@@ -4,7 +4,7 @@
   "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }],
   "functions": {
     "api/index.ts": {
-      "includeFiles": ["dist/client/**", "dist/server.bundle.mjs"]
+      "includeFiles": "dist/**"
     }
   }
 }
