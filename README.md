@@ -220,9 +220,23 @@ The template includes:
 npm run build
 ```
 
-### Deploy options:
+### Deploy to Vercel
 
-- **Vercel/Netlify** - Frontend deployment
+This repository includes `vercel.json` and `api/index.ts` so Vercel can run the
+Express SSR server as a function. Browser routes, API routes, sitemap/robots
+output, and server-rendered metadata are preserved.
+
+1. Import the repository into Vercel.
+2. Set the Node.js version to 22 or later.
+3. Add the production environment variables from `env.example` in the Vercel
+  project settings. Keep secret values server-only and do not prefix them with
+  `VITE_`.
+4. Deploy. Vercel uses `npm run build`; no start command is required.
+
+For a local production check, run `npm run build` and then `npm run preview`.
+
+### Other deploy options:
+
 - **Railway/Render** - Full-stack deployment
 - **Docker** - Containerized deployment
 

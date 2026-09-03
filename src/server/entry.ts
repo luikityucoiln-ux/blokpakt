@@ -162,9 +162,10 @@ app.get("/sitemap.xml", (req, res) => {
 
 app.get("/llms.txt", llmsTxtHandler);
 
-if (import.meta.env.PROD) {
+if (import.meta.env.PROD || process.env.VERCEL === "1") {
 	const __dirname = dirname(fileURLToPath(import.meta.url));
-	const clientDir = join(__dirname, "client");
+	const buildDir = process.env.VERCEL === "1" ? join(process.cwd(), "dist") : __dirname;
+	const clientDir = join(buildDir, "client");
 	const adSenseRuntimeConfig = loadAdSenseRuntimeConfig(__dirname);
 	const indexNowKey = loadIndexNowKey(__dirname);
 
@@ -369,28 +370,30 @@ if (import.meta.env.PROD) {
 		});
 	});
 
-	const rawPort = process.env.PORT || "3000";
-	const port = parseInt(rawPort, 10);
-	if (!Number.isInteger(port) || port <= 0 || port > 65535) {
-		// parseInt("abc") returns NaN; passing that to app.listen throws
-		// synchronously before the server.on("error") handler below can catch
-		// it. Fail fast with an actionable log rather than a cryptic crash.
-		console.error("ssr.server.invalid-port", { rawPort });
-		process.exit(1);
-	}
-	const host = process.env.HOST || "0.0.0.0";
-	const server = app.listen(port, host, () => {
-		console.log(`Server listening on http://${host}:${port}`);
-	});
-	server.on("error", (err: NodeJS.ErrnoException) => {
-		console.error("ssr.server.listen-failed", {
-			port,
-			host,
-			code: err.code,
-			error: err.message,
+	if (process.env.VERCEL !== "1") {
+		const rawPort = process.env.PORT || "3000";
+		const port = parseInt(rawPort, 10);
+		if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+			// parseInt("abc") returns NaN; passing that to app.listen throws
+			// synchronously before the server.on("error") handler below can catch
+			// it. Fail fast with an actionable log rather than a cryptic crash.
+			console.error("ssr.server.invalid-port", { rawPort });
+			process.exit(1);
+		}
+		const host = process.env.HOST || "0.0.0.0";
+		const server = app.listen(port, host, () => {
+			console.log(`Server listening on http://${host}:${port}`);
 		});
-		process.exit(1);
-	});
+		server.on("error", (err: NodeJS.ErrnoException) => {
+			console.error("ssr.server.listen-failed", {
+				port,
+				host,
+				code: err.code,
+				error: err.message,
+			});
+			process.exit(1);
+		});
+	}
 }
 
 export default app;
