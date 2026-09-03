@@ -162,7 +162,7 @@ app.get("/sitemap.xml", (req, res) => {
 
 app.get("/llms.txt", llmsTxtHandler);
 
-if (import.meta.env.PROD || process.env.VERCEL === "1") {
+if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
 	const __dirname = dirname(fileURLToPath(import.meta.url));
 	const buildDir = process.env.VERCEL === "1" ? join(process.cwd(), "dist") : __dirname;
 	const clientDir = join(buildDir, "client");
