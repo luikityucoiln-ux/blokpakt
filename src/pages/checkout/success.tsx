@@ -54,7 +54,7 @@ export default function CheckoutSuccess() {
     if (sessionId.startsWith('demo_session')) {
       setDetails({
         customerName: 'Alex Johnson',
-        amountTotal: 18000,
+        amountTotal: 4500,
         currency: 'usd',
         paymentStatus: 'paid',
         status: 'complete',

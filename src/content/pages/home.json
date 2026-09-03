@@ -37,9 +37,9 @@
       {
         "id": "lawn",
         "label": "Lawn Care",
-        "soloRate": 200,
-        "batchRate": 180,
-        "savings": 20,
+        "soloRate": 50,
+        "batchRate": 45,
+        "savings": 5,
         "contractors": [
           {
             "id": "c1",
@@ -127,9 +127,9 @@
       {
         "id": "snow",
         "label": "Snow Removal",
-        "soloRate": 160,
-        "batchRate": 144,
-        "savings": 16,
+        "soloRate": 64,
+        "batchRate": 58,
+        "savings": 6,
         "contractors": [
           {
             "id": "c8",
@@ -178,9 +178,9 @@
   "stats": [
     {
       "id": "stat1",
-      "value": "$720",
+      "value": "$180",
       "label": "avg contractor earns per 4-home batch route",
-      "detail": "4 homes × $180 = $720 gross. Minus 5% platform fee = $684 net. Same day, same street."
+      "detail": "4 homes × $45 = $180 gross. Minus 5% platform fee = $171 net. Same day, same street."
     },
     {
       "id": "stat2",

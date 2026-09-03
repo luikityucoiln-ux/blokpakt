@@ -452,9 +452,9 @@ export default function HomePage() {
                   <p className="text-base text-primary-foreground/80 mb-6">{home.stats[0].label}</p>
                   <div className="grid grid-cols-3 gap-3">
                     {[
-                      { label: '4 homes', value: '$720 gross' },
-                      { label: '5% fee', value: '−$36' },
-                      { label: 'Net payout', value: '$684' },
+                      { label: '4 homes', value: '$180 gross' },
+                      { label: '5% fee', value: '−$9' },
+                      { label: 'Net payout', value: '$171' },
                     ].map((item) => (
                       <div key={item.label} className="rounded-lg bg-white/10 px-3 py-2.5">
                         <p className="text-xs text-primary-foreground/60 mb-0.5">{item.label}</p>
