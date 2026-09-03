@@ -1,0 +1,108 @@
+{
+  "MOCK_UPDATES": [
+    {
+      "time": "8:02 AM",
+      "label": "Contractor confirmed your booking",
+      "done": true,
+      "id": "l0OflRMb0BL1JqMpr4Xhe"
+    },
+    {
+      "time": "8:47 AM",
+      "label": "Marcus T. is on the way",
+      "done": true,
+      "id": "cBZeawBYzWe4idMvEU4xS"
+    },
+    {
+      "time": "9:15 AM",
+      "label": "Estimated arrival",
+      "done": false,
+      "id": "H949NnYs8uU4aV7LLafnF"
+    },
+    {
+      "time": "After job",
+      "label": "Before & after photos uploaded",
+      "done": false,
+      "id": "UjCR3CFiVrHYS_CCklByu"
+    },
+    {
+      "time": "After job",
+      "label": "Payment captured",
+      "done": false,
+      "id": "vmsjcDWmiDbUiy_pE2VOQ"
+    }
+  ],
+  "homes": [
+    {
+      "x": 80,
+      "y": 60,
+      "label": "You",
+      "active": true,
+      "booked": true,
+      "id": "bthhlClHVoPDgg6NH1kFI"
+    },
+    {
+      "x": 160,
+      "y": 60,
+      "label": "249",
+      "active": false,
+      "booked": true,
+      "id": "6HGXEbzlTOGR-6-P2eqai"
+    },
+    {
+      "x": 240,
+      "y": 60,
+      "label": "251",
+      "active": false,
+      "booked": true,
+      "id": "fRiuJas4-JFy9OgnDdkgB"
+    },
+    {
+      "x": 320,
+      "y": 60,
+      "label": "253",
+      "active": false,
+      "booked": true,
+      "id": "ZNbCMxoawbsPmhI3ZFovk"
+    },
+    {
+      "x": 80,
+      "y": 130,
+      "label": "246",
+      "active": false,
+      "booked": false,
+      "id": "gq3iie6bNaW9ock048WUR"
+    },
+    {
+      "x": 160,
+      "y": 130,
+      "label": "248",
+      "active": false,
+      "booked": false,
+      "id": "f-sLjZblU67b-ZH8zKtIF"
+    },
+    {
+      "x": 240,
+      "y": 130,
+      "label": "250",
+      "active": false,
+      "booked": false,
+      "id": "HXVO_9DSK-crO-Bvt8LjM"
+    },
+    {
+      "x": 320,
+      "y": 130,
+      "label": "252",
+      "active": false,
+      "booked": false,
+      "id": "J1zNRIs3b4Y0PvYYESgmC"
+    }
+  ],
+  "reasons": [
+    "Job not completed as described",
+    "Property damage",
+    "Contractor did not show up",
+    "Work quality below standard",
+    "Unauthorized charges",
+    "Other"
+  ]
+}

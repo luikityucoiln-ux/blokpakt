@@ -1,0 +1,157 @@
+{
+  "pages/home/hero-neighborhood": {
+    "requestedSize": {
+      "width": 1200,
+      "height": 700,
+      "fit": "cover"
+    },
+    "orientations": "horizontal",
+    "graphicalStyles": "photography",
+    "minimumSize": "large",
+    "mediaType": "image",
+    "currentUrl": "https://img1.wsimg.com/isteam/getty/2213080936",
+    "searchQuery": "aerial view suburban neighborhood street grid homes",
+    "alternatives": [
+      "https://img1.wsimg.com/isteam/getty/170094223",
+      "https://img1.wsimg.com/isteam/getty/536920833"
+    ],
+    "userModified": false,
+    "createdAt": "2026-09-01T15:49:59.250Z",
+    "lastUpdated": "2026-09-01T15:49:59.250Z",
+    "gettyId": "2213080936",
+    "alternativeGettyIds": [
+      "170094223",
+      "536920833"
+    ]
+  },
+  "pages/home/contractor-working": {
+    "requestedSize": {
+      "width": 600,
+      "height": 600,
+      "fit": "cover"
+    },
+    "orientations": "square",
+    "graphicalStyles": "photography",
+    "minimumSize": "large",
+    "mediaType": "image",
+    "currentUrl": "https://img1.wsimg.com/isteam/getty/165776872",
+    "searchQuery": "professional lawn care contractor working residential yard",
+    "alternatives": [
+      "https://img1.wsimg.com/isteam/getty/2177197822",
+      "https://img1.wsimg.com/isteam/getty/1471567841"
+    ],
+    "userModified": false,
+    "createdAt": "2026-09-01T15:50:01.183Z",
+    "lastUpdated": "2026-09-01T15:50:01.183Z",
+    "gettyId": "165776872",
+    "alternativeGettyIds": [
+      "2177197822",
+      "1471567841"
+    ]
+  },
+  "logo/horizontal": {
+    "mediaType": "logo",
+    "currentUrl": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/026777f0-18f5-442c-b0f0-701b142421e3/horizontal-transparent-da348555-0745-4798-a3c6-bec3b8dafac6/logo-logo.png",
+    "searchQuery": "horizontal",
+    "alternatives": [
+      "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/d72eb895-d327-4e19-b132-d9def1d3ce88/transparent-3d1f3334-9c16-4885-ae64-9e48dfb40a6a/logo-logo.png"
+    ],
+    "logoSourceMap": {
+      "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/026777f0-18f5-442c-b0f0-701b142421e3/horizontal-transparent-da348555-0745-4798-a3c6-bec3b8dafac6/logo-logo.png": {
+        "sessionId": "026777f0-18f5-442c-b0f0-701b142421e3",
+        "logoId": "da348555-0745-4798-a3c6-bec3b8dafac6",
+        "groupId": "035f1a61-755a-4463-9849-3ba1b8b406cc"
+      },
+      "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/d72eb895-d327-4e19-b132-d9def1d3ce88/transparent-3d1f3334-9c16-4885-ae64-9e48dfb40a6a/logo-logo.png": {
+        "sessionId": "d72eb895-d327-4e19-b132-d9def1d3ce88",
+        "logoId": "3d1f3334-9c16-4885-ae64-9e48dfb40a6a",
+        "groupId": "035f1a61-755a-4463-9849-3ba1b8b406cc"
+      }
+    },
+    "logoGroupId": "035f1a61-755a-4463-9849-3ba1b8b406cc",
+    "solidUrlMap": {
+      "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/026777f0-18f5-442c-b0f0-701b142421e3/horizontal-transparent-da348555-0745-4798-a3c6-bec3b8dafac6/logo-logo.png": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/026777f0-18f5-442c-b0f0-701b142421e3/horizontal-original-da348555-0745-4798-a3c6-bec3b8dafac6/logo-logo.png",
+      "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/d72eb895-d327-4e19-b132-d9def1d3ce88/transparent-3d1f3334-9c16-4885-ae64-9e48dfb40a6a/logo-logo.png": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/d72eb895-d327-4e19-b132-d9def1d3ce88/original-3d1f3334-9c16-4885-ae64-9e48dfb40a6a/logo-logo.png"
+    },
+    "mockupUrlMap": {
+      "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/026777f0-18f5-442c-b0f0-701b142421e3/horizontal-transparent-da348555-0745-4798-a3c6-bec3b8dafac6/logo-logo.png": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/026777f0-18f5-442c-b0f0-701b142421e3/horizontal-transparent-da348555-0745-4798-a3c6-bec3b8dafac6/logo-logo.png"
+    },
+    "landscapeMockupUrlMap": {},
+    "productMockupsMap": {
+      "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/026777f0-18f5-442c-b0f0-701b142421e3/horizontal-transparent-da348555-0745-4798-a3c6-bec3b8dafac6/logo-logo.png": [
+        {
+          "type": "mug",
+          "label": "Mug",
+          "url": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/026777f0-18f5-442c-b0f0-701b142421e3/horizontal-mockup-mug-da348555-0745-4798-a3c6-bec3b8dafac6/logo-logo.png"
+        },
+        {
+          "type": "card",
+          "label": "Business Card",
+          "url": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/026777f0-18f5-442c-b0f0-701b142421e3/horizontal-mockup-card-da348555-0745-4798-a3c6-bec3b8dafac6/logo-logo.png"
+        },
+        {
+          "type": "tshirt",
+          "label": "T-Shirt",
+          "url": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/026777f0-18f5-442c-b0f0-701b142421e3/horizontal-mockup-tshirt-da348555-0745-4798-a3c6-bec3b8dafac6/logo-logo.png"
+        },
+        {
+          "type": "box",
+          "label": "Packaging",
+          "url": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/026777f0-18f5-442c-b0f0-701b142421e3/horizontal-mockup-box-da348555-0745-4798-a3c6-bec3b8dafac6/logo-logo.png"
+        }
+      ]
+    },
+    "productMockups": [
+      {
+        "type": "mug",
+        "label": "Mug",
+        "url": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/026777f0-18f5-442c-b0f0-701b142421e3/horizontal-mockup-mug-da348555-0745-4798-a3c6-bec3b8dafac6/logo-logo.png"
+      },
+      {
+        "type": "card",
+        "label": "Business Card",
+        "url": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/026777f0-18f5-442c-b0f0-701b142421e3/horizontal-mockup-card-da348555-0745-4798-a3c6-bec3b8dafac6/logo-logo.png"
+      },
+      {
+        "type": "tshirt",
+        "label": "T-Shirt",
+        "url": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/026777f0-18f5-442c-b0f0-701b142421e3/horizontal-mockup-tshirt-da348555-0745-4798-a3c6-bec3b8dafac6/logo-logo.png"
+      },
+      {
+        "type": "box",
+        "label": "Packaging",
+        "url": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/026777f0-18f5-442c-b0f0-701b142421e3/horizontal-mockup-box-da348555-0745-4798-a3c6-bec3b8dafac6/logo-logo.png"
+      }
+    ],
+    "userModified": false,
+    "createdAt": "2026-09-01T15:50:49.163Z",
+    "lastUpdated": "2026-09-01T15:54:27.101Z",
+    "surfaceMode": "dark",
+    "generatedForSurfaceColor": "#0f2e1f",
+    "lightSurfaceUrl": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/026777f0-18f5-442c-b0f0-701b142421e3/horizontal-transparent-da348555-0745-4798-a3c6-bec3b8dafac6/logo-logo.png",
+    "darkSurfaceUrl": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/d72eb895-d327-4e19-b132-d9def1d3ce88/transparent-3d1f3334-9c16-4885-ae64-9e48dfb40a6a/logo-logo.png"
+  },
+  "logo/favicon": {
+    "mediaType": "logo",
+    "currentUrl": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/f12324bf-fe02-4f36-b277-824e64bca0f4/favicon-transparent-0c605639-6b7d-42a9-bb5c-20fa784c77df/logo-logo.png",
+    "searchQuery": "favicon",
+    "alternatives": [],
+    "logoSourceMap": {
+      "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/f12324bf-fe02-4f36-b277-824e64bca0f4/favicon-transparent-0c605639-6b7d-42a9-bb5c-20fa784c77df/logo-logo.png": {
+        "sessionId": "f12324bf-fe02-4f36-b277-824e64bca0f4",
+        "logoId": "0c605639-6b7d-42a9-bb5c-20fa784c77df",
+        "groupId": "035f1a61-755a-4463-9849-3ba1b8b406cc"
+      }
+    },
+    "logoGroupId": "035f1a61-755a-4463-9849-3ba1b8b406cc",
+    "solidUrlMap": {
+      "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/f12324bf-fe02-4f36-b277-824e64bca0f4/favicon-transparent-0c605639-6b7d-42a9-bb5c-20fa784c77df/logo-logo.png": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/f12324bf-fe02-4f36-b277-824e64bca0f4/favicon-original-0c605639-6b7d-42a9-bb5c-20fa784c77df/logo-logo.png"
+    },
+    "userModified": false,
+    "createdAt": "2026-09-01T15:51:09.531Z",
+    "lastUpdated": "2026-09-01T15:51:38.565Z",
+    "surfaceMode": "light",
+    "generatedForSurfaceColor": "#f9f7f2",
+    "lightSurfaceUrl": "https://isteam.wsimg.com/genai-assistant/logoagent/customer/bed5b05d-ef90-4d73-ab29-824037defe83/session/f12324bf-fe02-4f36-b277-824e64bca0f4/favicon-transparent-0c605639-6b7d-42a9-bb5c-20fa784c77df/logo-logo.png"
+  }
+}

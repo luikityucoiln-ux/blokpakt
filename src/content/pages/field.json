@@ -1,0 +1,34 @@
+{
+  "ADDON_CATALOG": [
+    {
+      "label": "Fertilizer application",
+      "price": 35,
+      "id": "EdUGPiDOsO8bs2J1gQr22"
+    },
+    {
+      "label": "Weed treatment",
+      "price": 28,
+      "id": "2T92ra5Rc_PuRajlC5k7g"
+    },
+    {
+      "label": "Leaf blowing (extra)",
+      "price": 20,
+      "id": "wwDJ7cJ_QIeKEvb6yE0Ya"
+    },
+    {
+      "label": "Trim hedges",
+      "price": 45,
+      "id": "1JV1OZQ8KY35VPzI5IU3E"
+    },
+    {
+      "label": "Downspout extension",
+      "price": 25,
+      "id": "-31AnlBlGwegLmZuIiFp-"
+    },
+    {
+      "label": "Spot pressure wash",
+      "price": 30,
+      "id": "fmeWWOrF7e4BwiBzdZJpF"
+    }
+  ]
+}

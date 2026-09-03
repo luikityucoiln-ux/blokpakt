@@ -1,0 +1,38 @@
+{
+  "pageTitle": "Admin Operations Dashboard",
+  "pageSubtitle": "Blokpakt",
+  "liveLabel": "Live",
+  "dateLabel": "Sep 2, 2026",
+  "tabs": [
+    {
+      "id": "timeline",
+      "label": "📍 Dispatch Timeline"
+    },
+    {
+      "id": "payouts",
+      "label": "💰 Payout Approvals"
+    },
+    {
+      "id": "ratings",
+      "label": "🛡️ Rating Engine"
+    }
+  ],
+  "demoBanner": "Admin demo — all actions are simulated. Approve/reject buttons update local state only.",
+  "ratingLegend": [
+    {
+      "title": "Trimmed mean",
+      "description": "Top & bottom 10% of ratings removed before averaging — prevents coordinated 1-star bombing or fake 5-stars.",
+      "id": "QabvO9E_AlLo4yqdoybZU"
+    },
+    {
+      "title": "24-hr fix-it window",
+      "description": "Provider can re-submit photos or dispute a rating within 24 hours before it locks into the trimmed mean.",
+      "id": "RwfL8FwEJpzCjLYFgyOmO"
+    },
+    {
+      "title": "3.0★ floor",
+      "description": "Providers whose trimmed mean drops below 3.0 are auto-suspended pending admin review and payout hold.",
+      "id": "9fcC8UQYICaGTChrV6Fph"
+    }
+  ]
+}

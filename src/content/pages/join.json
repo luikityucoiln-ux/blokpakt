@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "title": "Join as a Provider — Blokpakt",
+    "description": "Apply to become a Blokpakt contractor. Set your services, coverage ZIP codes, and choose your activation path. Block Captain spots available."
+  },
+  "hero": {
+    "eyebrow": "For contractors",
+    "headline": "Earn more. Drive less.",
+    "subheadline": "Blokpakt batches jobs by street so you spend less time driving and more time earning. Apply in under 3 minutes."
+  },
+  "steps": [
+    {
+      "id": "s1",
+      "label": "Services & Coverage"
+    },
+    {
+      "id": "s2",
+      "label": "Contact Info"
+    },
+    {
+      "id": "s3",
+      "label": "Activation"
+    }
+  ],
+  "services": [
+    {
+      "id": "lawn",
+      "label": "Lawn Care",
+      "icon": "🌿",
+      "description": "Mowing, edging, cleanup"
+    },
+    {
+      "id": "gutter",
+      "label": "Gutter Cleaning",
+      "icon": "🏠",
+      "description": "Full flush & downspout clear"
+    },
+    {
+      "id": "pressure",
+      "label": "Pressure Washing",
+      "icon": "💧",
+      "description": "Driveways, walkways, exteriors"
+    },
+    {
+      "id": "snow",
+      "label": "Snow Removal",
+      "icon": "❄️",
+      "description": "Driveway & walkway clearing"
+    }
+  ],
+  "activation": {
+    "depositOption": {
+      "title": "Pay Activation Deposit",
+      "amount": 99,
+      "badge": "Instant access",
+      "bullets": [
+        "Start accepting jobs immediately",
+        "Deposit refunded after 10 completed jobs",
+        "Priority dispatch in your ZIP codes"
+      ]
+    },
+    "referralOption": {
+      "title": "Refer a Neighbor",
+      "badge": "No cost",
+      "bullets": [
+        "Refer one homeowner who books a job",
+        "Activation unlocks when their job completes",
+        "Earn a $25 bonus on their first booking"
+      ]
+    }
+  },
+  "blockCaptain": {
+    "badge": "Block Captain",
+    "headline": "Be the first contractor on your block",
+    "description": "The first provider to cover a ZIP code earns Block Captain status — priority dispatch, a profile badge, and a $50 bonus after your first 5 jobs in that zone.",
+    "perks": [
+      "Priority dispatch in your ZIP",
+      "$50 bonus after first 5 zone jobs",
+      "Block Captain badge on your profile"
+    ]
+  },
+  "waitlist": {
+    "headline": "We're not in your area yet",
+    "description": "Blokpakt is expanding fast. Drop your info and we'll notify you the moment your ZIP code goes live — you'll get first-mover Block Captain status.",
+    "ctaLabel": "Join the waitlist"
+  }
+}

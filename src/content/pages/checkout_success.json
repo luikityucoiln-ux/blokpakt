@@ -1,0 +1,16 @@
+{
+  "verifyingTitle": "Verifying your booking…",
+  "verifyingSubtitle": "Confirming your payment authorization with Stripe.",
+  "failedTitle": "Payment not confirmed",
+  "failedTryAgainLabel": "Try again",
+  "failedReturnHomeLabel": "Return home",
+  "successTitle": "Booking confirmed!",
+  "successSubtitle": "Your card is authorized and held — it will only be captured after your contractor submits photo-verified completion.",
+  "detailCustomerLabel": "Customer",
+  "detailAmountLabel": "Amount authorized",
+  "detailStatusLabel": "Status",
+  "detailStatusValue": "Auth hold — not yet captured",
+  "trackCtaLabel": "Track your job →",
+  "returnHomeLabel": "Return home",
+  "refLabel": "Booking ref"
+}

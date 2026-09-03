@@ -1,0 +1,35 @@
+{
+  "pageTitle": "Your cart",
+  "backLink": "Back to booking",
+  "demoBanner": "Demo mode — checkout bypasses Stripe and goes straight to confirmation.",
+  "emptyTitle": "Your cart is empty",
+  "emptySubtitle": "Book a service to get started.",
+  "emptyCtaLabel": "Book a service",
+  "orderSummaryTitle": "Order summary",
+  "subtotalLabel": "Subtotal",
+  "platformFeeLabel": "Platform fee (5%)",
+  "totalLabel": "Total authorized",
+  "checkoutCtaLabel": "Authorize & book",
+  "processingLabel": "Processing…",
+  "clearCartLabel": "Clear cart",
+  "trustItems": [
+    {
+      "icon": "shield",
+      "label": "Auth hold only",
+      "detail": "Card captured after job completion",
+      "id": "UkQUIzAMuXuuIFqSrCfDt"
+    },
+    {
+      "icon": "camera",
+      "label": "Photo verified",
+      "detail": "Before & after required",
+      "id": "nsBtC21JSSG6HgBmsSqXl"
+    },
+    {
+      "icon": "clock",
+      "label": "48-hr dispute window",
+      "detail": "Flag any issue instantly",
+      "id": "jjswIRXUG-Z2HJAAs_gMj"
+    }
+  ]
+}

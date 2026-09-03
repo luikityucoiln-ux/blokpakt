@@ -1,0 +1,205 @@
+{
+  "hero": {
+    "headline": "Your whole block saves. Your contractor earns more.",
+    "subheadline": "Blokpakt batches home services by street — so neighbors share the route, split the travel cost, and everyone wins.",
+    "searchPlaceholder": "Enter your address or ZIP code",
+    "searchCta": "Check Your Street",
+    "mockup": {
+      "streetName": "Oak Street",
+      "booked": 1,
+      "goal": 2,
+      "discount": "10%",
+      "label": "homes booked — invite 1 neighbor to unlock"
+    }
+  },
+  "trustSignals": [
+    {
+      "id": "ts1",
+      "icon": "shield",
+      "label": "Stripe-secured payments",
+      "detail": "Card held on auth — never charged until job is done"
+    },
+    {
+      "id": "ts2",
+      "icon": "camera",
+      "label": "Photo-verified completion",
+      "detail": "Before & after photos required to release payment"
+    },
+    {
+      "id": "ts3",
+      "icon": "clock",
+      "label": "48-hour dispute window",
+      "detail": "Flag any issue within 48 hrs to freeze payment capture"
+    }
+  ],
+  "services": {
+    "tabs": [
+      {
+        "id": "lawn",
+        "label": "Lawn Care",
+        "soloRate": 200,
+        "batchRate": 180,
+        "savings": 20,
+        "contractors": [
+          {
+            "id": "c1",
+            "name": "Marcus T.",
+            "rating": 4.9,
+            "jobs": 312,
+            "proximity": "0.8 mi",
+            "blockCaptain": true,
+            "specialty": "Lawn Care"
+          },
+          {
+            "id": "c2",
+            "name": "Devon R.",
+            "rating": 4.7,
+            "jobs": 189,
+            "proximity": "1.4 mi",
+            "blockCaptain": false,
+            "specialty": "Lawn Care"
+          },
+          {
+            "id": "c3",
+            "name": "Priya S.",
+            "rating": 4.8,
+            "jobs": 241,
+            "proximity": "2.1 mi",
+            "blockCaptain": false,
+            "specialty": "Lawn Care"
+          }
+        ]
+      },
+      {
+        "id": "gutter",
+        "label": "Gutter Cleaning",
+        "soloRate": 180,
+        "batchRate": 162,
+        "savings": 18,
+        "contractors": [
+          {
+            "id": "c4",
+            "name": "James W.",
+            "rating": 4.9,
+            "jobs": 278,
+            "proximity": "1.1 mi",
+            "blockCaptain": true,
+            "specialty": "Gutter Cleaning"
+          },
+          {
+            "id": "c5",
+            "name": "Sofia M.",
+            "rating": 4.6,
+            "jobs": 154,
+            "proximity": "1.8 mi",
+            "blockCaptain": false,
+            "specialty": "Gutter Cleaning"
+          }
+        ]
+      },
+      {
+        "id": "pressure",
+        "label": "Pressure Washing",
+        "soloRate": 220,
+        "batchRate": 198,
+        "savings": 22,
+        "contractors": [
+          {
+            "id": "c6",
+            "name": "Tyrell B.",
+            "rating": 5,
+            "jobs": 96,
+            "proximity": "0.6 mi",
+            "blockCaptain": true,
+            "specialty": "Pressure Washing"
+          },
+          {
+            "id": "c7",
+            "name": "Anita K.",
+            "rating": 4.8,
+            "jobs": 203,
+            "proximity": "1.9 mi",
+            "blockCaptain": false,
+            "specialty": "Pressure Washing"
+          }
+        ]
+      },
+      {
+        "id": "snow",
+        "label": "Snow Removal",
+        "soloRate": 160,
+        "batchRate": 144,
+        "savings": 16,
+        "contractors": [
+          {
+            "id": "c8",
+            "name": "Liam O.",
+            "rating": 4.8,
+            "jobs": 167,
+            "proximity": "1.3 mi",
+            "blockCaptain": true,
+            "specialty": "Snow Removal"
+          },
+          {
+            "id": "c9",
+            "name": "Keisha F.",
+            "rating": 4.7,
+            "jobs": 134,
+            "proximity": "2.4 mi",
+            "blockCaptain": false,
+            "specialty": "Snow Removal"
+          }
+        ]
+      }
+    ]
+  },
+  "howItWorks": {
+    "steps": [
+      {
+        "id": "s1",
+        "number": "01",
+        "title": "Enter your address",
+        "description": "We check if your street is in an active batch zone or add you to the waitlist for your neighborhood."
+      },
+      {
+        "id": "s2",
+        "number": "02",
+        "title": "Invite one neighbor",
+        "description": "Share your street link via WhatsApp or Nextdoor. One neighbor booking unlocks the group rate for everyone."
+      },
+      {
+        "id": "s3",
+        "number": "03",
+        "title": "Sit back — we handle the rest",
+        "description": "Your contractor arrives, completes the job with photo proof, and your card is only charged after you're satisfied."
+      }
+    ]
+  },
+  "stats": [
+    {
+      "id": "stat1",
+      "value": "$720",
+      "label": "avg contractor earns per 4-home batch route",
+      "detail": "4 homes × $180 = $720 gross. Minus 5% platform fee = $684 net. Same day, same street."
+    },
+    {
+      "id": "stat2",
+      "value": "4.9★",
+      "label": "average rating across 2,400+ completed jobs",
+      "detail": "Anti-sabotage engine drops outlier reviews every 10 jobs."
+    },
+    {
+      "id": "stat3",
+      "value": "48 hrs",
+      "label": "dispute protection on every single booking",
+      "detail": "Flag any issue within 48 hours to freeze payment capture instantly."
+    }
+  ],
+  "cta": {
+    "headline": "Ready to get your block on the list?",
+    "subheadline": "Check your address — it takes 30 seconds.",
+    "searchPlaceholder": "Enter your address or ZIP code",
+    "searchCta": "Check Your Street",
+    "contractorLink": "Are you a contractor? Join the network →"
+  }
+}
