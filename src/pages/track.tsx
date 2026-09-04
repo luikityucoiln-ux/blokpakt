@@ -515,7 +515,7 @@ export default function TrackPage() {
                     Batch active
                   </span>
                 </div>
-                <svg viewBox="0 0 420 200" className="w-full" aria-label="Neighborhood zone map">
+                <svg viewBox="0 0 420 220" className="w-full" aria-label="Neighborhood zone map">
                   <rect x="0" y="90" width="420" height="20" fill="hsl(var(--muted))" />
                   <text x="210" y="103" textAnchor="middle" fontSize="9" fill="hsl(var(--muted-foreground))" fontFamily="sans-serif">
                     {job.batchStreet}
@@ -540,8 +540,9 @@ export default function TrackPage() {
                       />
                       <text
                         x={h.x}
-                        y={h.y < 90 ? h.y + 22 : h.y + 32}
+                        y={h.y < 90 ? h.y + 18 : h.y + 28}
                         textAnchor="middle"
+                        dominantBaseline="middle"
                         fontSize="8"
                         fill={h.booked ? 'white' : 'hsl(var(--muted-foreground))'}
                         fontFamily="sans-serif"
@@ -551,12 +552,14 @@ export default function TrackPage() {
                       </text>
                     </g>
                   ))}
-                  <rect x="10" y="170" width="10" height="10" rx="2" fill="hsl(var(--accent))" />
-                  <text x="24" y="179" fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="sans-serif">You</text>
-                  <rect x="60" y="170" width="10" height="10" rx="2" fill="hsl(var(--primary))" />
-                  <text x="74" y="179" fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="sans-serif">Booked</text>
-                  <rect x="120" y="170" width="10" height="10" rx="2" fill="hsl(var(--card))" stroke="hsl(var(--border))" strokeWidth="1" opacity="0.5" />
-                  <text x="134" y="179" fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="sans-serif">Available</text>
+                  <g transform="translate(0 20)">
+                    <rect x="10" y="170" width="10" height="10" rx="2" fill="hsl(var(--accent))" />
+                    <text x="24" y="179" fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="sans-serif">You</text>
+                    <rect x="60" y="170" width="10" height="10" rx="2" fill="hsl(var(--primary))" />
+                    <text x="74" y="179" fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="sans-serif">Booked</text>
+                    <rect x="120" y="170" width="10" height="10" rx="2" fill="hsl(var(--card))" stroke="hsl(var(--border))" strokeWidth="1" opacity="0.5" />
+                    <text x="134" y="179" fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="sans-serif">Available</text>
+                  </g>
                 </svg>
               </div>
 
