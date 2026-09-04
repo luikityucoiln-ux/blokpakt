@@ -516,8 +516,8 @@ export default function TrackPage() {
                   </span>
                 </div>
                 <svg viewBox="0 0 420 220" className="w-full" aria-label="Neighborhood zone map">
-                  <rect x="0" y="90" width="420" height="20" fill="hsl(var(--muted))" />
-                  <text x="210" y="103" textAnchor="middle" fontSize="9" fill="hsl(var(--muted-foreground))" fontFamily="sans-serif">
+                  <rect x="0" y="100" width="420" height="20" fill="hsl(var(--muted))" />
+                  <text x="210" y="113" textAnchor="middle" fontSize="9" fill="hsl(var(--muted-foreground))" fontFamily="sans-serif">
                     {job.batchStreet}
                   </text>
                   {track.homes.map((h) => (
