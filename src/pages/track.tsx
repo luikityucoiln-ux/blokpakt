@@ -262,6 +262,7 @@ export default function TrackPage() {
         <title>Track Your Job — Blokpakt</title>
         <meta name="description" content="Track your Blokpakt service job in real time. See contractor status, approve on-site add-ons, share your referral code, and flag any issues within 48 hours." />
         <link rel="canonical" href="https://blokpakt.com/track" />
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
       {/* Add-on modal */}
@@ -515,52 +516,46 @@ export default function TrackPage() {
                     Batch active
                   </span>
                 </div>
-                <svg viewBox="0 0 420 220" className="w-full" aria-label="Neighborhood zone map">
-                  <rect x="0" y="100" width="420" height="20" fill="hsl(var(--muted))" />
-                  <text x="210" y="113" textAnchor="middle" fontSize="9" fill="hsl(var(--muted-foreground))" fontFamily="sans-serif">
-                    {job.batchStreet}
-                  </text>
-                  {track.homes.map((h) => (
-                    <g key={h.id}>
-                      <rect
-                        x={h.x - 24}
-                        y={h.y < 90 ? h.y : h.y + 10}
-                        width={48}
-                        height={36}
-                        rx={4}
-                        fill={h.active ? 'hsl(var(--accent))' : h.booked ? 'hsl(var(--primary))' : 'hsl(var(--card))'}
-                        stroke={h.booked ? 'hsl(var(--primary))' : 'hsl(var(--border))'}
-                        strokeWidth={h.active ? 2.5 : 1.5}
-                        opacity={h.booked ? 1 : 0.5}
-                      />
-                      <polygon
-                        points={`${h.x - 28},${h.y < 90 ? h.y : h.y + 10} ${h.x + 28},${h.y < 90 ? h.y : h.y + 10} ${h.x},${h.y < 90 ? h.y - 14 : h.y - 4}`}
-                        fill={h.active ? 'hsl(var(--accent))' : h.booked ? 'hsl(var(--primary))' : 'hsl(var(--muted))'}
-                        opacity={h.booked ? 0.7 : 0.4}
-                      />
-                      <text
-                        x={h.x}
-                        y={h.y < 90 ? h.y + 18 : h.y + 28}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        fontSize="8"
-                        fill={h.booked ? 'white' : 'hsl(var(--muted-foreground))'}
-                        fontFamily="sans-serif"
-                        fontWeight={h.active ? 'bold' : 'normal'}
-                      >
-                        {h.label}
-                      </text>
-                    </g>
-                  ))}
-                  <g transform="translate(0 20)">
-                    <rect x="10" y="170" width="10" height="10" rx="2" fill="hsl(var(--accent))" />
-                    <text x="24" y="179" fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="sans-serif">You</text>
-                    <rect x="60" y="170" width="10" height="10" rx="2" fill="hsl(var(--primary))" />
-                    <text x="74" y="179" fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="sans-serif">Booked</text>
-                    <rect x="120" y="170" width="10" height="10" rx="2" fill="hsl(var(--card))" stroke="hsl(var(--border))" strokeWidth="1" opacity="0.5" />
-                    <text x="134" y="179" fontSize="8" fill="hsl(var(--muted-foreground))" fontFamily="sans-serif">Available</text>
-                  </g>
-                </svg>
+                <div className="flex w-full flex-col items-center gap-4 px-4 pb-4" aria-label="Neighborhood zone map">
+                  <div className="grid w-full grid-cols-4 gap-2" aria-label="Top houses">
+                    {track.homes.filter((h) => h.y < 90).map((h) => (
+                      <div key={h.id} className="flex flex-col items-center">
+                        <div className={`flex h-9 w-12 items-center justify-center rounded-md border text-[11px] ${h.active ? 'border-accent bg-accent text-accent-foreground' : 'border-primary bg-primary text-primary-foreground'} ${h.active ? 'font-bold' : ''}`}>
+                          {h.label}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="my-4 flex w-full items-center justify-center rounded-full bg-stone-200/50 py-2">
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-amber-900/60">{job.batchStreet}</span>
+                  </div>
+
+                  <div className="grid w-full grid-cols-4 gap-2" aria-label="Bottom houses">
+                    {track.homes.filter((h) => h.y >= 90).map((h) => (
+                      <div key={h.id} className="flex flex-col items-center">
+                        <div className="flex h-9 w-12 items-center justify-center rounded-md border border-border bg-card text-[11px] text-muted-foreground opacity-60">
+                          {h.label}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex w-full items-center justify-center gap-4 pt-2" aria-label="Map legend">
+                    <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                      <span className="h-2.5 w-2.5 rounded-sm bg-accent" />
+                      You
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                      <span className="h-2.5 w-2.5 rounded-sm bg-primary" />
+                      Booked
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                      <span className="h-2.5 w-2.5 rounded-sm border border-border bg-card opacity-60" />
+                      Available
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Batch stats */}

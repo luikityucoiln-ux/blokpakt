@@ -37,6 +37,36 @@ export const schemas = {
             "blockCaptain": z.boolean(),
             "specialty": z.string()
           }))
+        })),
+        "details": z.array(z.object({
+          "id": z.string(),
+          "included": z.array(z.string()),
+          "notIncluded": z.array(z.string()),
+          "duration": z.string(),
+          "addonExamples": z.array(z.string())
+        }))
+      }),
+      "trustAndSafety": z.object({
+        "eyebrow": z.string(),
+        "headline": z.string(),
+        "intro": z.string(),
+        "items": z.array(z.object({
+          "id": z.string(),
+          "title": z.string(),
+          "description": z.string()
+        })),
+        "reporting": z.object({
+          "title": z.string(),
+          "description": z.string()
+        })
+      }),
+      "bookingFaq": z.object({
+        "eyebrow": z.string(),
+        "headline": z.string(),
+        "items": z.array(z.object({
+          "id": z.string(),
+          "question": z.string(),
+          "answer": z.string()
         }))
       }),
       "howItWorks": z.object({

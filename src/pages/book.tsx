@@ -2,7 +2,7 @@ import { book } from 'virtual:content';
 import { useState } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { ArrowRight, ArrowLeft, Shield, Clock, Camera, CheckCircle, ChevronDown } from 'lucide-react';
 
 // ── Stripe product IDs ────────────────────────────────────────────────────────
@@ -115,6 +115,28 @@ export default function BookPage() {
           content="Book lawn care, gutter cleaning, pressure washing, or snow removal on Blokpakt. Your card is held on authorization — never charged until the job is done."
         />
         <link rel="canonical" href="https://blokpakt.com/book" />
+        <meta property="og:title" content="Book a Service — Blokpakt" />
+        <meta
+          property="og:description"
+          content="Book lawn care, gutter cleaning, pressure washing, or snow removal on Blokpakt."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://blokpakt.com/book" />
+        <meta
+          property="og:image"
+          content="https://blokpakt.com/og-book.svg"
+        />
+        <meta property="og:image:alt" content="Blokpakt" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Book a Service — Blokpakt" />
+        <meta
+          name="twitter:description"
+          content="Book lawn care, gutter cleaning, pressure washing, or snow removal on Blokpakt."
+        />
+        <meta
+          name="twitter:image"
+          content="https://blokpakt.com/og-book.svg"
+        />
       </Helmet>
 
       <main className="min-h-screen bg-muted/30 py-12 lg:py-20">
@@ -124,6 +146,9 @@ export default function BookPage() {
             <span className="w-2 h-2 rounded-full bg-accent animate-pulse flex-shrink-0" />
             Demo mode — fields pre-filled. Click through any step to proceed.
           </div>
+          <p className="mb-8 text-center text-sm text-muted-foreground">
+            Have questions before booking? <Link to="/faq" className="font-semibold text-primary hover:text-accent">Read the FAQ</Link>
+          </p>
 
           {/* Page header */}
           <div className="text-center mb-10">

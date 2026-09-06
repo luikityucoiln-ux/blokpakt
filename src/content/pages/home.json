@@ -12,6 +12,32 @@
       "label": "homes booked — invite 1 neighbor to unlock"
     }
   },
+  "trustAndSafety": {
+    "eyebrow": "Trust and safety",
+    "headline": "Know who is coming and what happens if something goes wrong.",
+    "intro": "Blokpakt sets clear expectations for customers and providers before a job starts, then keeps a record of the work after it is complete.",
+    "items": [
+      { "id": "screening", "title": "Provider review", "description": "We review provider identity, service experience, references, and the information needed for the services they offer before they join the network." },
+      { "id": "coverage", "title": "License and insurance expectations", "description": "Providers must maintain licenses, permits, and insurance required for their trade and location, and must keep that information current." },
+      { "id": "photos", "title": "Photo record", "description": "Before-and-after photos document the service area, help confirm completion, and give both sides a shared record of the job." },
+      { "id": "payments", "title": "Payment protection", "description": "Payment is handled through the booking flow, with a dispute window so customers can report a problem before funds are released." }
+    ],
+    "reporting": {
+      "title": "Need to report a problem?",
+      "description": "Use the booking or job-tracking page to describe what happened and attach photos. We review the report, contact the provider when needed, and help document a resolution. For immediate safety emergencies, contact local emergency services first."
+    }
+  },
+  "bookingFaq": {
+    "eyebrow": "Before you book",
+    "headline": "The practical answers, before you commit.",
+    "items": [
+      { "id": "batch", "question": "How does a street batch form?", "answer": "Enter your address to see whether your street is active. When enough nearby homes request the same service window, the group rate unlocks. You can invite a neighbor from your booking link." },
+      { "id": "charge", "question": "When am I charged?", "answer": "Your payment method is authorized during booking and charged according to the service terms after the job is completed. Any approved add-on must be recorded and confirmed through Blokpakt before it is charged." },
+      { "id": "reschedule", "question": "How do I reschedule?", "answer": "Open your booking or contact support as soon as possible. Availability and any applicable cancellation or short-notice fee will be shown before a change is confirmed." },
+      { "id": "prepare", "question": "What should I do before the provider arrives?", "answer": "Clear personal items from the work area, secure pets, identify gates and water or power access, and tell us about hazards or restricted areas. Providers can only service areas they can safely access." },
+      { "id": "limits", "question": "What are common service limitations?", "answer": "Weather, unsafe access, blocked areas, hazardous materials, unusually large quantities, and work outside the selected service scope may require a new quote or an approved add-on." }
+    ]
+  },
   "trustSignals": [
     {
       "id": "ts1",
@@ -150,6 +176,36 @@
             "specialty": "Snow Removal"
           }
         ]
+      }
+    ],
+    "details": [
+      {
+        "id": "lawn",
+        "included": ["Mow and edge accessible lawn areas", "Blow clippings from walkways and driveways", "Basic cleanup of the serviced area"],
+        "notIncluded": ["Overgrown-lot restoration", "Tree trimming or hedge work", "Bagging and hauling unless selected as an add-on"],
+        "duration": "About 30–45 minutes",
+        "addonExamples": ["Bag and haul clippings: from $15", "Overgrown lawn surcharge: quoted after photos"]
+      },
+      {
+        "id": "gutter",
+        "included": ["Remove leaves and ordinary debris from reachable gutters", "Clear accessible downspouts", "Bag debris at the property"],
+        "notIncluded": ["Roof repair or gutter replacement", "Three-story or unsafe access without suitable equipment", "Hauling debris away unless selected as an add-on"],
+        "duration": "About 1–2 hours",
+        "addonExamples": ["Downspout flush: from $25", "Bag and haul debris: from $20"]
+      },
+      {
+        "id": "pressure",
+        "included": ["Pressure wash the selected driveway, walkway, or patio area", "Use appropriate pressure for the surface", "Rinse and leave the serviced area tidy"],
+        "notIncluded": ["Paint, oil, rust, or permanent stain removal guarantee", "Exterior building washing unless selected", "Repair of damaged or unstable surfaces"],
+        "duration": "About 1–3 hours",
+        "addonExamples": ["Additional 500 sq. ft.: quoted in the booking", "Heavy stain treatment: from $35"]
+      },
+      {
+        "id": "snow",
+        "included": ["Clear the booked driveway and primary walkway", "Create a safe path to the main entrance", "Apply salt or de-icer when included in the booking"],
+        "notIncluded": ["Snow removal from roofs", "Ice removal that requires specialized equipment", "Extra snowfall after the booked visit"],
+        "duration": "About 30–60 minutes",
+        "addonExamples": ["Additional walkway: from $15", "Snow hauling: quoted based on volume"]
       }
     ]
   },

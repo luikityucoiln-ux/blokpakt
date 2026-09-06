@@ -300,9 +300,12 @@ if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
 			// crawlers drop them from the index over time; customer-attached
 			// hosts get a self-canonical link so search engines treat them
 			// as authoritative for the rendered content.
+			const hasCanonical = /<link\b[^>]*\brel="canonical"/i.test(result.head);
 			const seoHead = isSystemHost(req)
 				? `<meta name="robots" content="noindex,nofollow">`
-				: `<link rel="canonical" href="${escapeXml(`${req.protocol}://${req.hostname}${req.path}`)}">`;
+				: hasCanonical
+					? ""
+					: `<link rel="canonical" href="${escapeXml(`${req.protocol}://${req.hostname}${req.path}`)}">`;
 			// Function replacements disable String.replace's $-special sequences
 			// ($&, $', $`, $$) so user-authored titles / JSON-LD like
 			// "Save $& today" insert literally instead of being interpolated.

@@ -12,6 +12,7 @@ export default function Header() {
   const navLinks = [
     { label: 'How It Works', href: '/#how-it-works' },
     { label: 'Services', href: '/#services' },
+    { label: 'FAQ', href: '/faq' },
     { label: 'Track Job', href: '/track' },
     { label: 'Join as Provider', href: '/join' },
   ];
@@ -26,6 +27,7 @@ export default function Header() {
     { label: '🔧 Join as Provider', href: '/join' },
     { label: '📱 Provider Field App', href: '/field' },
     { label: '⚙️ Admin Dashboard', href: '/admin' },
+    { label: '❓ FAQs', href: '/faq' },
   ];
 
   return (

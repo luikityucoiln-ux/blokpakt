@@ -35,6 +35,7 @@ export default function Footer() {
                 { label: 'About', href: '#' },
                 { label: 'How It Works', href: '#how-it-works' },
                 { label: 'Pricing', href: '#pricing' },
+                { label: 'FAQs', href: '/faq' },
               ].map((l) => (
                 <li key={l.label}>
                   <a href={l.href} className="text-sm text-white/70 hover:text-white transition-colors">{l.label}</a>
@@ -62,9 +63,20 @@ export default function Footer() {
 
         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-xs text-white/40">© 2026 Blokpakt. All rights reserved.</p>
-          <div className="flex gap-6">
-            {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map((l) => (
-              <a key={l} href="#" className="text-xs text-white/40 hover:text-white/70 transition-colors">{l}</a>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 sm:justify-end">
+            {[
+              { label: 'Legal Center', href: '/legal' },
+              { label: 'Privacy', href: '/legal#privacy' },
+              { label: 'State Privacy & Retention', href: '/legal#state-privacy-retention' },
+              { label: 'Cookies', href: '/legal#cookies' },
+              { label: 'Ad Choices', href: '/legal#ad-choices' },
+              { label: 'Terms', href: '/legal#terms' },
+              { label: 'IP Notice', href: '/legal#intellectual-property' },
+              { label: 'Property Access & Photos', href: '/legal#property-access-photos' },
+              { label: 'Scope Changes & Add-ons', href: '/legal#scope-changes-add-ons' },
+              { label: 'Platform Rules', href: '/legal#platform-rules' },
+            ].map((link) => (
+              <a key={link.label} href={link.href} className="text-xs text-white/40 hover:text-white/70 transition-colors">{link.label}</a>
             ))}
           </div>
         </div>

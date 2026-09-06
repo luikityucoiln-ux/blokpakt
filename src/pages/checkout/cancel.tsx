@@ -8,11 +8,19 @@
  */
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
+import { Helmet } from '@dr.pogodin/react-helmet';
 
 export default function CheckoutCancel() {
   const { t } = useTranslation();
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <>
+      <Helmet>
+        <title>Checkout Cancelled — Blokpakt</title>
+        <meta name="description" content="Your Blokpakt checkout was cancelled. No payment was made." />
+        <link rel="canonical" href="https://blokpakt.com/checkout/cancel" />
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
         {/* Cancel Icon */}
         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -60,7 +68,8 @@ export default function CheckoutCancel() {
           </a>
         </p>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

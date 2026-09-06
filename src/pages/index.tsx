@@ -312,6 +312,27 @@ export default function HomePage() {
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       Prices unlock automatically when 2+ homes on your street book the same service window. No coupon codes needed.
                     </p>
+                    {(() => {
+                      const detail = home.services.details.find((item) => item.id === tab.id);
+                      return detail ? (
+                        <div className="mt-6 grid gap-5 border-t border-border pt-5 text-sm sm:grid-cols-2">
+                          <div>
+                            <p className="font-semibold text-foreground">What is included</p>
+                            <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
+                              {detail.included.map((item) => <li key={item}>{item}</li>)}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="font-semibold text-foreground">Usually not included</p>
+                            <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
+                              {detail.notIncluded.map((item) => <li key={item}>{item}</li>)}
+                            </ul>
+                          </div>
+                          <p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">Typical time:</span> {detail.duration}</p>
+                          <div className="text-xs text-muted-foreground"><p className="font-semibold text-foreground">Common add-ons</p>{detail.addonExamples.map((item) => <p key={item} className="mt-1">{item}</p>)}</div>
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
 
@@ -402,6 +423,53 @@ export default function HomePage() {
                 </motion.div>
               ))}
             </motion.div>
+          </div>
+        </section>
+
+        <section className="bg-primary py-20 text-primary-foreground lg:py-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="max-w-2xl mb-12">
+              <motion.p variants={fadeUp} className="text-sm font-semibold uppercase tracking-wide text-accent">{home.trustAndSafety.eyebrow}</motion.p>
+              <motion.h2 variants={fadeUp} className="mt-2 text-3xl font-extrabold sm:text-4xl">{home.trustAndSafety.headline}</motion.h2>
+              <motion.p variants={fadeUp} className="mt-4 text-base leading-relaxed text-primary-foreground/70">{home.trustAndSafety.intro}</motion.p>
+            </motion.div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {home.trustAndSafety.items.map((item) => (
+                <div key={item.id} className="border-l border-white/20 pl-5">
+                  <h3 className="font-bold">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-primary-foreground/65">{item.description}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-10 border-t border-white/15 pt-6">
+              <h3 className="font-bold">{home.trustAndSafety.reporting.title}</h3>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-primary-foreground/65">{home.trustAndSafety.reporting.description}</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-muted/30 py-20 lg:py-28">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-10">
+              <p className="text-sm font-semibold uppercase tracking-wide text-accent">{home.bookingFaq.eyebrow}</p>
+              <h2 className="mt-2 text-3xl font-extrabold text-foreground sm:text-4xl">{home.bookingFaq.headline}</h2>
+            </div>
+            <div className="divide-y divide-border border-y border-border">
+              {home.bookingFaq.items.slice(0, 3).map((item) => (
+                <details key={item.id} className="group py-5">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 font-bold text-foreground">
+                    {item.question}
+                    <ChevronRight size={18} className="shrink-0 text-accent transition-transform group-open:rotate-90" />
+                  </summary>
+                  <p className="mt-3 max-w-3xl pr-8 text-sm leading-relaxed text-muted-foreground">{item.answer}</p>
+                </details>
+              ))}
+            </div>
+            <div className="mt-6">
+              <Link to="/faq" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-accent">
+                View all FAQs <ChevronRight size={16} />
+              </Link>
+            </div>
           </div>
         </section>
 
