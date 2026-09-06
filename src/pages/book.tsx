@@ -349,12 +349,13 @@ export default function BookPage() {
                         Property notes
                         <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>
                       </label>
-                      <input
-                        type="text"
+                      <textarea
+                        rows={3}
+                        maxLength={150}
                         value={form.propertyNotes}
                         onChange={(e) => update('propertyNotes', e.target.value)}
                         placeholder="e.g. Dog in backyard, skip side gate"
-                        className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full resize-none rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
                     </div>
                   </div>
