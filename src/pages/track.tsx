@@ -59,12 +59,13 @@ const MOCK_ADDONS: AddOnRequest[] = [
 // ── Share hub component ───────────────────────────────────────────────────────
 function ShareHub({ referralCode, batchStreet, savings }: { referralCode: string; batchStreet: string; savings: number }) {
   const [copied, setCopied] = useState(false);
-  const shareText = `I just booked lawn care on Blokpakt — if you're on ${batchStreet}, use my code ${referralCode} and we both save $${savings}! blokpakt.com/book`;
+  const batchUrl = `https://blokpakt.com/batch/${encodeURIComponent(referralCode)}`;
+  const shareText = `I just booked a yard crew for ${batchStreet} today. If anyone else needs a cut, we can batch it for a discount and save $${savings}.\n\nBook here: ${batchUrl}\nOr Google "Blokpakt" and enter code: ${referralCode}`;
 
   function copyCode() {
     navigator.clipboard.writeText(referralCode).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      window.setTimeout(() => setCopied(false), 2000);
     });
   }
 
@@ -227,8 +228,8 @@ export default function TrackPage() {
 
   useEffect(() => {
     if (pendingAddons.length > 0) {
-      const t = setTimeout(() => setActiveAddon(pendingAddons[0]), 2000);
-      return () => clearTimeout(t);
+      const t = window.setTimeout(() => setActiveAddon(pendingAddons[0]), 2000);
+      return () => window.clearTimeout(t);
     }
   }, []);
 
@@ -246,7 +247,7 @@ export default function TrackPage() {
   function handleDisputeSubmit() {
     if (!disputeReason) return;
     setDisputeSubmitted(true);
-    setTimeout(() => {
+    window.setTimeout(() => {
       setShowDispute(false);
       setDisputeFiled(true);
       setCurrentStatus('disputed');
@@ -430,7 +431,7 @@ export default function TrackPage() {
                 <div className="relative">
                   <div className="absolute left-3 top-0 bottom-0 w-px bg-border" />
                   <div className="flex flex-col gap-4">
-                    {track.MOCK_UPDATES.map((u, i) => (
+                    {track.MOCK_UPDATES.map((u) => (
                       <div key={u.id} className="flex items-start gap-4 pl-8 relative">
                         <div className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${u.done ? 'bg-primary' : 'bg-muted border border-border'}`}>
                           {u.done

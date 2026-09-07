@@ -9,6 +9,7 @@ import FieldPage from './pages/field';
 import AdminPage from './pages/admin';
 import LegalPage from './pages/legal';
 import FaqPage from './pages/faq';
+import BatchPage from './pages/batch';
 // Eager import so renderToString doesn't hit a Suspense boundary on 404 routes
 // and abort to client rendering. The prod 404 page is tiny; the dev-tools
 // variant stays lazy because it pulls in dev-only code we don't want in
@@ -25,6 +26,10 @@ export const routes: RouteObject[] = [
   {
     path: '/book',
     element: <BookPage />,
+  },
+  {
+    path: '/batch/:code',
+    element: <BatchPage />,
   },
   {
     path: '/track',
@@ -65,6 +70,6 @@ export const routes: RouteObject[] = [
 ];
 
 // Types for type-safe navigation
-export type Path = '/' | '/book' | '/track' | '/join' | '/checkout/success' | '/checkout/cancel' | '/legal' | '/faq';
+export type Path = '/' | '/book' | '/batch/:code' | '/track' | '/join' | '/checkout/success' | '/checkout/cancel' | '/legal' | '/faq';
 
 export type Params = Record<string, string | undefined>;

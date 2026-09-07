@@ -24,12 +24,22 @@ const trustIcons: Record<string, ReactNode> = {
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState(0);
+  const [streetAddress, setStreetAddress] = useState('');
   const navigate = useNavigate();
 
   const site = 'https://blokpakt.com';
   const title = 'Blokpakt — Your Whole Block Saves Together';
   const description =
     'Blokpakt batches home services by street. More neighbors booking = lower prices for everyone and higher earnings for contractors. Lawn care, gutters, pressure washing & snow removal.';
+
+  function handleStreetCheck() {
+    const address = streetAddress.trim();
+    if (/^[A-Z0-9]+(?:-[A-Z0-9]+)+$/i.test(address)) {
+      navigate(`/batch/${encodeURIComponent(address.toUpperCase())}`);
+      return;
+    }
+    navigate(address ? `/book?address=${encodeURIComponent(address)}` : '/book');
+  }
 
   return (
     <>
@@ -121,11 +131,13 @@ export default function HomePage() {
                   <div className="flex flex-col sm:flex-row gap-3">
                     <input
                       type="text"
+                      value={streetAddress}
+                      onChange={(event) => setStreetAddress(event.target.value)}
                       placeholder={home.hero.searchPlaceholder}
                       className="flex-1 rounded-xl border border-border bg-card px-4 py-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 shadow-sm"
                     />
                     <button
-                      onClick={() => navigate('/book')}
+                      onClick={handleStreetCheck}
                       className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3.5 text-sm font-bold text-white shadow-md hover:bg-accent/90 transition-colors whitespace-nowrap"
                     >
                       {home.hero.searchCta}

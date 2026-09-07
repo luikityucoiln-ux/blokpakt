@@ -1,9 +1,45 @@
 import { book } from 'virtual:content';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link, useNavigate } from 'react-router';
-import { ArrowRight, ArrowLeft, Shield, Clock, Camera, CheckCircle, ChevronDown } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Shield, Clock, Camera, CheckCircle, ChevronDown, LocateFixed } from 'lucide-react';
+
+interface GoogleAutocompletePlace {
+  address_components?: Array<{ long_name: string; short_name: string; types: string[] }>;
+}
+
+interface GoogleAutocomplete {
+  addListener: (eventName: string, handler: () => void) => void;
+  getPlace: () => GoogleAutocompletePlace;
+  setBounds: (bounds: GoogleLatLngBounds) => void;
+}
+
+interface GoogleLatLngBounds {
+  extend: (point: { lat: number; lng: number }) => void;
+}
+
+interface GoogleMapsApi {
+  maps: {
+    places: { Autocomplete: new (input: HTMLInputElement, options: { types: string[] }) => GoogleAutocomplete };
+    LatLngBounds: new () => GoogleLatLngBounds;
+  };
+}
+
+interface GoogleMapsScript {
+  src: string;
+  async: boolean;
+  defer: boolean;
+  dataset: { googlePlaces?: string };
+  addEventListener: (eventName: string, handler: () => void) => void;
+  removeEventListener: (eventName: string, handler: () => void) => void;
+}
+
+declare global {
+  interface Window {
+    google?: GoogleMapsApi;
+  }
+}
 
 // ── Stripe product IDs ────────────────────────────────────────────────────────
 const SERVICES = [
@@ -78,6 +114,35 @@ const DEMO_DEFAULTS: BookingForm = {
   referralCode: '',
 };
 
+function parseAddress(value: string): Pick<BookingForm, 'address' | 'city' | 'state' | 'zip'> {
+  const parts = value.split(',').map((part) => part.trim()).filter(Boolean);
+  const lastPart = parts.at(-1) ?? '';
+  const stateZipMatch = lastPart.match(/^([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+
+  if (parts.length >= 3 && stateZipMatch) {
+    return {
+      address: parts.slice(0, -2).join(', '),
+      city: parts.at(-2) ?? '',
+      state: stateZipMatch[1].toUpperCase(),
+      zip: stateZipMatch[2],
+    };
+  }
+
+  return { address: value, city: '', state: '', zip: '' };
+}
+
+function getInitialForm(): BookingForm {
+  if (typeof window === 'undefined') return DEMO_DEFAULTS;
+  const params = new window.URLSearchParams(window.location.search);
+  const address = params.get('address');
+  const batchCode = params.get('batch');
+  return {
+    ...DEMO_DEFAULTS,
+    ...(address ? parseAddress(address) : {}),
+    ...(batchCode ? { referralCode: batchCode.toUpperCase() } : {}),
+  };
+}
+
 const fadeSlide = {
   hidden: { opacity: 0, x: 24 },
   visible: { opacity: 1, x: 0, transition: { duration: 0.3, ease: 'easeOut' as const } },
@@ -87,8 +152,12 @@ const fadeSlide = {
 export default function BookPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState<BookingForm>(DEMO_DEFAULTS);
+  const [form, setForm] = useState<BookingForm>(getInitialForm);
   const [loading, setLoading] = useState(false);
+  const [locationMessage, setLocationMessage] = useState('');
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<GoogleAutocomplete | null>(null);
+  const locationRef = useRef<{ lat: number; lng: number } | null>(null);
 
   const selectedService = SERVICES.find((s) => s.id === form.serviceId) ?? SERVICES[0];
 
@@ -96,10 +165,83 @@ export default function BookPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
+  useEffect(() => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!apiKey || !addressInputRef.current) return;
+
+    const attachAutocomplete = () => {
+      if (!window.google?.maps?.places || !addressInputRef.current || autocompleteRef.current) return;
+      const autocomplete = new window.google.maps.places.Autocomplete(addressInputRef.current, {
+        types: ['address'],
+      });
+      autocompleteRef.current = autocomplete;
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        const components = place.address_components ?? [];
+        const getComponent = (type: string) => components.find((component) => component.types.includes(type));
+        const streetNumber = getComponent('street_number')?.long_name ?? '';
+        const route = getComponent('route')?.long_name ?? '';
+        const city = getComponent('locality')?.long_name ?? getComponent('postal_town')?.long_name ?? '';
+        const state = getComponent('administrative_area_level_1')?.short_name ?? '';
+        const zip = getComponent('postal_code')?.long_name ?? '';
+        setForm((previous) => ({
+          ...previous,
+          address: [streetNumber, route].filter(Boolean).join(' ') || previous.address,
+          city: city || previous.city,
+          state: state || previous.state,
+          zip: zip || previous.zip,
+        }));
+      });
+      if (locationRef.current) applyLocationBounds(locationRef.current, autocomplete);
+    };
+
+    if (window.google?.maps?.places) {
+      attachAutocomplete();
+      return;
+    }
+
+    const existingScript = document.querySelector('script[data-google-places]');
+    const script = (existingScript ?? document.createElement('script')) as unknown as GoogleMapsScript;
+    if (!existingScript) {
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.dataset.googlePlaces = 'true';
+      document.head.appendChild(script as unknown as ReturnType<typeof document.createElement>);
+    }
+    script.addEventListener('load', attachAutocomplete);
+    return () => script.removeEventListener('load', attachAutocomplete);
+  }, []);
+
+  function applyLocationBounds(location: { lat: number; lng: number }, autocomplete = autocompleteRef.current) {
+    if (!autocomplete || !window.google?.maps?.LatLngBounds) return;
+    const bounds = new window.google.maps.LatLngBounds();
+    bounds.extend(location);
+    autocomplete.setBounds(bounds);
+  }
+
+  function handleLocateMe() {
+    if (!navigator.geolocation) {
+      setLocationMessage('Location is not available in this browser.');
+      return;
+    }
+    setLocationMessage('');
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        const location = { lat: coords.latitude, lng: coords.longitude };
+        locationRef.current = location;
+        applyLocationBounds(location);
+        setLocationMessage('Search results are now biased near you. Confirm your exact address.');
+      },
+      () => setLocationMessage('We could not access your location. You can enter the address manually.'),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
+    );
+  }
+
   // DEMO MODE: no validation — navigate directly to success
   function handleCheckout() {
     setLoading(true);
-    setTimeout(() => {
+    window.setTimeout(() => {
       navigate('/checkout/success?demo=1&session_id=demo_session_blokpakt');
     }, 900);
   }
@@ -285,13 +427,26 @@ export default function BookPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="sm:col-span-2">
                       <label className="block text-sm font-semibold text-foreground mb-1.5">Street address</label>
-                      <input
-                        type="text"
-                        value={form.address}
-                        onChange={(e) => update('address', e.target.value)}
-                        placeholder="123 Oak Street"
-                        className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      />
+                      <div className="relative">
+                        <input
+                          ref={addressInputRef}
+                          type="text"
+                          value={form.address}
+                          onChange={(e) => update('address', e.target.value)}
+                          placeholder="123 Oak Street"
+                          className="w-full rounded-lg border border-border bg-background px-4 py-2.5 pr-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleLocateMe}
+                          aria-label="Use current location to bias address search"
+                          title="Use current location"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        >
+                          <LocateFixed size={17} />
+                        </button>
+                      </div>
+                      {locationMessage && <p className="mt-1.5 text-xs text-muted-foreground" role="status">{locationMessage}</p>}
                     </div>
 
                     <div>
