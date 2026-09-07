@@ -1,8 +1,8 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion } from 'motion/react';
 import { Link, useNavigate } from 'react-router';
-import { Shield, Camera, Clock, Star, MapPin, Award, ChevronRight, ArrowRight } from 'lucide-react';
+import { Shield, Camera, Clock, Star, MapPin, Award, ChevronRight, ArrowRight, LocateFixed } from 'lucide-react';
 import { home } from 'virtual:content';
 
 
@@ -22,9 +22,29 @@ const trustIcons: Record<string, ReactNode> = {
   clock: <Clock size={18} />,
 };
 
+const VALUE_PROPS = [
+  {
+    icon: '🚚',
+    title: 'Shared Travel Savings',
+    description: 'Vendors serve the same street in a single stop. Saved travel time and setup fees pass directly back to you as your 10% discount.',
+  },
+  {
+    icon: '🤝',
+    title: 'Zero Hassle',
+    description: 'Just share your route link with neighbors. Blokpakt automatically manages individual payments and unlocks group rates.',
+  },
+  {
+    icon: '🛡️',
+    title: 'Vetted & Guaranteed',
+    description: '100% money-back guarantee if your contractor no-shows. Every contractor is fully vetted and posts a security deposit before taking local routes.',
+  },
+];
+
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState(0);
   const [streetAddress, setStreetAddress] = useState('');
+  const [locationMessage, setLocationMessage] = useState('');
+  const addressInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   const site = 'https://blokpakt.com';
@@ -39,6 +59,35 @@ export default function HomePage() {
       return;
     }
     navigate(address ? `/book?address=${encodeURIComponent(address)}` : '/book');
+  }
+
+  function handleLocateMe() {
+    if (!navigator.geolocation) {
+      setLocationMessage('Location is not available in this browser.');
+      return;
+    }
+
+    setLocationMessage('Finding your street...');
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const response = await window.fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.latitude}&lon=${coords.longitude}`,
+          );
+          if (!response.ok) throw new Error('Reverse geocoding failed');
+          const data = await response.json() as { address?: { house_number?: string; road?: string } };
+          const address = data.address;
+          const street = [address?.house_number, address?.road].filter(Boolean).join(' ');
+          if (!street) throw new Error('No street found');
+          setStreetAddress(street);
+          setLocationMessage('Location found. Please confirm the address before continuing.');
+        } catch {
+          setLocationMessage('We could not find your street. Please enter it manually.');
+        }
+      },
+      () => setLocationMessage('We could not access your location. Please enter it manually.'),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
+    );
   }
 
   return (
@@ -129,13 +178,25 @@ export default function HomePage() {
                 {/* Search bar */}
                 <motion.div variants={fadeUp} id="check-street">
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <input
-                      type="text"
-                      value={streetAddress}
-                      onChange={(event) => setStreetAddress(event.target.value)}
-                      placeholder={home.hero.searchPlaceholder}
-                      className="flex-1 rounded-xl border border-border bg-card px-4 py-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 shadow-sm"
-                    />
+                    <div className="relative flex-1">
+                      <input
+                        ref={addressInputRef}
+                        type="text"
+                        value={streetAddress}
+                        onChange={(event) => setStreetAddress(event.target.value)}
+                        placeholder="Enter your address or batch code..."
+                        className="w-full rounded-xl border border-border bg-card px-4 py-3.5 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 shadow-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleLocateMe}
+                        aria-label="Use current location"
+                        title="Use current location"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      >
+                        <LocateFixed size={18} />
+                      </button>
+                    </div>
                     <button
                       onClick={handleStreetCheck}
                       className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3.5 text-sm font-bold text-white shadow-md hover:bg-accent/90 transition-colors whitespace-nowrap"
@@ -147,6 +208,14 @@ export default function HomePage() {
                   <p className="mt-3 text-xs text-muted-foreground">
                     No account needed to check availability. Free to browse.
                   </p>
+                  {locationMessage && <p className="mt-1 text-xs text-muted-foreground" role="status">{locationMessage}</p>}
+                  <button
+                    type="button"
+                    onClick={() => addressInputRef.current?.focus()}
+                    className="mt-1 text-left text-xs font-medium text-primary underline-offset-2 hover:underline focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    Have a neighbor's batch code? Enter it directly above.
+                  </button>
                 </motion.div>
               </motion.div>
 
@@ -228,6 +297,21 @@ export default function HomePage() {
                   </motion.div>
                 </div>
               </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── VALUE PROPS ──────────────────────────────────────── */}
+        <section className="bg-muted/30 py-14 lg:py-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+              {VALUE_PROPS.map((valueProp) => (
+                <article key={valueProp.title} className="rounded-2xl border border-border bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+                  <div className="text-4xl" aria-hidden="true">{valueProp.icon}</div>
+                  <h2 className="mt-5 text-lg font-bold text-foreground">{valueProp.title}</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{valueProp.description}</p>
+                </article>
+              ))}
             </div>
           </div>
         </section>
