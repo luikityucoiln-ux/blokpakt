@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router';
-import { Menu, X, ShoppingCart, ChevronDown } from 'lucide-react';
-import { useCart } from '@/contexts/use-cart';
+import { Menu, X, ChevronDown } from 'lucide-react';
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
-  const { cartCount } = useCart();
   const location = useLocation();
 
   const navLinks = [
@@ -21,7 +19,6 @@ export default function Header() {
   const demoLinks = [
     { label: '🏠 Homepage', href: '/' },
     { label: '📋 Book a Service', href: '/book' },
-    { label: '🛒 Cart', href: '/cart' },
     { label: '✅ Booking Confirmed', href: '/checkout/success?session_id=demo_session_blokpakt' },
     { label: '📍 Track My Job', href: '/track' },
     { label: '🔧 Join as Provider', href: '/join' },
@@ -106,18 +103,6 @@ export default function Header() {
 
           {/* CTA */}
           <div className="hidden md:flex items-center gap-3">
-            <Link
-              to="/cart"
-              className="relative p-2 text-foreground/60 hover:text-foreground transition-colors"
-              aria-label="Shopping cart"
-            >
-              <ShoppingCart size={20} />
-              {cartCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-accent text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
-                  {cartCount}
-                </span>
-              )}
-            </Link>
             <Link
               to="/book"
               className="inline-flex items-center rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-accent/90 transition-colors"

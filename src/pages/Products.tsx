@@ -11,21 +11,13 @@
  * `recurring: {interval, intervalCount} | null`.
  *
  * Features:
- * - Product cards with "Add to Cart" and "Buy Now" buttons
+ * - Product cards with "Buy Now" buttons
  * - Click card to view full details in modal/dialog
- * - Cart icon links to /cart page
  * - Checkout available from card and detail modal
- *
- * Note: Requires CartProvider wrapper in App.tsx or layout.
  */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
-
-import { useCart } from '../contexts/use-cart';
 import { formatPrice } from '../lib/stripe/format';
-
-const ENABLE_CART = true;
 
 interface Product {
   id: string;
@@ -46,7 +38,8 @@ interface Product {
  *
  * Replace this array with your actual products from Stripe.
  * Get product data via `scripts/stripe-register-products.ts` or the Stripe
- * Dashboard.
+ * Dashboard, then paste the products array here matching the Product
+ * interface above.
  *
  * Required fields:
  * - id: Stripe product ID (prod_xxx)
@@ -60,10 +53,10 @@ interface Product {
  *   name: 'Premium Plan',
  *   description: 'Full access to all features',
  *   images: ['/images/product.jpg'],
- *   priceId: 'price_XYZ789',  // ← This is used for Stripe checkout
- *   amount: 2999,              // ← $29.99 in cents
+ *   priceId: 'price_XYZ789',
+ *   amount: 2999,
  *   currency: 'usd',
- *   recurring: { interval: 'month', intervalCount: 1 }  // or null for one-time
+ *   recurring: { interval: 'month', intervalCount: 1 }
  * }
  */
 const PRODUCTS: Product[] = [
@@ -75,41 +68,16 @@ const PRODUCTS: Product[] = [
 
 export default function Products() {
   const { t } = useTranslation();
-  // Per-action error state — never replace the whole grid with one error.
-  // addError surfaces near the product whose Add-to-Cart failed; checkoutError
-  // surfaces near the product whose Buy-Now failed. A failure on one row
-  // must not affect any other row's render.
-  const [addError, setAddError] = useState<{ productId: string; message: string } | null>(null);
   const [checkoutError, setCheckoutError] = useState<{ productId: string; message: string } | null>(null);
   const [checkingOut, setCheckingOut] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const { addToCart: addToCartContext, cartCount } = useCart();
-
   // Use embedded products (no API fetch needed)
   const products = PRODUCTS;
   const loading = false;
 
-  const handleAddToCart = (product: Product) => {
-    setAddError(null);
-    setCheckoutError(null);
-    const result = addToCartContext({
-      id: product.id,
-      name: product.name,
-      price: product.amount,
-      currency: product.currency,
-      priceId: product.priceId,
-      image: product.images[0],
-    });
-
-    if (!result.success) {
-      setAddError({ productId: product.id, message: result.error || 'Failed to add item to cart' });
-    }
-  };
-
   const handleCheckout = async (product: Product) => {
-    setAddError(null);
     setCheckoutError(null);
     setCheckingOut(product.priceId);
 
@@ -123,7 +91,6 @@ export default function Products() {
       const data = await response.json();
 
       if (data.success && data.url) {
-        sessionStorage.setItem('stripe-buy-now-session', data.sessionId ?? '');
         window.location.href = data.url;
       } else {
         setCheckoutError({ productId: product.id, message: data.error || 'Failed to create checkout session' });
@@ -136,13 +103,10 @@ export default function Products() {
     }
   };
 
-  // Using shared formatPrice utility from lib/stripe/format.ts
-  // Handles zero-decimal currencies (JPY, KRW, etc.) correctly
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
       </div>
     );
   }
@@ -171,29 +135,6 @@ export default function Products() {
   return (
     <>
       <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        {/* Cart Button - Links to /cart page */}
-        {ENABLE_CART && (
-          <Link
-            to="/cart"
-            className="fixed top-20 right-4 z-40 bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-            {/* Badge - only shows when items in cart */}
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-                {cartCount}
-              </span>
-            )}
-          </Link>
-        )}
-
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-3xl font-bold text-gray-900">{t('stripe.page_title')}</h1>
@@ -262,66 +203,16 @@ export default function Products() {
                     >
                       {t('stripe.btn_view_details')}
                     </button>
-                    {ENABLE_CART ? (
-                      // Show "Add to Cart" + "Buy Now"
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleAddToCart(product)}
-                          className="flex-1 py-3 px-4 rounded-lg font-medium border-2 border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors"
-                        >
-                          {t('stripe.btn_add_to_cart')}
-                        </button>
-                        <button
-                          onClick={() => handleCheckout(product)}
-                          disabled={checkingOut === product.priceId}
-                          className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
-                            checkingOut === product.priceId
-                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                              : 'bg-blue-600 text-white hover:bg-blue-700'
-                          }`}
-                        >
-                          {checkingOut === product.priceId ? (
-                            <span className="flex items-center justify-center">
-                              <svg
-                                className="animate-spin -ml-1 mr-2 h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                              >
-                                <circle
-                                  className="opacity-25"
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  stroke="currentColor"
-                                  strokeWidth="4"
-                                />
-                                <path
-                                  className="opacity-75"
-                                  fill="currentColor"
-                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                />
-                              </svg>
-                              ...
-                            </span>
-                          ) : product.recurring ? (
-                            t('stripe.btn_subscribe')
-                          ) : (
-                            t('stripe.btn_buy_now')
-                          )}
-                        </button>
-                      </div>
-                    ) : (
-                      // Fallback: Show only "Subscribe" / "Buy Now"
-                      <button
-                        onClick={() => handleCheckout(product)}
-                        disabled={checkingOut === product.priceId}
-                        className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
-                          checkingOut === product.priceId
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                        }`}
-                      >
-                        {checkingOut === product.priceId ? (
+                    <button
+                      onClick={() => handleCheckout(product)}
+                      disabled={checkingOut === product.priceId}
+                      className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                        checkingOut === product.priceId
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {checkingOut === product.priceId ? (
                           <span className="flex items-center justify-center">
                             <svg
                               className="animate-spin -ml-1 mr-2 h-4 w-4"
@@ -350,13 +241,9 @@ export default function Products() {
                           t('stripe.btn_buy_now')
                         )}
                       </button>
-                    )}
                   </div>
 
                   {/* Per-product inline errors. Never replaces the grid. */}
-                  {addError?.productId === product.id && (
-                    <p className="mt-2 text-sm text-red-600" role="alert">{addError.message}</p>
-                  )}
                   {checkoutError?.productId === product.id && (
                     <p className="mt-2 text-sm text-red-600" role="alert">{checkoutError.message}</p>
                   )}

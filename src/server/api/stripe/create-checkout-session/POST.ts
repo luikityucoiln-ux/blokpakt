@@ -8,7 +8,7 @@
  *
  * Usage:
  *   POST /api/stripe/create-checkout-session
- *   Body: { priceId, quantity? } or { lineItems }
+ *   Body: { priceId, quantity? }
  */
 import type { Request, Response } from 'express';
 import Stripe from 'stripe';
@@ -22,14 +22,8 @@ function getStripe(): Stripe {
   return new Stripe(secretKey);
 }
 
-interface LineItem {
-  priceId: string;
-  quantity: number;
-}
-
 interface CreateCheckoutSessionRequest {
   priceId?: string; // For single item checkout
-  lineItems?: LineItem[]; // For cart checkout
   quantity?: number;
   metadata?: Record<string, string>; // Optional booking/order metadata
   // Note: successUrl/cancelUrl NOT accepted - derived from request origin (security)
@@ -39,15 +33,14 @@ export default async function handler(req: Request, res: Response) {
   try {
     const {
       priceId,
-      lineItems,
       quantity = 1,
       metadata,
     } = req.body as CreateCheckoutSessionRequest;
 
-    if (!priceId && (!lineItems || lineItems.length === 0)) {
+    if (!priceId) {
       res.status(400).json({
         success: false,
-        error: 'Missing required fields: priceId or lineItems',
+        error: 'Missing required field: priceId',
       });
       return;
     }
@@ -58,40 +51,9 @@ export default async function handler(req: Request, res: Response) {
     const cancelUrl = `${origin}/checkout/cancel`;
 
     const stripe = getStripe();
-    let sessionLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
-    let mode: Stripe.Checkout.SessionCreateParams.Mode = 'payment'; // Default
-
-    // Handle cart checkout (multiple items)
-    if (lineItems && lineItems.length > 0) {
-      // Fetch all prices to check for mixed modes
-      const prices = await Promise.all(
-        lineItems.map(async (item) => ({
-          ...item,
-          price: await stripe.prices.retrieve(item.priceId),
-        }))
-      );
-
-      // Check for mixed payment modes (Stripe doesn't support this)
-      const hasRecurring = prices.some((p) => p.price.recurring);
-      const hasOneTime = prices.some((p) => !p.price.recurring);
-
-      if (hasRecurring && hasOneTime) {
-        res.status(400).json({
-          success: false,
-          error: 'Cannot mix subscription and one-time items in the same cart. Please checkout separately.',
-        });
-        return;
-      }
-
-      mode = hasRecurring ? 'subscription' : 'payment';
-      sessionLineItems = prices.map((p) => ({ price: p.priceId, quantity: p.quantity }));
-    }
-    // Handle single item checkout
-    else if (priceId) {
-      const price = await stripe.prices.retrieve(priceId);
-      mode = price.recurring ? 'subscription' : 'payment';
-      sessionLineItems = [{ price: priceId, quantity }];
-    }
+    const price = await stripe.prices.retrieve(priceId);
+    const mode: Stripe.Checkout.SessionCreateParams.Mode = price.recurring ? 'subscription' : 'payment';
+    const sessionLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [{ price: priceId, quantity }];
 
     // Build session parameters
     const sessionParams: Stripe.Checkout.SessionCreateParams = {

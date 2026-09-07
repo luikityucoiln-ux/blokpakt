@@ -179,27 +179,6 @@ export const schemas = {
         "id": z.string()
       }))
     }),
-    cart: z.object({
-      "pageTitle": z.string(),
-      "backLink": z.string(),
-      "demoBanner": z.string(),
-      "emptyTitle": z.string(),
-      "emptySubtitle": z.string(),
-      "emptyCtaLabel": z.string(),
-      "orderSummaryTitle": z.string(),
-      "subtotalLabel": z.string(),
-      "platformFeeLabel": z.string(),
-      "totalLabel": z.string(),
-      "checkoutCtaLabel": z.string(),
-      "processingLabel": z.string(),
-      "clearCartLabel": z.string(),
-      "trustItems": z.array(z.object({
-        "icon": z.string(),
-        "label": z.string(),
-        "detail": z.string(),
-        "id": z.string()
-      }))
-    }),
     checkout_success: z.object({
       "verifyingTitle": z.string(),
       "verifyingSubtitle": z.string(),

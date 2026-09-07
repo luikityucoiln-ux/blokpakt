@@ -1,7 +1,6 @@
 import { RouteObject } from 'react-router';
 import HomePage from './pages/index';
 import BookPage from './pages/book';
-import CartPage from './pages/cart';
 import TrackPage from './pages/track';
 import JoinPage from './pages/join';
 import CheckoutSuccess from './pages/checkout/success';
@@ -30,10 +29,6 @@ export const routes: RouteObject[] = [
   {
     path: '/track',
     element: <TrackPage />,
-  },
-  {
-    path: '/cart',
-    element: <CartPage />,
   },
   {
     path: '/join',
@@ -70,6 +65,6 @@ export const routes: RouteObject[] = [
 ];
 
 // Types for type-safe navigation
-export type Path = '/' | '/book' | '/cart' | '/track' | '/join' | '/checkout/success' | '/checkout/cancel' | '/legal' | '/faq';
+export type Path = '/' | '/book' | '/track' | '/join' | '/checkout/success' | '/checkout/cancel' | '/legal' | '/faq';
 
 export type Params = Record<string, string | undefined>;

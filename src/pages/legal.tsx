@@ -27,7 +27,7 @@ const legalSections = [
     title: 'Cookie Policy',
     summary: 'How cookies and similar technologies support essential features, preferences, analytics, and measurement.',
     paragraphs: [
-      'Blokpakt uses cookies, local storage, pixels, and similar technologies to keep the site working, remember preferences, understand usage, and measure the performance of our communications. Essential technologies are needed for functions such as security, navigation, and shopping-cart operation.',
+      'Blokpakt uses cookies, local storage, pixels, and similar technologies to keep the site working, remember preferences, understand usage, and measure the performance of our communications. Essential technologies are needed for functions such as security and navigation.',
       'With your permission where required, we may use analytics or advertising technologies that help us understand engagement and deliver more relevant communications. You can change your preferences through the cookie controls shown on the site or through your browser settings. Blocking some technologies may affect site functionality.',
       'Our providers may process information on our behalf and may set their own cookies subject to their privacy policies. We honor applicable opt-out signals and consent choices to the extent required by law.',
     ],

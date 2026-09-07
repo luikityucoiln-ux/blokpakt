@@ -15,7 +15,6 @@ import { Link, useSearchParams } from 'react-router';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { checkout_success as cs } from 'virtual:content';
 
-import { useCart } from '@/contexts/use-cart';
 import { formatPrice } from '@/lib/stripe/format';
 
 interface SessionDetails {
@@ -32,7 +31,6 @@ type VerificationState = 'verifying' | 'verified' | 'failed' | 'no_session';
 export default function CheckoutSuccess() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id');
-  const { clearCart } = useCart();
   const [details, setDetails] = useState<SessionDetails | null>(null);
   const [verification, setVerification] = useState<VerificationState>('verifying');
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -93,11 +91,6 @@ export default function CheckoutSuccess() {
         const isPaid = session.paymentStatus === 'paid';
 
         if (isComplete && isPaid) {
-          const marker = sessionStorage.getItem('stripe-buy-now-session');
-          sessionStorage.removeItem('stripe-buy-now-session');
-          if (marker !== sessionId) {
-            clearCart();
-          }
           setVerification('verified');
         } else if (session.paymentStatus === 'unpaid') {
           setVerification('failed');
@@ -119,7 +112,7 @@ export default function CheckoutSuccess() {
         setVerification('failed');
         setErrorMessage('Unable to verify payment. Please contact support if you were charged.');
       });
-  }, [sessionId, clearCart]);
+  }, [sessionId]);
 
   // VERIFYING STATE - Show loading spinner
   if (verification === 'verifying') {
