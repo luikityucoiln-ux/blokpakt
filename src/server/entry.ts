@@ -9,6 +9,7 @@ import provider_apply_post_1 from "./api/provider/apply/POST";
 import provider_check_zip_post_2 from "./api/provider/check-zip/POST";
 import stripe_create_checkout_session_post_3 from "./api/stripe/create-checkout-session/POST";
 import stripe_session_sessionId_get_4 from "./api/stripe/session/[sessionId]/GET";
+import stripe_update_authorization_post_5 from "./api/stripe/update-authorization/POST";
 // </api-imports>
 import { seoRoutes } from "../lib/seo-routes";
 import {
@@ -94,6 +95,7 @@ app.post("/api/provider/apply", provider_apply_post_1);
 app.post("/api/provider/check-zip", provider_check_zip_post_2);
 app.post("/api/stripe/create-checkout-session", stripe_create_checkout_session_post_3);
 app.get("/api/stripe/session/:sessionId", stripe_session_sessionId_get_4);
+app.post("/api/stripe/update-authorization", stripe_update_authorization_post_5);
 // </api-registrations>
 
 // Error middleware must be registered AFTER the routes it protects; Express

@@ -63,6 +63,7 @@ export default async function handler(req: Request, res: Response) {
       cancel_url: cancelUrl,
       billing_address_collection: 'required', // Always collect billing address
       phone_number_collection: { enabled: true }, // Always collect phone number
+      ...(mode === 'payment' ? { payment_intent_data: { capture_method: 'manual' as const } } : {}),
       ...(metadata && Object.keys(metadata).length > 0 ? { metadata } : {}),
     };
 

@@ -15,6 +15,7 @@ import {
   AlertCircle,
   X,
   Plus,
+  ShieldCheck,
 } from 'lucide-react';
 
 // ── Animation variants ────────────────────────────────────────────────────────
@@ -44,12 +45,12 @@ interface FormData {
   lastName: string;
   email: string;
   phone: string;
-  activationMethod: 'deposit' | 'referral' | '';
+  activationMethod: 'deposit' | 'starter' | 'referral' | '';
   referralEmail: string;
 }
 
 type SubmitResult =
-  | { status: 'pending_payment' | 'pending_referral'; applicationId: string; isBlockCaptain: boolean; blockCaptainZips: string[]; coveredZips: string[]; uncoveredZips: string[] }
+  | { status: 'pending_activation' | 'pending_referral'; activationMethod: 'deposit' | 'starter' | 'referral'; applicationId: string; isBlockCaptain: boolean; blockCaptainZips: string[]; coveredZips: string[]; uncoveredZips: string[] }
   | { status: 'waitlist'; uncoveredZips: string[] }
   | null;
 
@@ -396,15 +397,15 @@ function Step3({
   onSubmit: () => void;
   submitting: boolean;
 }) {
-  const { depositOption, referralOption } = join.activation;
+  const { depositOption, starterOption, referralOption } = join.activation;
 
   return (
     <div className="space-y-6">
       <div>
         <h3 className="font-semibold text-foreground mb-1">Choose your activation path</h3>
-        <p className="text-sm text-muted-foreground mb-5">Both paths give you full access — pick what works for you.</p>
+        <p className="text-sm text-muted-foreground mb-5">All paths help protect customers while keeping your startup costs low.</p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Deposit option */}
           <button
             type="button"
@@ -425,9 +426,40 @@ function Step3({
               </span>
             </div>
             <p className="font-semibold text-foreground">{depositOption.title}</p>
-            <p className="text-2xl font-bold text-primary mt-1 mb-3">${depositOption.amount}</p>
+            <p className="text-2xl font-bold text-primary mt-1 mb-3">${depositOption.amount} bond</p>
             <ul className="space-y-1.5">
               {depositOption.bullets.map((b, i) => (
+                <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <CheckCircle size={12} className="text-primary shrink-0 mt-0.5" />
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+          </button>
+
+          {/* Starter option */}
+          <button
+            type="button"
+            onClick={() => setForm((f) => ({ ...f, activationMethod: 'starter' }))}
+            className={`p-5 rounded-xl border-2 text-left transition-all duration-200 ${
+              form.activationMethod === 'starter'
+                ? 'border-primary bg-primary/5'
+                : 'border-border hover:border-primary/40 bg-card'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <ShieldCheck
+                size={22}
+                className={form.activationMethod === 'starter' ? 'text-primary' : 'text-muted-foreground'}
+              />
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
+                {starterOption.badge}
+              </span>
+            </div>
+            <p className="font-semibold text-foreground">{starterOption.title}</p>
+            <p className="text-sm text-muted-foreground mt-1 mb-3">No upfront bond</p>
+            <ul className="space-y-1.5">
+              {starterOption.bullets.map((b, i) => (
                 <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
                   <CheckCircle size={12} className="text-primary shrink-0 mt-0.5" />
                   <span>{b}</span>
@@ -590,7 +622,7 @@ function WaitlistScreen({ zips, onReset }: { zips: string[]; onReset: () => void
 }
 
 // ── Success screen ────────────────────────────────────────────────────────────
-function SuccessScreen({ result }: { result: Extract<SubmitResult, { status: 'pending_payment' | 'pending_referral' }> }) {
+function SuccessScreen({ result }: { result: Extract<SubmitResult, { status: 'pending_activation' | 'pending_referral' }> }) {
   return (
     <motion.div
       variants={fadeUp}
@@ -618,20 +650,30 @@ function SuccessScreen({ result }: { result: Extract<SubmitResult, { status: 'pe
       <p className="text-muted-foreground mb-1">Application ID: <span className="font-mono font-medium text-foreground">{result.applicationId}</span></p>
 
       <div className="mt-6 max-w-sm mx-auto p-5 rounded-xl border border-border bg-card text-left space-y-3">
-        {result.status === 'pending_payment' ? (
+        {result.status === 'pending_activation' ? (
           <>
             <div className="flex items-start gap-3">
-              <DollarSign size={18} className="text-primary shrink-0 mt-0.5" />
+              {result.activationMethod === 'starter' ? (
+                <ShieldCheck size={18} className="text-primary shrink-0 mt-0.5" />
+              ) : (
+                <DollarSign size={18} className="text-primary shrink-0 mt-0.5" />
+              )}
               <div>
-                <p className="font-semibold text-sm text-foreground">Next: Complete your $99 deposit</p>
-                <p className="text-xs text-muted-foreground mt-0.5">We'll email you a secure payment link within 10 minutes.</p>
+                <p className="font-semibold text-sm text-foreground">
+                  {result.activationMethod === 'starter' ? 'You are ready to start' : 'Your $25 bond is rolling'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {result.activationMethod === 'starter'
+                    ? 'Complete your first 3 verified routes with no upfront bond.'
+                    : '$25 will be withheld from your first completed payout, not charged upfront.'}
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Zap size={18} className="text-primary shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold text-sm text-foreground">Then: Start accepting jobs</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Deposit is refunded after 10 completed jobs.</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Your trust rating grows with every verified route.</p>
               </div>
             </div>
           </>
@@ -724,7 +766,7 @@ export default function JoinPage() {
   };
 
   const isWaitlist = result?.status === 'waitlist';
-  const isSuccess = result?.status === 'pending_payment' || result?.status === 'pending_referral';
+  const isSuccess = result?.status === 'pending_activation' || result?.status === 'pending_referral';
 
   return (
     <>
@@ -820,7 +862,7 @@ export default function JoinPage() {
                   onReset={resetForm}
                 />
               ) : isSuccess ? (
-                <SuccessScreen result={result as Extract<SubmitResult, { status: 'pending_payment' | 'pending_referral' }>} />
+                <SuccessScreen result={result as Extract<SubmitResult, { status: 'pending_activation' | 'pending_referral' }>} />
               ) : (
                 <>
                   <StepIndicator current={step} steps={[

@@ -50,13 +50,22 @@
   ],
   "activation": {
     "depositOption": {
-      "title": "Pay Activation Deposit",
-      "amount": 99,
-      "badge": "Instant access",
+      "title": "Rolling Security Bond",
+      "amount": 25,
+      "badge": "No upfront payment",
       "bullets": [
         "Start accepting jobs immediately",
-        "Deposit refunded after 10 completed jobs",
+        "$25 withheld from your first completed payout",
         "Priority dispatch in your ZIP codes"
+      ]
+    },
+    "starterOption": {
+      "title": "Earn Trust First",
+      "badge": "First 3 routes free",
+      "bullets": [
+        "No bond for your first 3 verified routes",
+        "Build your trust rating as you work",
+        "Rolling $25 bond begins after route 3"
       ]
     },
     "referralOption": {

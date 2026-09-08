@@ -24,7 +24,7 @@ export default async function handler(req: Request, res: Response) {
       lastName,
       email,
       phone,
-      activationMethod, // 'deposit' | 'referral'
+      activationMethod, // 'deposit' | 'starter' | 'referral'
       referralEmail,
     } = req.body as {
       services: string[];
@@ -33,13 +33,17 @@ export default async function handler(req: Request, res: Response) {
       lastName: string;
       email: string;
       phone: string;
-      activationMethod: 'deposit' | 'referral';
+      activationMethod: 'deposit' | 'starter' | 'referral';
       referralEmail?: string;
     };
 
     // Validate required fields
     if (!services?.length || !zips?.length || !firstName || !lastName || !email || !phone || !activationMethod) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    if (!['deposit', 'starter', 'referral'].includes(activationMethod)) {
+      return res.status(400).json({ error: 'Invalid activation method' });
     }
 
     // Check coverage
@@ -75,7 +79,8 @@ export default async function handler(req: Request, res: Response) {
     const applicationId = `BP-${Date.now().toString(36).toUpperCase()}`;
 
     return res.status(201).json({
-      status: activationMethod === 'deposit' ? 'pending_payment' : 'pending_referral',
+      status: activationMethod === 'referral' ? 'pending_referral' : 'pending_activation',
+      activationMethod,
       applicationId,
       isBlockCaptain,
       blockCaptainZips: blockCaptainZipsEarned,
@@ -83,7 +88,9 @@ export default async function handler(req: Request, res: Response) {
       uncoveredZips,
       message:
         activationMethod === 'deposit'
-          ? 'Application received. Complete your $99 activation deposit to start accepting jobs.'
+          ? 'Application received. A $25 security bond will be withheld from your first completed payout.'
+          : activationMethod === 'starter'
+          ? 'Application received. Your first 3 verified routes are bond-free.'
           : 'Application received. Your activation will unlock once your referred homeowner completes their first job.',
     });
   } catch (err) {

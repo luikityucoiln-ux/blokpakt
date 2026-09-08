@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
 import { field } from 'virtual:content';
+import { createAddOnRequest, type AddOnRequest } from '../lib/add-on-workflow';
 import {
   MapPin, Clock, Camera, CheckCircle,
   Zap, Plus, X, AlertCircle, ArrowRight,
@@ -192,10 +193,24 @@ function AddOnLogger({
   onRemove,
 }: {
   addOns: AddOn[];
-  onAdd: (item: { label: string; price: number }) => void;
+  onAdd: (item: { label: string; description: string; price: number; photo: string | null }) => void;
   onRemove: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [photo, setPhoto] = useState<string | null>(null);
+
+  function submitPitch() {
+    const amount = Number(price);
+    if (!title.trim() || !Number.isFinite(amount) || amount <= 0) return;
+    onAdd({ label: title.trim(), description: description.trim(), price: amount, photo });
+    setTitle('');
+    setDescription('');
+    setPrice('');
+    setPhoto(null);
+  }
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -245,18 +260,36 @@ function AddOnLogger({
                   ))}
                 </div>
               )}
-              <p className="text-xs text-muted-foreground mb-2 font-medium">Quick-add catalog</p>
+              <p className="text-xs text-muted-foreground mb-2 font-medium">On-site pitch: you set the price</p>
               <div className="grid grid-cols-2 gap-2">
                 {field.ADDON_CATALOG.map((item) => (
                   <button
                     key={item.label}
-                    onClick={() => onAdd(item)}
+                    onClick={() => setTitle(item.label)}
                     className="text-left rounded-lg border border-border bg-background px-3 py-2 hover:border-accent/50 hover:bg-accent/5 transition-all"
                   >
                     <p className="text-xs font-semibold text-foreground leading-tight">{item.label}</p>
-                    <p className="text-xs text-accent font-bold mt-0.5">+${item.price}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Use label</p>
                   </button>
                 ))}
+              </div>
+              <div className="mt-3 space-y-2">
+                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Custom service title" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What did you find on-site?" rows={2} className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+                <div className="flex gap-2">
+                  <label className="flex-1 cursor-pointer rounded-lg border border-dashed border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:border-accent/50">
+                    <Camera size={14} className="mr-1 inline" /> {photo ? 'Photo attached' : 'Attach site photo'}
+                    <input type="file" accept="image/*" className="sr-only" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new globalThis.FileReader();
+                      reader.onload = () => setPhoto(typeof reader.result === 'string' ? reader.result : null);
+                      reader.readAsDataURL(file);
+                    }} />
+                  </label>
+                  <input required type="number" min="0.01" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Your price ($)" className="w-36 rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+                </div>
+                <button type="button" onClick={submitPitch} disabled={!title.trim() || !price || Number(price) <= 0} className="w-full rounded-lg bg-accent px-3 py-2.5 text-sm font-bold text-white disabled:opacity-40">Send pitch to customer</button>
               </div>
             </div>
           </motion.div>
@@ -282,7 +315,7 @@ function JobCard({
   onToggle: () => void;
   onAction: (jobId: string, action: 'arrive' | 'start' | 'complete') => void;
   onPhoto: (jobId: string, type: 'before' | 'after') => void;
-  onAddAddOn: (jobId: string, item: { label: string; price: number }) => void;
+  onAddAddOn: (jobId: string, item: { label: string; description: string; price: number; photo: string | null }) => void;
   onRemoveAddOn: (jobId: string, addOnId: string) => void;
 }) {
   const cfg = STATUS_CONFIG[job.status];
@@ -680,8 +713,19 @@ export default function FieldPage() {
     );
   }
 
-  function handleAddAddOn(jobId: string, item: { label: string; price: number }) {
+  async function handleAddAddOn(jobId: string, item: { label: string; description: string; price: number; photo: string | null }) {
     addOnCounter.current += 1;
+    const request: AddOnRequest = {
+      id: `pitch-${addOnCounter.current}`,
+      jobId,
+      service: item.label,
+      description: item.description,
+      price: item.price,
+      photo: item.photo,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+    await createAddOnRequest(request);
     setJobs((prev) =>
       prev.map((j) => {
         if (j.id !== jobId) return j;
@@ -690,7 +734,7 @@ export default function FieldPage() {
           ...j,
           addOns: [
             ...j.addOns,
-            { id: `ao${addOnCounter.current}`, label: item.label, price: item.price, approved: true },
+            { id: request.id, label: item.label, price: item.price, approved: false },
           ],
         };
       }),

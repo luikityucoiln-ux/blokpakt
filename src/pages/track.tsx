@@ -1,5 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { track } from 'virtual:content';
+import { readAddOnRequests, subscribeToAddOnRequests, updateAddOnStatus, type AddOnRequest } from '../lib/add-on-workflow';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -20,13 +21,6 @@ import {
 // ── Types ─────────────────────────────────────────────────────────────────────
 type JobStatus = 'scheduled' | 'en_route' | 'arrived' | 'in_progress' | 'completed' | 'disputed';
 
-interface AddOnRequest {
-  id: string;
-  service: string;
-  price: number;
-  note: string;
-}
-
 // ── Mock data ─────────────────────────────────────────────────────────────────
 const MOCK_JOB = {
   id: 'BLK-20240912-0042',
@@ -41,6 +35,7 @@ const MOCK_JOB = {
   referralCode: 'OAK-2024',
   referralSavings: 18,
   neighborsSaved: 3,
+  paymentIntentId: null as string | null,
 };
 
 const STATUS_STEPS: { key: JobStatus; label: string }[] = [
@@ -52,8 +47,8 @@ const STATUS_STEPS: { key: JobStatus; label: string }[] = [
 ];
 
 const MOCK_ADDONS: AddOnRequest[] = [
-  { id: 'ao1', service: 'Edge trimming — driveway border', price: 25, note: 'Contractor noticed overgrowth along your driveway edge.' },
-  { id: 'ao2', service: 'Bag & haul clippings', price: 15, note: 'Clippings are heavy today — bagging recommended.' },
+  { id: 'ao1', jobId: MOCK_JOB.id, service: 'Edge trimming — driveway border', description: 'Contractor noticed overgrowth along your driveway edge.', price: 25, photo: null, status: 'pending', createdAt: new Date().toISOString() },
+  { id: 'ao2', jobId: MOCK_JOB.id, service: 'Bag & haul clippings', description: 'Clippings are heavy today — bagging recommended.', price: 15, photo: null, status: 'pending', createdAt: new Date().toISOString() },
 ];
 
 // ── Share hub component ───────────────────────────────────────────────────────
@@ -163,7 +158,8 @@ function AddOnModal({
         </div>
         <div className="rounded-xl border border-border bg-muted/30 p-4 mb-4">
           <p className="text-sm font-semibold text-foreground mb-1">{addon.service}</p>
-          <p className="text-xs text-muted-foreground mb-3">{addon.note}</p>
+          <p className="text-xs text-muted-foreground mb-3">{addon.description || 'Your contractor added a service after inspecting the property.'}</p>
+          {addon.photo && <img src={addon.photo} alt="Area photographed by contractor" className="mb-3 max-h-44 w-full rounded-lg object-cover" />}
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">Additional charge</span>
             <span className="text-lg font-extrabold text-foreground">+${addon.price}</span>
@@ -217,9 +213,10 @@ function StatusBanner({ status, eta }: { status: JobStatus; eta: string }) {
 export default function TrackPage() {
   const job = MOCK_JOB;
   const [currentStatus, setCurrentStatus] = useState<JobStatus>(job.status);
-  const [pendingAddons, setPendingAddons] = useState<AddOnRequest[]>(MOCK_ADDONS);
+  const [pendingAddons, setPendingAddons] = useState<AddOnRequest[]>([]);
   const [activeAddon, setActiveAddon] = useState<AddOnRequest | null>(null);
   const [approvedAddons, setApprovedAddons] = useState<string[]>([]);
+  const [approvedRequests, setApprovedRequests] = useState<AddOnRequest[]>([]);
   const [showDispute, setShowDispute] = useState(false);
   const [disputeFiled, setDisputeFiled] = useState(false);
   const [disputeReason, setDisputeReason] = useState('');
@@ -227,19 +224,42 @@ export default function TrackPage() {
   const [disputeSubmitted, setDisputeSubmitted] = useState(false);
 
   useEffect(() => {
-    if (pendingAddons.length > 0) {
-      const t = window.setTimeout(() => setActiveAddon(pendingAddons[0]), 2000);
-      return () => window.clearTimeout(t);
-    }
-  }, []);
+    const showPending = (requests: AddOnRequest[]) => {
+      const pending = requests.filter((addon) => addon.status === 'pending');
+      setPendingAddons(pending);
+      setActiveAddon((current) => current ?? pending[0] ?? null);
+    };
+    void readAddOnRequests().then(showPending).catch(() => setPendingAddons([]));
+    const unsubscribe = subscribeToAddOnRequests((request) => {
+      if (request.status === 'pending') {
+        setPendingAddons((current) => current.some((item) => item.id === request.id) ? current : [...current, request]);
+        setActiveAddon((current) => current ?? request);
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [job.id]);
 
-  function handleApproveAddon(id: string) {
+  async function handleApproveAddon(id: string) {
+    const addon = pendingAddons.find((item) => item.id === id);
+    if (!addon) return;
+    await updateAddOnStatus(id, 'approved');
     setApprovedAddons((prev) => [...prev, id]);
+    setApprovedRequests((prev) => [...prev, addon]);
     setPendingAddons((prev) => prev.filter((a) => a.id !== id));
     setActiveAddon(null);
+    if (job.paymentIntentId) {
+      void globalThis.fetch('/api/stripe/update-authorization', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentIntentId: job.paymentIntentId, amount: addon.price * 100, addOnId: id }),
+      });
+    }
   }
 
-  function handleDeclineAddon(id: string) {
+  async function handleDeclineAddon(id: string) {
+    await updateAddOnStatus(id, 'declined');
     setPendingAddons((prev) => prev.filter((a) => a.id !== id));
     setActiveAddon(null);
   }
@@ -453,7 +473,7 @@ export default function TrackPage() {
               {approvedAddons.length > 0 && (
                 <div className="bg-card rounded-xl border border-border p-5">
                   <p className="text-sm font-bold text-foreground mb-3">Approved add-ons</p>
-                  {MOCK_ADDONS.filter((a) => approvedAddons.includes(a.id)).map((a) => (
+                  {[...MOCK_ADDONS, ...approvedRequests].filter((a) => approvedAddons.includes(a.id) || approvedRequests.some((approved) => approved.id === a.id)).map((a) => (
                     <div key={a.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                       <div className="flex items-center gap-2">
                         <CheckCircle size={13} className="text-primary flex-shrink-0" />

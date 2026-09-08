@@ -138,6 +138,11 @@ export const schemas = {
           "badge": z.string(),
           "bullets": z.array(z.string())
         }),
+        "starterOption": z.object({
+          "title": z.string(),
+          "badge": z.string(),
+          "bullets": z.array(z.string())
+        }),
         "referralOption": z.object({
           "title": z.string(),
           "badge": z.string(),
