@@ -253,7 +253,7 @@ function JobCard({
               </span>
             </div>
             <p className="text-sm text-muted-foreground mt-0.5 truncate">{job.address}, {job.city}</p>
-            <div className="flex items-center gap-3 mt-1">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
               {job.scheduledWindow && (
                 <span className="text-xs font-semibold text-accent flex items-center gap-1">
                   <CalendarDays size={11} /> {job.scheduledWindow}

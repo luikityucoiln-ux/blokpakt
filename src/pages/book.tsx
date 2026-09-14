@@ -395,7 +395,7 @@ export default function BookPage() {
         />
       </Helmet>
 
-      <main className="min-h-screen bg-muted/30 py-12 lg:py-20">
+      <main className="min-h-screen bg-muted/30 py-6 lg:py-10">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           {/* Demo banner */}
           <div className="mb-6 flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 px-4 py-2.5 text-sm text-accent font-medium">
@@ -712,7 +712,7 @@ export default function BookPage() {
                       <label className="block text-sm font-semibold text-foreground mb-1.5">
                         Preferred service window
                       </label>
-                      <div className="rounded-2xl border border-border bg-muted/20 p-4">
+                      <div className="w-full max-w-[21rem] rounded-2xl border border-border bg-muted/20 p-3 sm:p-3.5">
                         <div className="flex items-center justify-between gap-2 mb-3">
                           <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                             <CalendarDays size={14} className="text-primary" />
@@ -742,12 +742,15 @@ export default function BookPage() {
                             </button>
                           </div>
                         </div>
-                        <div className="grid grid-cols-7 gap-1 mb-1">
+                        <p className="mb-2 text-[11px] leading-4 text-muted-foreground">
+                          Bookings start 7 days out so your neighborhood has time to batch together and save.
+                        </p>
+                        <div className="grid grid-cols-7 gap-0.5 mb-0.5">
                           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                            <span key={day} className="py-1 text-center text-[10px] font-bold uppercase text-muted-foreground">{day}</span>
+                            <span key={day} className="w-9 py-0.5 text-center text-[9px] font-bold uppercase text-muted-foreground">{day}</span>
                           ))}
                         </div>
-                        <div className="grid grid-cols-7 gap-1">
+                        <div className="grid grid-cols-7 gap-0.5">
                           {calendarDates(calendarMonth).map((date) => {
                             const inCurrentMonth = date.getMonth() === calendarMonth.getMonth();
                             const inRange = date >= minimumBookingDate && date <= maximumBookingDate;
@@ -758,7 +761,7 @@ export default function BookPage() {
                                 type="button"
                                 disabled={!inCurrentMonth || !inRange}
                                 onClick={() => selectBookingDate(date)}
-                                className={`aspect-square rounded-lg border text-center text-sm transition-colors disabled:cursor-not-allowed disabled:border-transparent disabled:bg-transparent disabled:text-muted-foreground/30 ${
+                                className={`mx-auto h-9 w-9 rounded-md border text-center text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:border-transparent disabled:bg-transparent disabled:text-muted-foreground/30 ${
                                   selected
                                     ? 'border-primary bg-primary text-primary-foreground shadow-sm'
                                     : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-primary/5'
@@ -769,13 +772,9 @@ export default function BookPage() {
                             );
                           })}
                         </div>
-                        <p className="mt-3 text-xs text-muted-foreground">
-                          Bookings start 7 days out so your neighborhood has time to batch together and save.
-                        </p>
-
-                        <div className="mt-4 border-t border-border pt-4">
-                          <p className="text-xs font-semibold text-muted-foreground mb-2">Choose a time window</p>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <div className="mt-3 border-t border-border pt-3">
+                          <p className="mb-1.5 text-[11px] font-semibold text-muted-foreground">Choose a time window</p>
+                          <div className="flex flex-wrap gap-1.5">
                             {SERVICE_WINDOW_OPTIONS.map((option) => {
                               const selected = selectedWindow?.id === option.id;
                               return (
@@ -784,20 +783,17 @@ export default function BookPage() {
                                   type="button"
                                   disabled={!selectedBookingDate}
                                   onClick={() => selectServiceWindow(option.window)}
-                                  className={`rounded-xl border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-left text-[11px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                                     selected
                                       ? 'border-accent bg-accent/10 text-accent shadow-sm'
                                       : 'border-border bg-background text-foreground hover:border-accent/50 hover:bg-accent/5'
                                   }`}
                                 >
-                                  <span className="flex items-center gap-2 text-sm font-bold">
-                                    <Clock size={14} />
-                                    {option.label}
-                                  </span>
-                                  <span className="mt-1 block text-xs text-muted-foreground">{option.description}</span>
+                                  <Clock size={12} />
+                                  <span>{option.label} ({option.description})</span>
                                   {option.id === 'flexible' && (
-                                    <span className="mt-2 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
-                                      Save an extra $2
+                                    <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                                      + Flex Discount
                                     </span>
                                   )}
                                 </button>
@@ -824,33 +820,33 @@ export default function BookPage() {
                   </div>
 
                   {/* Order summary */}
-                  <div className="mt-8 rounded-xl border border-border bg-muted/40 p-5">
-                    <p className="text-sm font-semibold text-foreground mb-3">Order summary</p>
-                    <div className="flex items-center justify-between text-sm mb-2">
+                  <div className="mt-4 rounded-xl border border-border bg-muted/40 p-4">
+                    <p className="text-sm font-semibold text-foreground mb-2">Order summary</p>
+                    <div className="flex items-center justify-between text-sm mb-1.5">
                       <span className="text-muted-foreground">{selectedService.label} — Street Batch</span>
                       <span className="font-bold text-foreground">${selectedService.batchPrice}.00</span>
                     </div>
                     {flexibleDiscountCents > 0 && (
-                      <div className="flex items-center justify-between text-sm mb-2 text-primary">
+                      <div className="flex items-center justify-between text-sm mb-1.5 text-primary">
                         <span>Flexible Slot Discount</span>
                         <span className="font-bold">-$2.00</span>
                       </div>
                     )}
-                    <div className="flex items-center justify-between border-t border-border pt-2 text-sm mb-2">
+                    <div className="flex items-center justify-between border-t border-border pt-1.5 text-sm mb-1.5">
                       <span className="font-semibold text-foreground">Total</span>
                       <span className="font-extrabold text-foreground">${(orderTotalCents / 100).toFixed(2)}</span>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                       <span>{form.address ? `${form.address}, ${form.city}` : '247 Oak Street, Springfield'}</span>
                       <span className="text-accent font-semibold">Save ${selectedService.soloPrice - selectedService.batchPrice} vs solo</span>
                     </div>
-                    <div className="pt-3 border-t border-border flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="pt-2 border-t border-border flex items-center gap-2 text-xs text-muted-foreground">
                       <Shield size={12} className="text-primary flex-shrink-0" />
                       Card authorized now — captured only after photo-verified completion
                     </div>
                   </div>
 
-                  <div className="mt-6 flex justify-between">
+                  <div className="mt-4 flex justify-between">
                     <button
                       onClick={() => setStep(2)}
                       className="inline-flex items-center gap-2 rounded-xl border border-border px-5 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
