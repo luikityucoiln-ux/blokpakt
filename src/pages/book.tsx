@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router';
-import { ArrowRight, ArrowLeft, Shield, Clock, Camera, CheckCircle, LocateFixed, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Shield, Clock, Camera, CheckCircle, LocateFixed, CalendarDays } from 'lucide-react';
 import { savePendingBooking, clearPendingBooking } from '../lib/pending-booking';
 
 interface GoogleAutocompletePlace {
@@ -143,17 +143,8 @@ function formatBookingDate(date: Date): string {
   return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-function addMonths(date: Date, months: number): Date {
-  return new Date(date.getFullYear(), date.getMonth() + months, 1);
-}
-
-function calendarDates(month: Date): Array<Date | null> {
-  const firstDay = new Date(month.getFullYear(), month.getMonth(), 1);
-  const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
-  return [
-    ...Array.from({ length: firstDay.getDay() }, () => null),
-    ...Array.from({ length: daysInMonth }, (_, index) => addDays(firstDay, index)),
-  ];
+function availableBookingDates(): Date[] {
+  return Array.from({ length: 14 }, (_, index) => addDays(new Date(), index + 7));
 }
 
 function parseAddress(value: string): Pick<BookingForm, 'address' | 'city' | 'state' | 'zip'> {
@@ -198,7 +189,6 @@ export default function BookPage() {
   const [checkoutError, setCheckoutError] = useState('');
   const [selectedBookingDate, setSelectedBookingDate] = useState<Date | null>(null);
   const [confirmedSchedule, setConfirmedSchedule] = useState<{ date: string; windowId: string } | null>(null);
-  const [calendarMonth, setCalendarMonth] = useState(() => addMonths(addDays(new Date(), 7), 0));
   const [locationMessage, setLocationMessage] = useState('');
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<GoogleAutocomplete | null>(null);
@@ -211,8 +201,6 @@ export default function BookPage() {
   const orderTotalCents = Math.round(selectedService.batchPrice * 100) - flexibleDiscountCents;
   const minimumBookingDate = addDays(new Date(), 7);
   const maximumBookingDate = addDays(new Date(), 90);
-  const firstCalendarMonth = addMonths(minimumBookingDate, 0);
-  const lastCalendarMonth = addMonths(maximumBookingDate, 0);
 
   function update(field: keyof BookingForm, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -724,72 +712,42 @@ export default function BookPage() {
                       <label className="block text-sm font-semibold text-foreground mb-1.5">
                         Preferred service window
                       </label>
-                      <div className="w-full max-w-[21rem] rounded-2xl border border-border bg-muted/20 p-3 sm:p-3.5">
-                        <div className="flex items-center justify-between gap-2 mb-3">
-                          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-                            <CalendarDays size={14} className="text-primary" />
-                            Choose a date
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              aria-label="Previous month"
-                              disabled={calendarMonth.getTime() <= firstCalendarMonth.getTime()}
-                              onClick={() => setCalendarMonth((month) => addMonths(month, -1))}
-                              className="rounded-lg p-1.5 text-muted-foreground hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
-                            >
-                              <ChevronLeft size={16} />
-                            </button>
-                            <span className="min-w-[118px] text-center text-sm font-bold text-foreground">
-                              {calendarMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                            </span>
-                            <button
-                              type="button"
-                              aria-label="Next month"
-                              disabled={calendarMonth.getTime() >= lastCalendarMonth.getTime()}
-                              onClick={() => setCalendarMonth((month) => addMonths(month, 1))}
-                              className="rounded-lg p-1.5 text-muted-foreground hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
-                            >
-                              <ChevronRight size={16} />
-                            </button>
-                          </div>
+                      <div className="w-full rounded-2xl border border-border bg-muted/20 p-3 sm:p-4">
+                        <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                          <CalendarDays size={14} className="text-primary" />
+                          Choose a date
                         </div>
                         <p className="mb-2 text-[11px] leading-4 text-muted-foreground">
                           Bookings start 7 days out so your neighborhood has time to batch together and save.
                         </p>
-                        <div className="grid grid-cols-7 gap-0.5 mb-0.5">
-                          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                            <span key={day} className="w-9 py-0.5 text-center text-[9px] font-bold uppercase text-muted-foreground">{day}</span>
-                          ))}
-                        </div>
-                        <div className="grid grid-cols-7 gap-0.5">
-                          {calendarDates(calendarMonth).map((date, index) => {
-                            if (!date) {
-                              return <span key={`calendar-spacer-${index}`} className="h-11 w-11" aria-hidden="true" />;
-                            }
-                            const inCurrentMonth = date.getMonth() === calendarMonth.getMonth();
-                            const inRange = date >= minimumBookingDate && date <= maximumBookingDate;
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-7">
+                          {availableBookingDates().map((date) => {
                             const selected = selectedBookingDate ? dateKey(selectedBookingDate) === dateKey(date) : false;
                             return (
                               <button
                                 key={dateKey(date)}
                                 type="button"
-                                disabled={!inCurrentMonth || !inRange}
                                 onClick={() => selectBookingDate(date)}
-                                className={`mx-auto h-11 w-11 rounded-md border text-center text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:border-transparent disabled:bg-transparent disabled:text-muted-foreground/30 ${
+                                className={`flex min-h-[76px] flex-col items-center justify-center rounded-xl border px-2 py-2 text-center transition-colors ${
                                   selected
-                                    ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                                    : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-primary/5'
+                                    ? 'border-slate-900 bg-slate-900 text-white shadow-sm'
+                                    : 'border-slate-200 bg-white text-slate-900 hover:border-slate-400'
                                 }`}
                               >
-                                {date.getDate()}
+                                <span className="text-[10px] font-bold uppercase tracking-wide opacity-70">
+                                  {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                                </span>
+                                <span className="text-xl font-extrabold leading-6">{date.getDate()}</span>
+                                <span className="text-[11px] font-semibold opacity-70">
+                                  {date.toLocaleDateString('en-US', { month: 'short' })}
+                                </span>
                               </button>
                             );
                           })}
                         </div>
                         <div className="mt-3 border-t border-border pt-3">
                           <p className="mb-1.5 text-[11px] font-semibold text-muted-foreground">Choose a time window</p>
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                             {SERVICE_WINDOW_OPTIONS.map((option) => {
                               const selected = selectedWindow?.id === option.id;
                               return (
@@ -798,17 +756,21 @@ export default function BookPage() {
                                   type="button"
                                   disabled={!selectedBookingDate}
                                   onClick={() => selectServiceWindow(option.window)}
-                                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-left text-[11px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                                  className={`rounded-xl border px-3 py-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                                     selected
-                                      ? 'border-accent bg-accent/10 text-accent shadow-sm'
-                                      : 'border-border bg-background text-foreground hover:border-accent/50 hover:bg-accent/5'
+                                      ? option.id === 'flexible'
+                                        ? 'border-amber-500 bg-amber-50/50 text-amber-900 shadow-sm'
+                                        : 'border-slate-900 bg-slate-900 text-white shadow-sm'
+                                      : 'border-slate-200 bg-white text-slate-900 hover:border-slate-400'
                                   }`}
                                 >
-                                  <Clock size={12} />
-                                  <span>{option.label} ({option.description})</span>
+                                  <span className="flex items-center gap-2 text-sm font-bold">
+                                    <Clock size={14} /> {option.label}
+                                  </span>
+                                  <span className="mt-1 block text-xs text-muted-foreground">{option.description}</span>
                                   {option.id === 'flexible' && (
-                                    <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
-                                      + Flex Discount
+                                    <span className="mt-2 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900">
+                                      Save an extra $2
                                     </span>
                                   )}
                                 </button>
