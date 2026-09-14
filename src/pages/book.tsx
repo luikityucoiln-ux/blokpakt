@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router';
-import { ArrowRight, ArrowLeft, Shield, Clock, Camera, CheckCircle, LocateFixed, CalendarDays } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Shield, Clock, Camera, CheckCircle, LocateFixed, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { savePendingBooking, clearPendingBooking } from '../lib/pending-booking';
 
 interface GoogleAutocompletePlace {
@@ -143,9 +143,14 @@ function formatBookingDate(date: Date): string {
   return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-function availableBookingDates(): Date[] {
-  const firstDate = addDays(new Date(), 7);
-  return Array.from({ length: 14 }, (_, index) => addDays(firstDate, index));
+function addMonths(date: Date, months: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + months, 1);
+}
+
+function calendarDates(month: Date): Date[] {
+  const firstDay = new Date(month.getFullYear(), month.getMonth(), 1);
+  const firstGridDay = addDays(firstDay, -firstDay.getDay());
+  return Array.from({ length: 42 }, (_, index) => addDays(firstGridDay, index));
 }
 
 function parseAddress(value: string): Pick<BookingForm, 'address' | 'city' | 'state' | 'zip'> {
@@ -189,6 +194,7 @@ export default function BookPage() {
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [selectedBookingDate, setSelectedBookingDate] = useState<Date | null>(null);
+  const [calendarMonth, setCalendarMonth] = useState(() => addMonths(addDays(new Date(), 7), 0));
   const [locationMessage, setLocationMessage] = useState('');
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<GoogleAutocomplete | null>(null);
@@ -198,12 +204,17 @@ export default function BookPage() {
   const selectedWindow = SERVICE_WINDOW_OPTIONS.find((option) => form.preferredSlot.endsWith(` · ${option.window}`));
   const flexibleDiscountCents = selectedWindow?.id === 'flexible' ? FLEXIBLE_DISCOUNT_CENTS : 0;
   const orderTotalCents = Math.round(selectedService.batchPrice * 100) - flexibleDiscountCents;
+  const minimumBookingDate = addDays(new Date(), 7);
+  const maximumBookingDate = addDays(new Date(), 90);
+  const firstCalendarMonth = addMonths(minimumBookingDate, 0);
+  const lastCalendarMonth = addMonths(maximumBookingDate, 0);
 
   function update(field: keyof BookingForm, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
   function selectBookingDate(date: Date) {
+    if (date < minimumBookingDate || date > maximumBookingDate) return;
     setSelectedBookingDate(date);
     if (form.preferredSlot) {
       const timeWindow = form.preferredSlot.split(' · ').at(-1) ?? '';
@@ -292,8 +303,8 @@ export default function BookPage() {
   async function handleCheckout() {
     setCheckoutError('');
 
-    if (!form.preferredSlot) {
-      setCheckoutError('Please select a preferred service window before continuing.');
+    if (!selectedBookingDate || !selectedWindow || selectedBookingDate < minimumBookingDate || selectedBookingDate > maximumBookingDate) {
+      setCheckoutError('Please select a valid date and service window before continuing.');
       return;
     }
 
@@ -329,6 +340,8 @@ export default function BookPage() {
             jobCode,
             service: selectedService.label,
             scheduledWindow: form.preferredSlot,
+            scheduledDate: selectedBookingDate ? dateKey(selectedBookingDate) : '',
+            timeWindow: selectedWindow?.id ?? '',
             flexibleSlot: String(selectedWindow?.id === 'flexible'),
             address: `${form.address}, ${form.city}, ${form.state} ${form.zip}`,
           },
@@ -340,6 +353,7 @@ export default function BookPage() {
       }
       window.location.href = data.url;
     } catch (error) {
+      console.error('checkout creation failed:', error);
       clearPendingBooking();
       setCheckoutError(error instanceof Error ? error.message : 'Unable to start checkout. Please try again.');
       setLoading(false);
@@ -699,31 +713,58 @@ export default function BookPage() {
                         Preferred service window
                       </label>
                       <div className="rounded-2xl border border-border bg-muted/20 p-4">
-                        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground mb-3">
-                          <CalendarDays size={14} className="text-primary" />
-                          Choose a date
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                            <CalendarDays size={14} className="text-primary" />
+                            Choose a date
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              aria-label="Previous month"
+                              disabled={calendarMonth.getTime() <= firstCalendarMonth.getTime()}
+                              onClick={() => setCalendarMonth((month) => addMonths(month, -1))}
+                              className="rounded-lg p-1.5 text-muted-foreground hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+                            >
+                              <ChevronLeft size={16} />
+                            </button>
+                            <span className="min-w-[118px] text-center text-sm font-bold text-foreground">
+                              {calendarMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                            </span>
+                            <button
+                              type="button"
+                              aria-label="Next month"
+                              disabled={calendarMonth.getTime() >= lastCalendarMonth.getTime()}
+                              onClick={() => setCalendarMonth((month) => addMonths(month, 1))}
+                              className="rounded-lg p-1.5 text-muted-foreground hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+                            >
+                              <ChevronRight size={16} />
+                            </button>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
-                          {availableBookingDates().map((date) => {
+                        <div className="grid grid-cols-7 gap-1 mb-1">
+                          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                            <span key={day} className="py-1 text-center text-[10px] font-bold uppercase text-muted-foreground">{day}</span>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-7 gap-1">
+                          {calendarDates(calendarMonth).map((date) => {
+                            const inCurrentMonth = date.getMonth() === calendarMonth.getMonth();
+                            const inRange = date >= minimumBookingDate && date <= maximumBookingDate;
                             const selected = selectedBookingDate ? dateKey(selectedBookingDate) === dateKey(date) : false;
                             return (
                               <button
                                 key={dateKey(date)}
                                 type="button"
+                                disabled={!inCurrentMonth || !inRange}
                                 onClick={() => selectBookingDate(date)}
-                                className={`rounded-xl border px-2 py-2.5 text-center transition-colors ${
+                                className={`aspect-square rounded-lg border text-center text-sm transition-colors disabled:cursor-not-allowed disabled:border-transparent disabled:bg-transparent disabled:text-muted-foreground/30 ${
                                   selected
                                     ? 'border-primary bg-primary text-primary-foreground shadow-sm'
                                     : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-primary/5'
                                 }`}
                               >
-                                <span className="block text-[11px] font-semibold uppercase opacity-70">
-                                  {date.toLocaleDateString('en-US', { weekday: 'short' })}
-                                </span>
-                                <span className="block text-lg font-extrabold leading-5">{date.getDate()}</span>
-                                <span className="block text-[11px] opacity-70">
-                                  {date.toLocaleDateString('en-US', { month: 'short' })}
-                                </span>
+                                {date.getDate()}
                               </button>
                             );
                           })}
