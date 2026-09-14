@@ -147,10 +147,13 @@ function addMonths(date: Date, months: number): Date {
   return new Date(date.getFullYear(), date.getMonth() + months, 1);
 }
 
-function calendarDates(month: Date): Date[] {
+function calendarDates(month: Date): Array<Date | null> {
   const firstDay = new Date(month.getFullYear(), month.getMonth(), 1);
-  const firstGridDay = addDays(firstDay, -firstDay.getDay());
-  return Array.from({ length: 42 }, (_, index) => addDays(firstGridDay, index));
+  const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  return [
+    ...Array.from({ length: firstDay.getDay() }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, index) => addDays(firstDay, index)),
+  ];
 }
 
 function parseAddress(value: string): Pick<BookingForm, 'address' | 'city' | 'state' | 'zip'> {
@@ -194,6 +197,7 @@ export default function BookPage() {
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [selectedBookingDate, setSelectedBookingDate] = useState<Date | null>(null);
+  const [confirmedSchedule, setConfirmedSchedule] = useState<{ date: string; windowId: string } | null>(null);
   const [calendarMonth, setCalendarMonth] = useState(() => addMonths(addDays(new Date(), 7), 0));
   const [locationMessage, setLocationMessage] = useState('');
   const addressInputRef = useRef<HTMLInputElement>(null);
@@ -202,7 +206,8 @@ export default function BookPage() {
 
   const selectedService = SERVICES.find((s) => s.id === form.serviceId) ?? SERVICES[0];
   const selectedWindow = SERVICE_WINDOW_OPTIONS.find((option) => form.preferredSlot.endsWith(` · ${option.window}`));
-  const flexibleDiscountCents = selectedWindow?.id === 'flexible' ? FLEXIBLE_DISCOUNT_CENTS : 0;
+  const confirmedWindow = SERVICE_WINDOW_OPTIONS.find((option) => option.id === confirmedSchedule?.windowId);
+  const flexibleDiscountCents = confirmedWindow?.id === 'flexible' ? FLEXIBLE_DISCOUNT_CENTS : 0;
   const orderTotalCents = Math.round(selectedService.batchPrice * 100) - flexibleDiscountCents;
   const minimumBookingDate = addDays(new Date(), 7);
   const maximumBookingDate = addDays(new Date(), 90);
@@ -215,6 +220,7 @@ export default function BookPage() {
 
   function selectBookingDate(date: Date) {
     if (date < minimumBookingDate || date > maximumBookingDate) return;
+    setConfirmedSchedule(null);
     setSelectedBookingDate(date);
     if (form.preferredSlot) {
       const timeWindow = form.preferredSlot.split(' · ').at(-1) ?? '';
@@ -224,7 +230,13 @@ export default function BookPage() {
 
   function selectServiceWindow(timeWindow: string) {
     if (!selectedBookingDate) return;
+    setConfirmedSchedule(null);
     update('preferredSlot', `${formatBookingDate(selectedBookingDate)} · ${timeWindow}`);
+  }
+
+  function confirmSchedule() {
+    if (!selectedBookingDate || !selectedWindow) return;
+    setConfirmedSchedule({ date: dateKey(selectedBookingDate), windowId: selectedWindow.id });
   }
 
   useEffect(() => {
@@ -303,7 +315,7 @@ export default function BookPage() {
   async function handleCheckout() {
     setCheckoutError('');
 
-    if (!selectedBookingDate || !selectedWindow || selectedBookingDate < minimumBookingDate || selectedBookingDate > maximumBookingDate) {
+    if (!selectedBookingDate || !selectedWindow || !confirmedSchedule || selectedBookingDate < minimumBookingDate || selectedBookingDate > maximumBookingDate) {
       setCheckoutError('Please select a valid date and service window before continuing.');
       return;
     }
@@ -340,9 +352,9 @@ export default function BookPage() {
             jobCode,
             service: selectedService.label,
             scheduledWindow: form.preferredSlot,
-            scheduledDate: selectedBookingDate ? dateKey(selectedBookingDate) : '',
-            timeWindow: selectedWindow?.id ?? '',
-            flexibleSlot: String(selectedWindow?.id === 'flexible'),
+            scheduledDate: confirmedSchedule?.date ?? '',
+            timeWindow: confirmedSchedule?.windowId ?? '',
+            flexibleSlot: String(confirmedWindow?.id === 'flexible'),
             address: `${form.address}, ${form.city}, ${form.state} ${form.zip}`,
           },
         }),
@@ -751,7 +763,10 @@ export default function BookPage() {
                           ))}
                         </div>
                         <div className="grid grid-cols-7 gap-0.5">
-                          {calendarDates(calendarMonth).map((date) => {
+                          {calendarDates(calendarMonth).map((date, index) => {
+                            if (!date) {
+                              return <span key={`calendar-spacer-${index}`} className="h-11 w-11" aria-hidden="true" />;
+                            }
                             const inCurrentMonth = date.getMonth() === calendarMonth.getMonth();
                             const inRange = date >= minimumBookingDate && date <= maximumBookingDate;
                             const selected = selectedBookingDate ? dateKey(selectedBookingDate) === dateKey(date) : false;
@@ -761,7 +776,7 @@ export default function BookPage() {
                                 type="button"
                                 disabled={!inCurrentMonth || !inRange}
                                 onClick={() => selectBookingDate(date)}
-                                className={`mx-auto h-9 w-9 rounded-md border text-center text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:border-transparent disabled:bg-transparent disabled:text-muted-foreground/30 ${
+                                className={`mx-auto h-11 w-11 rounded-md border text-center text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:border-transparent disabled:bg-transparent disabled:text-muted-foreground/30 ${
                                   selected
                                     ? 'border-primary bg-primary text-primary-foreground shadow-sm'
                                     : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-primary/5'
@@ -800,6 +815,18 @@ export default function BookPage() {
                               );
                             })}
                           </div>
+                          <button
+                            type="button"
+                            disabled={!selectedBookingDate || !selectedWindow}
+                            onClick={confirmSchedule}
+                            className={`mt-2 w-full rounded-lg px-3 py-2 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                              confirmedSchedule
+                                ? 'bg-primary/10 text-primary'
+                                : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                            }`}
+                          >
+                            {confirmedSchedule ? 'Date & Time Confirmed' : 'Confirm Date & Time'}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -855,7 +882,7 @@ export default function BookPage() {
                       Back
                     </button>
                     <button
-                      disabled={loading || !form.preferredSlot}
+                      disabled={loading || !confirmedSchedule}
                       onClick={handleCheckout}
                       className="inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3 text-sm font-bold text-primary-foreground disabled:opacity-60 hover:bg-primary/90 transition-colors"
                     >
