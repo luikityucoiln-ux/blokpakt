@@ -45,6 +45,22 @@ export default async function handler(req: Request, res: Response) {
       return;
     }
 
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid quantity',
+      });
+      return;
+    }
+
+    if (metadata && (!Object.values(metadata).every((value) => typeof value === 'string') || Object.keys(metadata).length > 50)) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid checkout metadata',
+      });
+      return;
+    }
+
     // Derive redirect URLs from request origin (security - not from frontend body)
     const origin = req.headers.origin || `https://${req.headers.host}`;
     const successUrl = `${origin}/checkout/success`;

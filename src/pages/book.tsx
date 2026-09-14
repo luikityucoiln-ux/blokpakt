@@ -240,8 +240,14 @@ export default function BookPage() {
   }
 
   async function handleCheckout() {
-    setLoading(true);
     setCheckoutError('');
+
+    if (!form.preferredSlot) {
+      setCheckoutError('Please select a preferred service window before continuing.');
+      return;
+    }
+
+    setLoading(true);
 
     // Stash the booking details so the success page can create the job
     // record once Stripe confirms the authorization (see checkout/success.tsx).
@@ -272,6 +278,7 @@ export default function BookPage() {
           metadata: {
             jobCode,
             service: selectedService.label,
+            scheduledWindow: form.preferredSlot,
             address: `${form.address}, ${form.city}, ${form.state} ${form.zip}`,
           },
         }),
@@ -696,7 +703,7 @@ export default function BookPage() {
                       Back
                     </button>
                     <button
-                      disabled={loading}
+                      disabled={loading || !form.preferredSlot}
                       onClick={handleCheckout}
                       className="inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3 text-sm font-bold text-primary-foreground disabled:opacity-60 hover:bg-primary/90 transition-colors"
                     >
