@@ -69,7 +69,27 @@ export default async function handler(req: Request, res: Response) {
     const stripe = getStripe();
     const price = await stripe.prices.retrieve(priceId);
     const mode: Stripe.Checkout.SessionCreateParams.Mode = price.recurring ? 'subscription' : 'payment';
-    const sessionLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [{ price: priceId, quantity }];
+    const isFlexibleSlot = metadata?.flexibleSlot === 'true';
+    if (isFlexibleSlot && mode !== 'payment') {
+      res.status(400).json({ success: false, error: 'Flexible slots are only available for one-time payments' });
+      return;
+    }
+
+    const sessionLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = isFlexibleSlot
+      ? [{
+          price_data: {
+            currency: price.currency,
+            product: typeof price.product === 'string' ? price.product : price.product.id,
+            unit_amount: (price.unit_amount ?? 0) - 200,
+          },
+          quantity,
+        }]
+      : [{ price: priceId, quantity }];
+
+    if (isFlexibleSlot && (price.unit_amount ?? 0) <= 200) {
+      res.status(400).json({ success: false, error: 'Flexible discount cannot be applied to this price' });
+      return;
+    }
 
     // Build session parameters
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
