@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router';
-import { ArrowRight, ArrowLeft, Shield, Clock, Camera, CheckCircle, ChevronDown, LocateFixed } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Shield, Clock, Camera, CheckCircle, LocateFixed, CalendarDays } from 'lucide-react';
 import { savePendingBooking, clearPendingBooking } from '../lib/pending-booking';
 
 interface GoogleAutocompletePlace {
@@ -115,6 +115,34 @@ const DEMO_DEFAULTS: BookingForm = {
   referralCode: '',
 };
 
+const SERVICE_WINDOWS = [...new Set(book.TIME_SLOTS.map((slot) => slot.replace(/^[^ ]+ /, '')))];
+
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return startOfDay(result);
+}
+
+function dateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatBookingDate(date: Date): string {
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function availableBookingDates(): Date[] {
+  const firstDate = addDays(new Date(), 7);
+  return Array.from({ length: 14 }, (_, index) => addDays(firstDate, index));
+}
+
 function parseAddress(value: string): Pick<BookingForm, 'address' | 'city' | 'state' | 'zip'> {
   const parts = value.split(',').map((part) => part.trim()).filter(Boolean);
   const lastPart = parts.at(-1) ?? '';
@@ -155,6 +183,7 @@ export default function BookPage() {
   const [form, setForm] = useState<BookingForm>(getInitialForm);
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
+  const [selectedBookingDate, setSelectedBookingDate] = useState<Date | null>(null);
   const [locationMessage, setLocationMessage] = useState('');
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<GoogleAutocomplete | null>(null);
@@ -164,6 +193,19 @@ export default function BookPage() {
 
   function update(field: keyof BookingForm, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function selectBookingDate(date: Date) {
+    setSelectedBookingDate(date);
+    if (form.preferredSlot) {
+      const timeWindow = form.preferredSlot.split(' · ').at(-1) ?? '';
+      update('preferredSlot', `${formatBookingDate(date)} · ${timeWindow}`);
+    }
+  }
+
+  function selectServiceWindow(timeWindow: string) {
+    if (!selectedBookingDate) return;
+    update('preferredSlot', `${formatBookingDate(selectedBookingDate)} · ${timeWindow}`);
   }
 
   useEffect(() => {
@@ -647,18 +689,64 @@ export default function BookPage() {
                       <label className="block text-sm font-semibold text-foreground mb-1.5">
                         Preferred service window
                       </label>
-                      <div className="relative">
-                        <select
-                          value={form.preferredSlot}
-                          onChange={(e) => update('preferredSlot', e.target.value)}
-                          className="w-full appearance-none rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 pr-10"
-                        >
-                          <option value="">Select a time window…</option>
-                          {book.TIME_SLOTS.map((slot) => (
-                            <option key={slot} value={slot}>{slot}</option>
-                          ))}
-                        </select>
-                        <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                      <div className="rounded-2xl border border-border bg-muted/20 p-4">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground mb-3">
+                          <CalendarDays size={14} className="text-primary" />
+                          Choose a date
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+                          {availableBookingDates().map((date) => {
+                            const selected = selectedBookingDate ? dateKey(selectedBookingDate) === dateKey(date) : false;
+                            return (
+                              <button
+                                key={dateKey(date)}
+                                type="button"
+                                onClick={() => selectBookingDate(date)}
+                                className={`rounded-xl border px-2 py-2.5 text-center transition-colors ${
+                                  selected
+                                    ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                                    : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-primary/5'
+                                }`}
+                              >
+                                <span className="block text-[11px] font-semibold uppercase opacity-70">
+                                  {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                                </span>
+                                <span className="block text-lg font-extrabold leading-5">{date.getDate()}</span>
+                                <span className="block text-[11px] opacity-70">
+                                  {date.toLocaleDateString('en-US', { month: 'short' })}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <p className="mt-3 text-xs text-muted-foreground">
+                          Bookings start 7 days out so your neighborhood has time to batch together and save.
+                        </p>
+
+                        <div className="mt-4 border-t border-border pt-4">
+                          <p className="text-xs font-semibold text-muted-foreground mb-2">Choose a time window</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {SERVICE_WINDOWS.map((timeWindow) => {
+                              const selected = form.preferredSlot.endsWith(` · ${timeWindow}`);
+                              return (
+                                <button
+                                  key={timeWindow}
+                                  type="button"
+                                  disabled={!selectedBookingDate}
+                                  onClick={() => selectServiceWindow(timeWindow)}
+                                  className={`rounded-xl border px-3 py-2.5 text-sm font-semibold text-left transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                                    selected
+                                      ? 'border-accent bg-accent/10 text-accent'
+                                      : 'border-border bg-background text-foreground hover:border-accent/50 hover:bg-accent/5'
+                                  }`}
+                                >
+                                  <Clock size={14} className="inline-block mr-2 align-[-2px]" />
+                                  {timeWindow}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>
                     </div>
 

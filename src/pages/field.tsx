@@ -16,7 +16,7 @@ import {
   MapPin, Clock, Camera, CheckCircle,
   Zap, Plus, X, AlertCircle, ArrowRight,
   Navigation, Phone, MessageSquare, TrendingUp, Banknote,
-  ChevronDown, ChevronUp, Lock, Unlock
+  CalendarDays, ChevronDown, ChevronUp, Lock, Unlock
 } from 'lucide-react';
 
 interface DisplayAddOn {
@@ -254,6 +254,11 @@ function JobCard({
             </div>
             <p className="text-sm text-muted-foreground mt-0.5 truncate">{job.address}, {job.city}</p>
             <div className="flex items-center gap-3 mt-1">
+              {job.scheduledWindow && (
+                <span className="text-xs font-semibold text-accent flex items-center gap-1">
+                  <CalendarDays size={11} /> {job.scheduledWindow}
+                </span>
+              )}
               <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <Clock size={11} /> {job.estimatedDuration}
               </span>
@@ -469,7 +474,7 @@ function EarningsPanel({ jobs }: { jobs: FieldJob[] }) {
 
   function handleCashout() {
     setCashoutLoading(true);
-    setTimeout(() => {
+    window.setTimeout(() => {
       setCashoutLoading(false);
       setCashoutDone(true);
     }, 1200);
