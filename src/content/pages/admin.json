@@ -15,6 +15,10 @@
     {
       "id": "ratings",
       "label": "🛡️ Rating Engine"
+    },
+    {
+      "id": "batches",
+      "label": "📦 Active Batches"
     }
   ],
   "demoBanner": "Admin demo — all actions are simulated. Approve/reject buttons update local state only.",

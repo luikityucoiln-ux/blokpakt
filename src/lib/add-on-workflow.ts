@@ -33,6 +33,17 @@ export async function readAddOnRequests(): Promise<AddOnRequest[]> {
   return (data as AddOnRow[]).map(fromRow);
 }
 
+export async function listAddOnRequestsForJob(jobId: string): Promise<AddOnRequest[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('addon_requests')
+    .select('id, job_id, service_title, description, price_cents, photo_data, status, created_at')
+    .eq('job_id', jobId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data as AddOnRow[]).map(fromRow);
+}
+
 export async function createAddOnRequest(request: AddOnRequest): Promise<AddOnRequest> {
   if (!supabase) throw new Error('Supabase is not configured');
   const { data, error } = await supabase.from('addon_requests').insert({ id: request.id, job_id: request.jobId, service_title: request.service, description: request.description, price_cents: Math.round(request.price * 100), photo_data: request.photo, status: request.status, created_at: request.createdAt }).select('id, job_id, service_title, description, price_cents, photo_data, status, created_at').single();
@@ -46,8 +57,22 @@ export async function updateAddOnStatus(id: string, status: AddOnRequest['status
   if (error) throw error;
 }
 
+export async function deleteAddOnRequest(id: string): Promise<void> {
+  if (!supabase) throw new Error('Supabase is not configured');
+  const { error } = await supabase.from('addon_requests').delete().eq('id', id);
+  if (error) throw error;
+}
+
 export function subscribeToAddOnRequests(listener: (request: AddOnRequest) => void): () => void {
   if (!supabase) return () => undefined;
-  const channel = supabase.channel('addon-requests').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'addon_requests' }, (payload) => listener(fromRow(payload.new as AddOnRow))).subscribe();
-  return () => { void supabase.removeChannel(channel); };
+  const client = supabase;
+  const channel = client.channel('addon-requests').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'addon_requests' }, (payload) => listener(fromRow(payload.new as AddOnRow))).subscribe();
+  return () => { void client.removeChannel(channel); };
+}
+
+export function subscribeToAddOnStatusChanges(listener: (request: AddOnRequest) => void): () => void {
+  if (!supabase) return () => undefined;
+  const client = supabase;
+  const channel = client.channel('addon-requests-status').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'addon_requests' }, (payload) => listener(fromRow(payload.new as AddOnRow))).subscribe();
+  return () => { void client.removeChannel(channel); };
 }

@@ -56,6 +56,7 @@ export default async function handler(req: Request, res: Response) {
         paymentStatus: session.payment_status,
         status: session.status,
         mode: session.mode,
+        paymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id ?? null,
         lineItems: session.line_items?.data.map((item) => ({
           name: item.description,
           quantity: item.quantity,

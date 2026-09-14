@@ -1,42 +1,55 @@
 import { Helmet } from '@dr.pogodin/react-helmet';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { ArrowRight, CheckCircle, MapPin, Users } from 'lucide-react';
-
-interface ActiveBatch {
-  code: string;
-  street: string;
-  service: string;
-  batchPrice: number;
-  soloPrice: number;
-  homesBooked: number;
-  targetHomes: number;
-}
-
-// Replace this registry with the batch lookup API when live batch persistence is enabled.
-const ACTIVE_BATCHES: Record<string, ActiveBatch> = {
-  'OAK-2024': {
-    code: 'OAK-2024',
-    street: 'Oak Street',
-    service: 'Lawn Care',
-    batchPrice: 45,
-    soloPrice: 50,
-    homesBooked: 4,
-    targetHomes: 5,
-  },
-};
+import { getBatchByCode, type Batch } from '../lib/batches';
 
 export default function BatchPage() {
   const { code = '' } = useParams();
   const normalizedCode = decodeURIComponent(code).toUpperCase();
-  const batch = ACTIVE_BATCHES[normalizedCode];
   const navigate = useNavigate();
+  const [batch, setBatch] = useState<Batch | null>(null);
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'not_found' | 'unavailable'>('loading');
 
-  if (!batch) {
+  useEffect(() => {
+    let cancelled = false;
+    setLoadState('loading');
+    getBatchByCode(normalizedCode)
+      .then((found) => {
+        if (cancelled) return;
+        if (!found) {
+          setLoadState('not_found');
+          return;
+        }
+        setBatch(found);
+        setLoadState('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setLoadState('unavailable');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [normalizedCode]);
+
+  if (loadState === 'loading') {
+    return (
+      <main className="min-h-screen bg-muted/30 flex items-center justify-center px-4 py-20">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </main>
+    );
+  }
+
+  if (loadState === 'not_found' || loadState === 'unavailable' || !batch) {
     return (
       <main className="min-h-screen bg-muted/30 px-4 py-20">
         <div className="mx-auto max-w-lg rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
           <h1 className="text-2xl font-extrabold text-foreground">That batch link is no longer active</h1>
-          <p className="mt-3 text-sm text-muted-foreground">Check the code with your neighbor or search for a new service area.</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {loadState === 'unavailable'
+              ? "We couldn't reach the database. Please try again shortly."
+              : 'Check the code with your neighbor or search for a new service area.'}
+          </p>
           <Link to="/" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-bold text-white">
             Check another street <ArrowRight size={16} />
           </Link>

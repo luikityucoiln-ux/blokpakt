@@ -1,8 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { admin } from 'virtual:content';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle, XCircle, Clock, AlertTriangle, Star, ChevronDown, ChevronUp, DollarSign, Users, Shield, Camera, BarChart2, Zap, Search, RefreshCw, Eye, Flag, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, AlertTriangle, Star, ChevronDown, ChevronUp, DollarSign, Users, Shield, Camera, BarChart2, Zap, Search, RefreshCw, Eye, Flag, ThumbsUp, ThumbsDown, Package } from 'lucide-react';
+import { isSupabaseConfigured } from '../lib/supabase';
+import { listBatches, type Batch } from '../lib/batches';
+import { listActiveJobs, subscribeToJobs, type Job } from '../lib/jobs';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -581,11 +584,154 @@ function KpiStrip({ jobs, providers }: { jobs: TimelineJob[]; providers: Provide
   );
 }
 
+// ── Live Batches (real Supabase data — the only tab wired to production data) ──
+
+const OPEN_JOB_STATUSES = new Set<Job['status']>(['pending', 'en_route', 'arrived', 'in_progress', 'disputed']);
+
+function BatchesPanel() {
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'unavailable' | 'unconfigured'>('loading');
+  const [cancellingCode, setCancellingCode] = useState<string | null>(null);
+  const [cancelledCodes, setCancelledCodes] = useState<Set<string>>(new Set());
+  const [rowMessages, setRowMessages] = useState<Record<string, { type: 'success' | 'error'; text: string }>>({});
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setLoadState('unconfigured');
+      return;
+    }
+    let cancelled = false;
+    setLoadState('loading');
+    Promise.all([listBatches(), listActiveJobs()])
+      .then(([batchRows, jobRows]) => {
+        if (cancelled) return;
+        setBatches(batchRows);
+        setJobs(jobRows);
+        setLoadState('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setLoadState('unavailable');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Reflect job status changes from the field app (e.g. captures) in real time.
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    return subscribeToJobs((updated) => {
+      setJobs((prev) => {
+        const idx = prev.findIndex((j) => j.id === updated.id);
+        if (idx === -1) return [...prev, updated];
+        const next = [...prev];
+        next[idx] = updated;
+        return next;
+      });
+    });
+  }, []);
+
+  async function handleCancelBatch(batchCode: string) {
+    setCancellingCode(batchCode);
+    setRowMessages((prev) => {
+      if (!(batchCode in prev)) return prev;
+      const rest = { ...prev };
+      delete rest[batchCode];
+      return rest;
+    });
+    try {
+      const res = await globalThis.fetch('/api/stripe/cancel-batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ batchCode }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Unable to release the batch holds');
+      const skippedCount = data.skipped?.length ?? 0;
+      setRowMessages((prev) => ({
+        ...prev,
+        [batchCode]: {
+          type: 'success',
+          text: `Released ${data.cancelled?.length ?? 0} hold(s)${skippedCount ? `, ${skippedCount} skipped` : ''}.`,
+        },
+      }));
+      setCancelledCodes((prev) => new Set(prev).add(batchCode));
+      setJobs((prev) => prev.map((j) => (j.batchCode === batchCode && OPEN_JOB_STATUSES.has(j.status) ? { ...j, status: 'cancelled' } : j)));
+    } catch (error) {
+      setRowMessages((prev) => ({
+        ...prev,
+        [batchCode]: { type: 'error', text: error instanceof Error ? error.message : 'Unable to release the batch holds' },
+      }));
+    } finally {
+      setCancellingCode(null);
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="px-5 py-4 border-b border-border flex items-center gap-2">
+        <Package size={16} className="text-primary" />
+        <p className="font-bold text-foreground text-sm">Active Batches</p>
+        <span className="ml-auto text-xs text-muted-foreground">Live from Supabase</span>
+      </div>
+
+      {loadState === 'loading' && (
+        <div className="flex justify-center py-10">
+          <div className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
+      {loadState === 'unconfigured' && (
+        <p className="px-5 py-8 text-center text-sm text-muted-foreground">Connect Supabase to load live batch data (see supabase/*.sql).</p>
+      )}
+
+      {loadState === 'unavailable' && (
+        <p className="px-5 py-8 text-center text-sm text-muted-foreground">We couldn't reach the database. Please try again shortly.</p>
+      )}
+
+      {loadState === 'ready' && batches.length === 0 && (
+        <p className="px-5 py-8 text-center text-sm text-muted-foreground">No batches yet.</p>
+      )}
+
+      {loadState === 'ready' && batches.length > 0 && (
+        <div className="divide-y divide-border">
+          {batches.map((batch) => {
+            const openJobs = jobs.filter((j) => j.batchCode === batch.code && OPEN_JOB_STATUSES.has(j.status));
+            const isCancelled = cancelledCodes.has(batch.code);
+            const message = rowMessages[batch.code];
+            return (
+              <div key={batch.code} className="px-5 py-4 flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-foreground truncate">{batch.street} · {batch.service}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {batch.code} · {batch.homesBooked}/{batch.targetHomes} homes · {openJobs.length} open hold{openJobs.length === 1 ? '' : 's'}
+                  </p>
+                  {message && (
+                    <p className={`text-xs font-semibold mt-1 ${message.type === 'error' ? 'text-destructive' : 'text-primary'}`}>{message.text}</p>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleCancelBatch(batch.code)}
+                  disabled={isCancelled || openJobs.length === 0 || cancellingCode === batch.code}
+                  className="rounded-xl bg-destructive px-4 py-2 text-xs font-bold text-white disabled:opacity-40 hover:bg-destructive/90 transition-colors whitespace-nowrap"
+                >
+                  {cancellingCode === batch.code ? 'Cancelling…' : isCancelled ? 'Cancelled' : 'Cancel Batch'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
   const [jobs, setJobs] = useState<TimelineJob[]>(TIMELINE_JOBS);
-  const [activeTab, setActiveTab] = useState<'timeline' | 'payouts' | 'ratings'>('timeline');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'payouts' | 'ratings' | 'batches'>('timeline');
 
   function handleApprove(jobId: string) {
     setJobs((prev) =>
@@ -637,7 +783,7 @@ export default function AdminPage() {
             {admin.tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as 'timeline' | 'payouts' | 'ratings')}
+                onClick={() => setActiveTab(tab.id as 'timeline' | 'payouts' | 'ratings' | 'batches')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                   activeTab === tab.id
                     ? 'bg-primary text-primary-foreground'
@@ -674,6 +820,11 @@ export default function AdminPage() {
             {activeTab === 'ratings' && (
               <motion.div key="ratings" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
                 <RatingEngine providers={PROVIDERS} />
+              </motion.div>
+            )}
+            {activeTab === 'batches' && (
+              <motion.div key="batches" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                <BatchesPanel />
               </motion.div>
             )}
           </AnimatePresence>

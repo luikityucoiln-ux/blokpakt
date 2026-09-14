@@ -16,6 +16,8 @@ import { Helmet } from '@dr.pogodin/react-helmet';
 import { checkout_success as cs } from 'virtual:content';
 
 import { formatPrice } from '@/lib/stripe/format';
+import { readPendingBooking, clearPendingBooking } from '../../lib/pending-booking';
+import { createJob } from '../../lib/jobs';
 
 interface SessionDetails {
   customerName?: string;
@@ -23,10 +25,46 @@ interface SessionDetails {
   currency?: string;
   paymentStatus?: string; // "paid" | "unpaid" | "no_payment_required"
   status?: string; // "open" | "complete" | "expired"
+  paymentIntentId?: string | null;
 }
 
 // Verification states
 type VerificationState = 'verifying' | 'verified' | 'failed' | 'no_session';
+
+// Creates the job record from the booking data stashed before the Stripe
+// redirect, now that the card authorization is confirmed. Falls back to the
+// generic /track page if there's no pending booking (e.g. a stale link) or
+// Supabase isn't configured yet.
+async function persistJobFromBooking(paymentIntentId: string | null, checkoutSessionId: string): Promise<string> {
+  const pending = readPendingBooking();
+  if (!pending) return '/track';
+  try {
+    await createJob({
+      id: `job-${pending.jobCode}`,
+      code: pending.jobCode,
+      batchCode: pending.batchCode,
+      service: pending.service,
+      serviceIcon: pending.serviceIcon,
+      address: pending.address,
+      city: pending.city,
+      zip: pending.zip,
+      gateCode: pending.gateCode || null,
+      propertyNotes: pending.propertyNotes,
+      scheduledWindow: pending.scheduledWindow || null,
+      customerName: pending.customerName,
+      customerEmail: pending.customerEmail || null,
+      customerPhone: pending.customerPhone || null,
+      payoutCents: pending.payoutCents,
+      paymentIntentId,
+      checkoutSessionId,
+    });
+  } catch (error) {
+    console.error('job creation failed', error);
+  } finally {
+    clearPendingBooking();
+  }
+  return `/track?code=${encodeURIComponent(pending.jobCode)}`;
+}
 
 export default function CheckoutSuccess() {
   const [searchParams] = useSearchParams();
@@ -34,6 +72,7 @@ export default function CheckoutSuccess() {
   const [details, setDetails] = useState<SessionDetails | null>(null);
   const [verification, setVerification] = useState<VerificationState>('verifying');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [trackHref, setTrackHref] = useState('/track');
   const firedRef = useRef(false);
 
   // MANDATORY: Verify payment status with Stripe before showing success
@@ -45,19 +84,6 @@ export default function CheckoutSuccess() {
     if (!sessionId) {
       setVerification('no_session');
       setErrorMessage('No payment session found. Please try again.');
-      return;
-    }
-
-    // DEMO MODE: bypass Stripe validation for prototype sessions
-    if (sessionId.startsWith('demo_session')) {
-      setDetails({
-        customerName: 'Alex Johnson',
-        amountTotal: 4500,
-        currency: 'usd',
-        paymentStatus: 'paid',
-        status: 'complete',
-      });
-      setVerification('verified');
       return;
     }
 
@@ -76,7 +102,7 @@ export default function CheckoutSuccess() {
         }
         return res.json();
       })
-      .then((data) => {
+      .then(async (data) => {
         if (!data?.success || !data?.session) {
           throw new Error('Invalid session response');
         }
@@ -91,6 +117,8 @@ export default function CheckoutSuccess() {
         const isPaid = session.paymentStatus === 'paid';
 
         if (isComplete && isPaid) {
+          const href = await persistJobFromBooking(session.paymentIntentId ?? null, sessionId);
+          setTrackHref(href);
           setVerification('verified');
         } else if (session.paymentStatus === 'unpaid') {
           setVerification('failed');
@@ -204,7 +232,7 @@ export default function CheckoutSuccess() {
 
         <div className="space-y-3">
           <Link
-            to="/track"
+            to={trackHref}
             className="block w-full bg-primary text-primary-foreground py-3 px-4 rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors"
           >
             {cs.trackCtaLabel}

@@ -2,8 +2,9 @@ import { book } from 'virtual:content';
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import { ArrowRight, ArrowLeft, Shield, Clock, Camera, CheckCircle, ChevronDown, LocateFixed } from 'lucide-react';
+import { savePendingBooking, clearPendingBooking } from '../lib/pending-booking';
 
 interface GoogleAutocompletePlace {
   address_components?: Array<{ long_name: string; short_name: string; types: string[] }>;
@@ -150,10 +151,10 @@ const fadeSlide = {
 };
 
 export default function BookPage() {
-  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<BookingForm>(getInitialForm);
   const [loading, setLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
   const [locationMessage, setLocationMessage] = useState('');
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<GoogleAutocomplete | null>(null);
@@ -238,12 +239,53 @@ export default function BookPage() {
     );
   }
 
-  // DEMO MODE: no validation — navigate directly to success
-  function handleCheckout() {
+  async function handleCheckout() {
     setLoading(true);
-    window.setTimeout(() => {
-      navigate('/checkout/success?demo=1&session_id=demo_session_blokpakt');
-    }, 900);
+    setCheckoutError('');
+
+    // Stash the booking details so the success page can create the job
+    // record once Stripe confirms the authorization (see checkout/success.tsx).
+    const jobCode = `BLK-${Date.now().toString(36).toUpperCase()}`;
+    savePendingBooking({
+      jobCode,
+      service: selectedService.label,
+      serviceIcon: selectedService.icon,
+      payoutCents: Math.round(selectedService.batchPrice * 100),
+      address: form.address,
+      city: form.city,
+      zip: form.zip,
+      gateCode: form.gateCode,
+      propertyNotes: form.propertyNotes,
+      scheduledWindow: form.preferredSlot,
+      customerName: `${form.firstName} ${form.lastName}`.trim(),
+      customerEmail: form.email,
+      customerPhone: form.phone,
+      batchCode: form.referralCode ? form.referralCode.toUpperCase() : null,
+    });
+
+    try {
+      const response = await globalThis.fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priceId: selectedService.priceId,
+          metadata: {
+            jobCode,
+            service: selectedService.label,
+            address: `${form.address}, ${form.city}, ${form.state} ${form.zip}`,
+          },
+        }),
+      });
+      const data = await response.json();
+      if (!data?.success || !data?.url) {
+        throw new Error(data?.error || 'Unable to start checkout');
+      }
+      window.location.href = data.url;
+    } catch (error) {
+      clearPendingBooking();
+      setCheckoutError(error instanceof Error ? error.message : 'Unable to start checkout. Please try again.');
+      setLoading(false);
+    }
   }
 
   const stepLabels = ['Service', 'Property', 'Contact & Schedule'];
@@ -668,6 +710,9 @@ export default function BookPage() {
                       )}
                     </button>
                   </div>
+                  {checkoutError && (
+                    <p className="mt-3 text-right text-xs font-medium text-destructive">{checkoutError}</p>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
