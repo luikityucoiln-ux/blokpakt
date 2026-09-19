@@ -1,72 +1,16 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Link } from 'react-router';
+import { Menu, X } from 'lucide-react';
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [demoOpen, setDemoOpen] = useState(false);
-  const location = useLocation();
-
   const navLinks = [
     { label: 'How It Works', href: '/#how-it-works' },
-    { label: 'Services', href: '/#services' },
-    { label: 'FAQ', href: '/faq' },
-    { label: 'Track Job', href: '/track' },
-    { label: 'Join as Provider', href: '/join' },
-  ];
-
-  // Demo portal links — all prototype pages
-  const demoLinks = [
-    { label: '🏠 Homepage', href: '/' },
-    { label: '📋 Book a Service', href: '/book' },
-    { label: '✅ Booking Confirmed', href: '/checkout/success?session_id=demo_session_blokpakt' },
-    { label: '📍 Track My Job', href: '/track' },
-    { label: '🔧 Join as Provider', href: '/join' },
-    { label: '📱 Provider Field App', href: '/field' },
-    { label: '⚙️ Admin Dashboard', href: '/admin' },
-    { label: '❓ FAQs', href: '/faq' },
+    { label: 'Check Eligibility', href: '/#eligibility' },
   ];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-sm">
-      {/* Demo navigation bar */}
-      <div className="bg-primary/5 border-b border-primary/10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-8">
-            <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-              Interactive prototype
-            </span>
-            <div className="relative">
-              <button
-                onClick={() => setDemoOpen(!demoOpen)}
-                className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors py-1"
-              >
-                Jump to page <ChevronDown size={12} className={`transition-transform ${demoOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {demoOpen && (
-                <div className="absolute right-0 top-full mt-1 w-56 rounded-xl border border-border bg-card shadow-xl z-50 py-1.5 overflow-hidden">
-                  {demoLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      to={link.href}
-                      onClick={() => setDemoOpen(false)}
-                      className={`block px-4 py-2 text-xs font-medium transition-colors ${
-                        location.pathname === link.href.split('?')[0]
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -104,7 +48,7 @@ export default function Header() {
           {/* CTA */}
           <div className="hidden md:flex items-center gap-3">
             <Link
-              to="/book"
+              to="/#eligibility"
               className="inline-flex items-center rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-accent/90 transition-colors"
             >
               Book Now
@@ -146,21 +90,8 @@ export default function Header() {
               </a>
             )
           )}
-          <div className="pt-2 border-t border-border mt-2 space-y-1">
-            <p className="text-xs font-semibold text-muted-foreground px-0 py-1">Demo pages</p>
-            {demoLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className="block text-xs font-medium text-foreground/60 hover:text-foreground py-1.5"
-                onClick={() => setMobileOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
           <Link
-            to="/book"
+            to="/#eligibility"
             className="block w-full text-center rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white mt-3"
             onClick={() => setMobileOpen(false)}
           >

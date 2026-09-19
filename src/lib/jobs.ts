@@ -21,6 +21,9 @@ export interface Job {
   customerEmail: string | null;
   customerPhone: string | null;
   payout: number;
+  scheduledDate: string | null;
+  timeWindow: 'morning' | 'afternoon' | 'flexible' | null;
+  flexibleSlot: boolean;
   estimatedDuration: string;
   beforePhoto: string | null;
   afterPhoto: string | null;
@@ -50,6 +53,9 @@ interface JobRow {
   customer_email: string | null;
   customer_phone: string | null;
   payout_cents: number;
+  scheduled_date: string | null;
+  time_window: 'morning' | 'afternoon' | 'flexible' | null;
+  flexible_slot: boolean;
   estimated_duration: string;
   before_photo: string | null;
   after_photo: string | null;
@@ -61,7 +67,7 @@ interface JobRow {
 }
 
 const JOB_COLUMNS =
-  'id, code, batch_code, position, status, service, service_icon, address, city, zip, gate_code, property_notes, scheduled_window, provider_name, customer_name, customer_email, customer_phone, payout_cents, estimated_duration, before_photo, after_photo, arrived_at, completed_at, payment_intent_id, checkout_session_id, created_at';
+  'id, code, batch_code, position, status, service, service_icon, address, city, zip, gate_code, property_notes, scheduled_window, provider_name, customer_name, customer_email, customer_phone, payout_cents, scheduled_date, time_window, flexible_slot, estimated_duration, before_photo, after_photo, arrived_at, completed_at, payment_intent_id, checkout_session_id, created_at';
 
 function fromRow(row: JobRow): Job {
   return {
@@ -83,6 +89,9 @@ function fromRow(row: JobRow): Job {
     customerEmail: row.customer_email,
     customerPhone: row.customer_phone,
     payout: row.payout_cents / 100,
+    scheduledDate: row.scheduled_date,
+    timeWindow: row.time_window,
+    flexibleSlot: row.flexible_slot,
     estimatedDuration: row.estimated_duration,
     beforePhoto: row.before_photo,
     afterPhoto: row.after_photo,
@@ -110,6 +119,9 @@ export interface CreateJobInput {
   customerEmail: string | null;
   customerPhone: string | null;
   payoutCents: number;
+  scheduledDate: string | null;
+  timeWindow: 'morning' | 'afternoon' | 'flexible' | null;
+  flexibleSlot: boolean;
   paymentIntentId: string | null;
   checkoutSessionId: string | null;
 }
@@ -134,6 +146,9 @@ export async function createJob(input: CreateJobInput): Promise<Job> {
       customer_email: input.customerEmail,
       customer_phone: input.customerPhone,
       payout_cents: input.payoutCents,
+      scheduled_date: input.scheduledDate,
+      time_window: input.timeWindow,
+      flexible_slot: input.flexibleSlot,
       payment_intent_id: input.paymentIntentId,
       checkout_session_id: input.checkoutSessionId,
     })
