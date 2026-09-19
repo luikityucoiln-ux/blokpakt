@@ -109,6 +109,7 @@ export interface CreateJobInput {
   customerName: string;
   customerEmail: string | null;
   customerPhone: string | null;
+  providerName: string;
   payoutCents: number;
   paymentIntentId: string | null;
   checkoutSessionId: string | null;
@@ -133,6 +134,7 @@ export async function createJob(input: CreateJobInput): Promise<Job> {
       customer_name: input.customerName,
       customer_email: input.customerEmail,
       customer_phone: input.customerPhone,
+      provider_name: input.providerName,
       payout_cents: input.payoutCents,
       payment_intent_id: input.paymentIntentId,
       checkout_session_id: input.checkoutSessionId,

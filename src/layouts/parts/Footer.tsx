@@ -21,7 +21,7 @@ export default function Footer() {
             <ul className="space-y-2">
               {['Lawn Care', 'Gutter Cleaning', 'Pressure Washing', 'Snow Removal'].map((s) => (
                 <li key={s}>
-                  <a href="#services" className="text-sm text-white/70 hover:text-white transition-colors">{s}</a>
+                  <a href="/book" className="text-sm text-white/70 hover:text-white transition-colors">{s}</a>
                 </li>
               ))}
             </ul>

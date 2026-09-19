@@ -81,8 +81,15 @@ const SERVICES = [
   },
 ];
 
+const PROVIDERS = [
+  { id: 'marcus-t', name: 'Marcus T.', services: ['lawn', 'gutter', 'pressure', 'snow'] },
+  { id: 'devon-r', name: 'Devon R.', services: ['lawn', 'gutter', 'pressure', 'snow'] },
+  { id: 'priya-s', name: 'Priya S.', services: ['lawn', 'gutter', 'pressure', 'snow'] },
+];
+
 interface BookingForm {
   serviceId: string;
+  providerId: string;
   address: string;
   city: string;
   state: string;
@@ -100,6 +107,7 @@ interface BookingForm {
 // Demo defaults — pre-fill so the prototype flows without typing
 const DEMO_DEFAULTS: BookingForm = {
   serviceId: 'lawn',
+  providerId: '',
   address: '247 Oak Street',
   city: 'Springfield',
   state: 'IL',
@@ -164,6 +172,12 @@ function parseAddress(value: string): Pick<BookingForm, 'address' | 'city' | 'st
   return { address: value, city: '', state: '', zip: '' };
 }
 
+function getInvitedProviderId(): string | null {
+  if (typeof window === 'undefined') return null;
+  const providerId = new window.URLSearchParams(window.location.search).get('provider');
+  return PROVIDERS.some((provider) => provider.id === providerId) ? providerId : null;
+}
+
 function getInitialForm(): BookingForm {
   if (typeof window === 'undefined') return DEMO_DEFAULTS;
   const params = new window.URLSearchParams(window.location.search);
@@ -171,11 +185,13 @@ function getInitialForm(): BookingForm {
   const batchCode = params.get('batch');
   const serviceId = params.get('service');
   const selectedService = SERVICES.some((service) => service.id === serviceId) ? serviceId : null;
+  const invitedProviderId = getInvitedProviderId();
   return {
     ...DEMO_DEFAULTS,
     ...(address ? parseAddress(address) : {}),
     ...(batchCode ? { referralCode: batchCode.toUpperCase() } : {}),
     ...(selectedService ? { serviceId: selectedService } : {}),
+    ...(invitedProviderId ? { providerId: invitedProviderId } : {}),
   };
 }
 
@@ -204,6 +220,11 @@ export default function BookPage() {
   const locationRef = useRef<{ lat: number; lng: number } | null>(null);
 
   const selectedService = SERVICES.find((s) => s.id === form.serviceId) ?? SERVICES[0];
+  const invitedProviderId = getInvitedProviderId();
+  const availableProviders = PROVIDERS
+    .filter((provider) => provider.services.includes(form.serviceId))
+    .sort((first, second) => Number(second.id === invitedProviderId) - Number(first.id === invitedProviderId));
+  const selectedProvider = availableProviders.find((provider) => provider.id === form.providerId);
   const selectedWindow = SERVICE_WINDOW_OPTIONS.find((option) => form.preferredSlot.endsWith(` · ${option.window}`));
   const confirmedWindow = SERVICE_WINDOW_OPTIONS.find((option) => option.id === confirmedSchedule?.windowId);
   const flexibleDiscountCents = confirmedWindow?.id === 'flexible' ? FLEXIBLE_DISCOUNT_CENTS : 0;
@@ -337,6 +358,7 @@ export default function BookPage() {
       customerEmail: form.email,
       customerPhone: form.phone,
       batchCode: form.referralCode ? form.referralCode.toUpperCase() : null,
+      providerName: selectedProvider?.name ?? 'Provider pending confirmation',
     });
 
     try {
@@ -352,6 +374,7 @@ export default function BookPage() {
             scheduledDate: confirmedSchedule?.date ?? '',
             timeWindow: confirmedSchedule?.windowId ?? '',
             flexibleSlot: String(confirmedWindow?.id === 'flexible'),
+            preferredProvider: selectedProvider?.name ?? '',
             address: `${form.address}, ${form.city}, ${form.state} ${form.zip}`,
           },
         }),
@@ -520,10 +543,51 @@ export default function BookPage() {
                     ))}
                   </div>
 
+                  <div className="mt-8 border-t border-border pt-7">
+                    <div className="mb-4">
+                      <h3 className="text-base font-bold text-foreground">Choose your provider</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">Select the provider you prefer for this service.</p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {availableProviders.map((provider) => {
+                        const selected = form.providerId === provider.id;
+                        const invited = provider.id === invitedProviderId;
+                        return (
+                          <button
+                            key={provider.id}
+                            type="button"
+                            onClick={() => update('providerId', provider.id)}
+                            className={`rounded-xl border-2 p-4 text-left transition-colors ${
+                              selected
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border bg-background hover:border-primary/40'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                                {provider.name.split(' ').map((part) => part[0]).join('')}
+                              </span>
+                              <span>
+                                <span className="block text-sm font-bold text-foreground">{provider.name}</span>
+                                <span className="mt-0.5 block text-xs text-muted-foreground">Available for {selectedService.label.toLowerCase()}</span>
+                                {invited && (
+                                  <span className="mt-2 inline-flex rounded-full bg-accent/10 px-2 py-0.5 text-xs font-bold text-accent">
+                                    Invited you
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div className="mt-8 flex justify-end">
                     <button
                       onClick={() => setStep(2)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-bold text-white hover:bg-accent/90 transition-colors"
+                      disabled={!selectedProvider}
+                      className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Next: Property details
                       <ArrowRight size={16} />

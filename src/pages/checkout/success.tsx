@@ -54,6 +54,7 @@ async function persistJobFromBooking(paymentIntentId: string | null, checkoutSes
       customerName: pending.customerName,
       customerEmail: pending.customerEmail || null,
       customerPhone: pending.customerPhone || null,
+      providerName: pending.providerName,
       payoutCents: pending.payoutCents,
       paymentIntentId,
       checkoutSessionId,

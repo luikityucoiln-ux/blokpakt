@@ -22,6 +22,7 @@ export interface PendingBooking {
   customerEmail: string;
   customerPhone: string;
   batchCode: string | null;
+  providerName: string;
 }
 
 export function savePendingBooking(booking: PendingBooking): void {

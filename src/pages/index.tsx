@@ -2,7 +2,7 @@ import { useRef, useState, type ReactNode } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion } from 'motion/react';
 import { Link, useNavigate } from 'react-router';
-import { Shield, Camera, Clock, Star, MapPin, Award, ChevronRight, ArrowRight, LocateFixed } from 'lucide-react';
+import { Shield, Camera, Clock, ChevronRight, ArrowRight, LocateFixed } from 'lucide-react';
 import { home } from 'virtual:content';
 
 
@@ -40,8 +40,13 @@ const VALUE_PROPS = [
   },
 ];
 
+const PROVIDER_INVITE_CODES: Record<string, string> = {
+  'MARCUS-T': 'marcus-t',
+  'DEVON-R': 'devon-r',
+  'PRIYA-S': 'priya-s',
+};
+
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState(0);
   const [streetAddress, setStreetAddress] = useState('');
   const [locationMessage, setLocationMessage] = useState('');
   const addressInputRef = useRef<HTMLInputElement>(null);
@@ -54,6 +59,11 @@ export default function HomePage() {
 
   function handleStreetCheck() {
     const address = streetAddress.trim();
+    const providerId = PROVIDER_INVITE_CODES[address.toUpperCase()];
+    if (providerId) {
+      navigate(`/book?provider=${encodeURIComponent(providerId)}`);
+      return;
+    }
     if (/^[A-Z0-9]+(?:-[A-Z0-9]+)+$/i.test(address)) {
       navigate(`/batch/${encodeURIComponent(address.toUpperCase())}`);
       return;
@@ -184,7 +194,7 @@ export default function HomePage() {
                         type="text"
                         value={streetAddress}
                         onChange={(event) => setStreetAddress(event.target.value)}
-                        placeholder="Enter your address or batch code..."
+                        placeholder="Enter your address, batch, or invite code..."
                         className="w-full rounded-xl border border-border bg-card px-4 py-3.5 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 shadow-sm"
                       />
                       <button
@@ -214,7 +224,7 @@ export default function HomePage() {
                     onClick={() => addressInputRef.current?.focus()}
                     className="mt-1 text-left text-xs font-medium text-primary underline-offset-2 hover:underline focus:outline-none focus:ring-2 focus:ring-primary/30"
                   >
-                    Have a neighbor's batch code? Enter it directly above.
+                    Have a batch or provider invite code? Enter it directly above.
                   </button>
                 </motion.div>
               </motion.div>
@@ -332,158 +342,6 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-          </div>
-        </section>
-
-        {/* ── SERVICE SWITCHER ─────────────────────────────────── */}
-        <section id="services" className="py-20 lg:py-28 bg-background">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <motion.div
-              variants={stagger}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              className="mb-10"
-            >
-              <motion.p variants={fadeUp} className="text-sm font-semibold text-accent uppercase tracking-wide mb-2">
-                Services
-              </motion.p>
-              <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-foreground">
-                Pick your service. We handle the rest.
-              </motion.h2>
-            </motion.div>
-
-            {/* Tab row */}
-            <div className="flex flex-wrap gap-2 mb-10" role="tablist" aria-label="Service categories">
-              {home.services.tabs.map((tab, i) => (
-                <button
-                  key={tab.id}
-                  role="tab"
-                  aria-selected={activeTab === i}
-                  onClick={() => setActiveTab(i)}
-                  className={`rounded-lg px-5 py-2.5 text-sm font-semibold transition-all ${
-                    activeTab === i
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'bg-muted text-foreground/60 hover:bg-muted/80 hover:text-foreground'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Tab content — all tabs rendered, visibility driven by activeTab state */}
-            {home.services.tabs.map((tab, tabIdx) => (
-              <div
-                key={tab.id}
-                className={`grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 ${activeTab === tabIdx ? 'block' : 'hidden'}`}
-              >
-                {/* Tiered price visualizer */}
-                <div className="rounded-2xl border border-border bg-card p-8">
-                  <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-6">
-                    {tab.label} — Pricing
-                  </p>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between rounded-xl border border-border bg-muted/40 px-5 py-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium mb-0.5">Solo Rate</p>
-                        <p className="text-sm text-foreground/70">Just you on the route</p>
-                      </div>
-                      <p className="text-2xl font-extrabold text-foreground">${tab.soloRate}</p>
-                    </div>
-                    <div className="flex items-center justify-between rounded-xl border-2 border-primary bg-primary/5 px-5 py-4">
-                      <div>
-                        <p className="text-xs text-primary font-semibold mb-0.5">Street Batch Rate</p>
-                        <p className="text-sm text-foreground/70">2+ neighbors on your block</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-extrabold text-primary">${tab.batchRate}</p>
-                        <span className="inline-block mt-1 rounded-full bg-accent px-2.5 py-0.5 text-xs font-bold text-white">
-                          Save ${tab.savings}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-6 pt-5 border-t border-border">
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Prices unlock automatically when 2+ homes on your street book the same service window. No coupon codes needed.
-                    </p>
-                    {(() => {
-                      const detail = home.services.details.find((item) => item.id === tab.id);
-                      return detail ? (
-                        <div className="mt-6 grid gap-5 border-t border-border pt-5 text-sm sm:grid-cols-2">
-                          <div>
-                            <p className="font-semibold text-foreground">What is included</p>
-                            <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
-                              {detail.included.map((item) => <li key={item}>{item}</li>)}
-                            </ul>
-                          </div>
-                          <div>
-                            <p className="font-semibold text-foreground">Usually not included</p>
-                            <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
-                              {detail.notIncluded.map((item) => <li key={item}>{item}</li>)}
-                            </ul>
-                          </div>
-                          <p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">Typical time:</span> {detail.duration}</p>
-                          <div className="text-xs text-muted-foreground"><p className="font-semibold text-foreground">Common add-ons</p>{detail.addonExamples.map((item) => <p key={item} className="mt-1">{item}</p>)}</div>
-                        </div>
-                      ) : null;
-                    })()}
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/book?service=${encodeURIComponent(tab.id)}`)}
-                      className="mt-6 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-accent/90"
-                    >
-                      Choose {tab.label}
-                      <ArrowRight size={16} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Contractor cards */}
-                <div className="space-y-3">
-                  <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
-                    Available contractors near you
-                  </p>
-                  {tab.contractors.map((contractor) => (
-                    <motion.div
-                      key={contractor.id}
-                      whileHover={{ y: -2 }}
-                      transition={{ duration: 0.15 }}
-                      onClick={() => navigate(`/book?service=${encodeURIComponent(tab.id)}`)}
-                      className="flex items-center gap-4 rounded-xl border border-border bg-card px-5 py-4 cursor-pointer hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex-shrink-0 w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                        {contractor.name.split(' ').map((n: string) => n[0]).join('')}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-semibold text-foreground text-sm">{contractor.name}</p>
-                          {contractor.blockCaptain && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-bold text-accent">
-                              <Award size={10} />
-                              Block Captain
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 mt-0.5">
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Star size={11} className="fill-accent text-accent" />
-                            <span className="font-medium text-foreground">{contractor.rating}</span>
-                            <span>({contractor.jobs} jobs)</span>
-                          </span>
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <MapPin size={11} />
-                            {contractor.proximity}
-                          </span>
-                        </div>
-                      </div>
-                      <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            ))}
           </div>
         </section>
 
