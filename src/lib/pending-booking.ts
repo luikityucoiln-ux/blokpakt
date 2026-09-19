@@ -22,9 +22,6 @@ export interface PendingBooking {
   customerEmail: string;
   customerPhone: string;
   batchCode: string | null;
-  scheduledDate: string;
-  timeWindow: 'morning' | 'afternoon' | 'flexible';
-  flexibleSlot: boolean;
 }
 
 export function savePendingBooking(booking: PendingBooking): void {

@@ -1,70 +1,93 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
-import { CircleCheck, Home, Mail, MapPin, ShieldCheck, Sparkles, UsersRound } from 'lucide-react';
+import { motion } from 'motion/react';
+import { Link, useNavigate } from 'react-router';
+import { Shield, Camera, Clock, Star, MapPin, Award, ChevronRight, ArrowRight, LocateFixed } from 'lucide-react';
+import { home } from 'virtual:content';
 
-type SubmissionState = 'idle' | 'checking' | 'success' | 'error';
 
-interface SmokeTestLead {
-  address: string;
-  email: string;
-  postcode: string | null;
-  source: 'smoke-test-landing-page';
-  submittedAt: string;
-}
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
+};
 
-function getPostcode(address: string): string | null {
-  return address.match(/\b[A-Z]\d[A-Z][ -]?\d[A-Z]\d\b|\b\d{5}(?:-\d{4})?\b/i)?.[0]?.toUpperCase().replace(/\s+/g, ' ') ?? null;
-}
+const stagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12 } },
+};
 
-async function submitSmokeTestLead(lead: SmokeTestLead): Promise<void> {
-  const endpoint = import.meta.env.VITE_SMOKE_TEST_LEAD_ENDPOINT;
-  if (!endpoint) return;
+const trustIcons: Record<string, ReactNode> = {
+  shield: <Shield size={18} />,
+  camera: <Camera size={18} />,
+  clock: <Clock size={18} />,
+};
 
-  const response = await window.fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(lead),
-  });
-  if (!response.ok) throw new Error('Lead capture request failed');
-}
+const VALUE_PROPS = [
+  {
+    icon: '🚚',
+    title: 'Shared Travel Savings',
+    description: 'Vendors serve the same street in a single stop. Saved travel time and setup fees pass directly back to you as your 10% discount.',
+  },
+  {
+    icon: '🤝',
+    title: 'Zero Hassle',
+    description: 'Just share your route link with neighbors. Blokpakt automatically manages individual payments and unlocks group rates.',
+  },
+  {
+    icon: '🛡️',
+    title: 'Vetted & Guaranteed',
+    description: '100% money-back guarantee if your contractor no-shows. Every contractor is fully vetted and posts a security deposit before taking local routes.',
+  },
+];
 
 export default function HomePage() {
-  const [address, setAddress] = useState('');
-  const [email, setEmail] = useState('');
-  const [submissionState, setSubmissionState] = useState<SubmissionState>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
-  const title = 'Blokpakt | Save together on home maintenance';
-  const description = 'Unlock 20% off gutter cleaning and pressure washing when three homes on your street book together.';
+  const [activeTab, setActiveTab] = useState(0);
+  const [streetAddress, setStreetAddress] = useState('');
+  const [locationMessage, setLocationMessage] = useState('');
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    const trimmedAddress = address.trim();
-    const trimmedEmail = email.trim();
+  const site = 'https://blokpakt.com';
+  const title = 'Blokpakt — Your Whole Block Saves Together';
+  const description =
+    'Blokpakt batches home services by street. More neighbors booking = lower prices for everyone and higher earnings for contractors. Lawn care, gutters, pressure washing & snow removal.';
 
-    if (!trimmedAddress || !trimmedEmail) {
-      setErrorMessage('Enter your street address and email to check your street.');
+  function handleStreetCheck() {
+    const address = streetAddress.trim();
+    if (/^[A-Z0-9]+(?:-[A-Z0-9]+)+$/i.test(address)) {
+      navigate(`/batch/${encodeURIComponent(address.toUpperCase())}`);
+      return;
+    }
+    navigate(address ? `/book?address=${encodeURIComponent(address)}` : '/book');
+  }
+
+  function handleLocateMe() {
+    if (!navigator.geolocation) {
+      setLocationMessage('Location is not available in this browser.');
       return;
     }
 
-    setErrorMessage('');
-    setSubmissionState('checking');
-    try {
-      const lead: SmokeTestLead = {
-        address: trimmedAddress,
-        email: trimmedEmail,
-        postcode: getPostcode(trimmedAddress),
-        source: 'smoke-test-landing-page',
-        submittedAt: new Date().toISOString(),
-      };
-      await Promise.all([
-        submitSmokeTestLead(lead),
-        new Promise<void>((resolve) => window.setTimeout(resolve, 1500)),
-      ]);
-      setSubmissionState('success');
-    } catch {
-      setSubmissionState('error');
-      setErrorMessage('We could not secure your address. Please try again.');
-    }
+    setLocationMessage('Finding your street...');
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const response = await window.fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.latitude}&lon=${coords.longitude}`,
+          );
+          if (!response.ok) throw new Error('Reverse geocoding failed');
+          const data = await response.json() as { address?: { house_number?: string; road?: string } };
+          const address = data.address;
+          const street = [address?.house_number, address?.road].filter(Boolean).join(' ');
+          if (!street) throw new Error('No street found');
+          setStreetAddress(street);
+          setLocationMessage('Location found. Please confirm the address before continuing.');
+        } catch {
+          setLocationMessage('We could not find your street. Please enter it manually.');
+        }
+      },
+      () => setLocationMessage('We could not access your location. Please enter it manually.'),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
+    );
   }
 
   return (
@@ -72,99 +95,637 @@ export default function HomePage() {
       <Helmet>
         <title>{title}</title>
         <meta name="description" content={description} />
-        <link rel="canonical" href="https://blokpakt.com/" />
+        <link rel="canonical" href={site} />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://blokpakt.com/" />
+        <meta property="og:url" content={site} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={title} />
-        <meta name="twitter:description" content={description} />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@graph': [
+            { '@type': 'WebSite', '@id': `${site}/#website`, name: 'Blokpakt', url: `${site}/` },
+            {
+              '@type': 'LocalBusiness',
+              '@id': `${site}/#organization`,
+              name: 'Blokpakt',
+              url: `${site}/`,
+              description,
+            },
+            {
+              '@type': 'WebPage',
+              '@id': `${site}/#webpage`,
+              url: `${site}/`,
+              isPartOf: { '@id': `${site}/#website` },
+              about: { '@id': `${site}/#organization` },
+              datePublished: '2026-09-01',
+              dateModified: '2026-09-01',
+            },
+          ],
+        })}</script>
       </Helmet>
 
       <main>
-        <section className="overflow-hidden border-b border-border bg-background">
-          <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-20">
-            <div className="max-w-2xl">
-              <p className="inline-flex items-center gap-2 border border-primary/15 bg-primary/5 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-primary">
-                <Sparkles size={15} aria-hidden="true" />
-                Neighbourhood group rates
-              </p>
-              <h1 className="mt-6 text-4xl font-extrabold leading-[1.08] text-foreground sm:text-5xl lg:text-6xl">Stop Overpaying for Home Maintenance.</h1>
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
-                Save 20% on gutter cleaning and pressure washing when 3 houses on your street book together.
-              </p>
+        {/* ── HERO ─────────────────────────────────────────────── */}
+        <section className="relative overflow-hidden bg-background pt-16 pb-20 lg:pt-24 lg:pb-28">
+          {/* Street map SVG texture */}
+          <svg
+            className="absolute inset-0 w-full h-full opacity-[0.035] pointer-events-none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <defs>
+              <pattern id="streets" width="80" height="80" patternUnits="userSpaceOnUse">
+                <rect x="10" y="10" width="25" height="25" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                <rect x="45" y="10" width="25" height="25" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                <rect x="10" y="45" width="25" height="25" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                <rect x="45" y="45" width="25" height="25" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#streets)" />
+          </svg>
 
-              <div id="eligibility" className="mt-9 max-w-xl border border-border bg-card p-5 shadow-lg sm:p-6">
-                {submissionState === 'success' ? (
-                  <div className="py-3" role="status" aria-live="polite">
-                    <CircleCheck className="text-primary" size={42} aria-hidden="true" />
-                    <h2 className="mt-4 text-2xl font-extrabold text-foreground">Address secured!</h2>
-                    <p className="mt-3 leading-relaxed text-muted-foreground">You are the first on your block. We will email you the moment two more neighbors join so we can unlock your 20% discount.</p>
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubmit} noValidate>
-                    <div className="flex items-center gap-2 text-sm font-bold text-foreground">
-                      <ShieldCheck className="text-primary" size={19} aria-hidden="true" />
-                      Check your street's availability
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+              {/* Left: copy + search */}
+              <motion.div
+                variants={stagger}
+                initial="hidden"
+                animate="visible"
+                className="max-w-xl"
+              >
+                <motion.div variants={fadeUp}>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary mb-6">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
+                    Hyper-local home services
+                  </span>
+                </motion.div>
+
+                <motion.h1
+                  variants={fadeUp}
+                  className="text-4xl sm:text-5xl lg:text-[3.25rem] font-extrabold leading-[1.1] tracking-tight text-foreground mb-5"
+                >
+                  {home.hero.headline}
+                </motion.h1>
+
+                <motion.p
+                  variants={fadeUp}
+                  className="text-lg text-muted-foreground leading-relaxed mb-8"
+                >
+                  {home.hero.subheadline}
+                </motion.p>
+
+                {/* Search bar */}
+                <motion.div variants={fadeUp} id="check-street">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                      <input
+                        ref={addressInputRef}
+                        type="text"
+                        value={streetAddress}
+                        onChange={(event) => setStreetAddress(event.target.value)}
+                        placeholder="Enter your address or batch code..."
+                        className="w-full rounded-xl border border-border bg-card px-4 py-3.5 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 shadow-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleLocateMe}
+                        aria-label="Use current location"
+                        title="Use current location"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      >
+                        <LocateFixed size={18} />
+                      </button>
                     </div>
-                    <p className="mt-1 text-sm text-muted-foreground">No payment details. No obligation.</p>
-                    <label className="mt-5 block text-sm font-semibold text-foreground" htmlFor="street-address">Street address</label>
-                    <div className="relative mt-2">
-                      <MapPin className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary" size={19} aria-hidden="true" />
-                      <input id="street-address" value={address} onChange={(event) => setAddress(event.target.value)} autoComplete="street-address" placeholder="123 Maple Avenue, Toronto, ON" required className="h-12 w-full border border-input bg-background pl-10 pr-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20" />
-                    </div>
-                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Your address is used to match your street and postcode service area.</p>
-                    <label className="mt-5 block text-sm font-semibold text-foreground" htmlFor="email">Email address</label>
-                    <div className="relative mt-2">
-                      <Mail className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary" size={19} aria-hidden="true" />
-                      <input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" placeholder="you@example.com" required className="h-12 w-full border border-input bg-background pl-10 pr-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20" />
-                    </div>
-                    {errorMessage && <p className="mt-3 text-sm font-medium text-destructive" role="alert">{errorMessage}</p>}
-                    <button type="submit" disabled={submissionState === 'checking'} className="mt-6 flex h-12 w-full items-center justify-center gap-2 bg-accent px-5 text-sm font-bold text-white transition hover:bg-accent/90 disabled:cursor-wait disabled:opacity-80">
-                      {submissionState === 'checking' && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />}
-                      {submissionState === 'checking' ? 'Checking neighborhood density...' : "Check My Street's Eligibility"}
+                    <button
+                      onClick={handleStreetCheck}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3.5 text-sm font-bold text-white shadow-md hover:bg-accent/90 transition-colors whitespace-nowrap"
+                    >
+                      {home.hero.searchCta}
+                      <ArrowRight size={16} />
                     </button>
-                  </form>
-                )}
-              </div>
-            </div>
-
-            <div className="relative mx-auto w-full max-w-lg" aria-hidden="true">
-              <div className="absolute inset-x-0 bottom-0 h-4/5 border border-primary/10 bg-primary/5" />
-              <div className="relative grid grid-cols-3 gap-3 p-5 sm:gap-5 sm:p-9">
-                {[true, false, false].map((joined, index) => (
-                  <div key={index} className="border border-border bg-card p-3 shadow-sm sm:p-4">
-                    <Home className={joined ? 'text-primary' : 'text-muted-foreground'} size={31} />
-                    <div className="mt-6 h-2 w-3/4 bg-muted" />
-                    <div className="mt-2 h-2 w-1/2 bg-muted" />
-                    <div className={`mt-5 h-2 ${joined ? 'bg-accent' : 'bg-border'}`} />
                   </div>
-                ))}
-              </div>
-              <div className="relative mx-5 mb-5 border border-primary bg-primary p-5 text-primary-foreground shadow-xl sm:mx-9 sm:mb-9">
-                <div className="flex items-start gap-3">
-                  <UsersRound size={24} aria-hidden="true" />
-                  <div><p className="text-sm font-bold">One home is in</p><p className="mt-1 text-sm text-primary-foreground/75">Two more neighbours unlock the street rate.</p></div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    No account needed to check availability. Free to browse.
+                  </p>
+                  {locationMessage && <p className="mt-1 text-xs text-muted-foreground" role="status">{locationMessage}</p>}
+                  <button
+                    type="button"
+                    onClick={() => addressInputRef.current?.focus()}
+                    className="mt-1 text-left text-xs font-medium text-primary underline-offset-2 hover:underline focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    Have a neighbor's batch code? Enter it directly above.
+                  </button>
+                </motion.div>
+              </motion.div>
+
+              {/* Right: street progress mockup — inline rendered for content editability */}
+              <motion.div
+                initial={{ opacity: 0, x: 32 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, ease: 'easeOut' as const, delay: 0.2 }}
+                className="flex justify-center lg:justify-end"
+              >
+                <div className="relative w-full max-w-md mx-auto">
+                  <div className="rounded-2xl bg-card border border-border shadow-2xl p-6 relative overflow-hidden">
+                    <svg className="absolute inset-0 w-full h-full opacity-[0.03] pointer-events-none" aria-hidden="true">
+                      <defs>
+                        <pattern id="mockup-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+                          <path d="M 24 0 L 0 0 0 24" fill="none" stroke="currentColor" strokeWidth="1" />
+                        </pattern>
+                      </defs>
+                      <rect width="100%" height="100%" fill="url(#mockup-grid)" />
+                    </svg>
+                    <div className="flex items-center justify-between mb-5">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Active Route</p>
+                        <h3 className="text-lg font-bold text-foreground mt-0.5">{home.hero.mockup.streetName}</h3>
+                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-3 py-1 text-sm font-bold text-accent">
+                        {home.hero.mockup.discount} off
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mb-3">
+                      {Array.from({ length: home.hero.mockup.goal + 1 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className={`flex items-center justify-center w-10 h-10 rounded-lg border-2 transition-all ${
+                            i < home.hero.mockup.booked
+                              ? 'bg-primary border-primary text-primary-foreground'
+                              : i === home.hero.mockup.booked
+                              ? 'bg-accent/10 border-accent border-dashed text-accent'
+                              : 'bg-muted border-border text-muted-foreground'
+                          }`}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden mb-3">
+                      <motion.div
+                        className="h-full rounded-full bg-primary"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(home.hero.mockup.booked / home.hero.mockup.goal) * 100}%` }}
+                        transition={{ duration: 1.2, ease: 'easeOut' as const, delay: 0.4 }}
+                      />
+                    </div>
+                    <p className="text-sm text-foreground/70">
+                      <span className="font-semibold text-foreground">Booked: {home.hero.mockup.booked} home</span>
+                      {' '}|{' '}
+                      <span className="text-accent font-medium">Goal: {home.hero.mockup.goal}+ homes to {home.hero.mockup.label}</span>
+                    </p>
+                    <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                        <span className="text-xs text-muted-foreground">Waiting for neighbors</span>
+                      </div>
+                      <button
+                        onClick={() => navigate('/book')}
+                        className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                      >
+                        Share street link →
+                      </button>
+                    </div>
+                  </div>
+                  <motion.div
+                    className="absolute -top-3 -right-3 bg-accent text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 1.4, type: 'spring', stiffness: 300 }}
+                  >
+                    Unlock group rate
+                  </motion.div>
                 </div>
-                <div className="mt-5 flex gap-2">{[true, false, false].map((filled, index) => <span key={index} className={`h-2 flex-1 ${filled ? 'bg-accent' : 'bg-white/25'}`} />)}</div>
-              </div>
+              </motion.div>
             </div>
           </div>
         </section>
 
-        <section id="how-it-works" className="bg-muted/40 py-14 lg:py-20">
+        {/* ── VALUE PROPS ──────────────────────────────────────── */}
+        <section className="bg-muted/30 py-14 lg:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <p className="text-sm font-bold uppercase tracking-wide text-primary">Designed around your street</p>
-            <div className="mt-7 grid gap-8 md:grid-cols-3">
-              {[
-                ['1', 'Claim your address', 'Tell us where you live so we can start the local group.'],
-                ['2', 'Neighbours join', 'We notify you as your block gets closer to the discount.'],
-                ['3', 'Save 20%', 'Once three homes join, your group rate is ready to book.'],
-              ].map(([number, heading, copy]) => (
-                <article key={number} className="border-t-2 border-primary pt-4"><p className="text-sm font-bold text-accent">0{number}</p><h2 className="mt-3 text-xl font-extrabold text-foreground">{heading}</h2><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{copy}</p></article>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+              {VALUE_PROPS.map((valueProp) => (
+                <article key={valueProp.title} className="rounded-2xl border border-border bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+                  <div className="text-4xl" aria-hidden="true">{valueProp.icon}</div>
+                  <h2 className="mt-5 text-lg font-bold text-foreground">{valueProp.title}</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{valueProp.description}</p>
+                </article>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ── TRUST SIGNALS ────────────────────────────────────── */}
+        <section className="border-y border-border bg-muted/40 py-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {home.trustSignals.map((signal) => (
+                <div key={signal.id} className="flex items-start gap-3 py-2">
+                  <span className="mt-0.5 flex-shrink-0 text-primary">
+                    {trustIcons[signal.icon]}
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{signal.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{signal.detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── SERVICE SWITCHER ─────────────────────────────────── */}
+        <section id="services" className="py-20 lg:py-28 bg-background">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <motion.div
+              variants={stagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="mb-10"
+            >
+              <motion.p variants={fadeUp} className="text-sm font-semibold text-accent uppercase tracking-wide mb-2">
+                Services
+              </motion.p>
+              <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-foreground">
+                Pick your service. We handle the rest.
+              </motion.h2>
+            </motion.div>
+
+            {/* Tab row */}
+            <div className="flex flex-wrap gap-2 mb-10" role="tablist" aria-label="Service categories">
+              {home.services.tabs.map((tab, i) => (
+                <button
+                  key={tab.id}
+                  role="tab"
+                  aria-selected={activeTab === i}
+                  onClick={() => setActiveTab(i)}
+                  className={`rounded-lg px-5 py-2.5 text-sm font-semibold transition-all ${
+                    activeTab === i
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'bg-muted text-foreground/60 hover:bg-muted/80 hover:text-foreground'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab content — all tabs rendered, visibility driven by activeTab state */}
+            {home.services.tabs.map((tab, tabIdx) => (
+              <div
+                key={tab.id}
+                className={`grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 ${activeTab === tabIdx ? 'block' : 'hidden'}`}
+              >
+                {/* Tiered price visualizer */}
+                <div className="rounded-2xl border border-border bg-card p-8">
+                  <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-6">
+                    {tab.label} — Pricing
+                  </p>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between rounded-xl border border-border bg-muted/40 px-5 py-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium mb-0.5">Solo Rate</p>
+                        <p className="text-sm text-foreground/70">Just you on the route</p>
+                      </div>
+                      <p className="text-2xl font-extrabold text-foreground">${tab.soloRate}</p>
+                    </div>
+                    <div className="flex items-center justify-between rounded-xl border-2 border-primary bg-primary/5 px-5 py-4">
+                      <div>
+                        <p className="text-xs text-primary font-semibold mb-0.5">Street Batch Rate</p>
+                        <p className="text-sm text-foreground/70">2+ neighbors on your block</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-extrabold text-primary">${tab.batchRate}</p>
+                        <span className="inline-block mt-1 rounded-full bg-accent px-2.5 py-0.5 text-xs font-bold text-white">
+                          Save ${tab.savings}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-6 pt-5 border-t border-border">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Prices unlock automatically when 2+ homes on your street book the same service window. No coupon codes needed.
+                    </p>
+                    {(() => {
+                      const detail = home.services.details.find((item) => item.id === tab.id);
+                      return detail ? (
+                        <div className="mt-6 grid gap-5 border-t border-border pt-5 text-sm sm:grid-cols-2">
+                          <div>
+                            <p className="font-semibold text-foreground">What is included</p>
+                            <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
+                              {detail.included.map((item) => <li key={item}>{item}</li>)}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="font-semibold text-foreground">Usually not included</p>
+                            <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
+                              {detail.notIncluded.map((item) => <li key={item}>{item}</li>)}
+                            </ul>
+                          </div>
+                          <p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">Typical time:</span> {detail.duration}</p>
+                          <div className="text-xs text-muted-foreground"><p className="font-semibold text-foreground">Common add-ons</p>{detail.addonExamples.map((item) => <p key={item} className="mt-1">{item}</p>)}</div>
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                </div>
+
+                {/* Contractor cards */}
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
+                    Available contractors near you
+                  </p>
+                  {tab.contractors.map((contractor) => (
+                    <motion.div
+                      key={contractor.id}
+                      whileHover={{ y: -2 }}
+                      transition={{ duration: 0.15 }}
+                      onClick={() => navigate('/book')}
+                      className="flex items-center gap-4 rounded-xl border border-border bg-card px-5 py-4 cursor-pointer hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex-shrink-0 w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                        {contractor.name.split(' ').map((n: string) => n[0]).join('')}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-foreground text-sm">{contractor.name}</p>
+                          {contractor.blockCaptain && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-bold text-accent">
+                              <Award size={10} />
+                              Block Captain
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 mt-0.5">
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Star size={11} className="fill-accent text-accent" />
+                            <span className="font-medium text-foreground">{contractor.rating}</span>
+                            <span>({contractor.jobs} jobs)</span>
+                          </span>
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <MapPin size={11} />
+                            {contractor.proximity}
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── HOW IT WORKS ─────────────────────────────────────── */}
+        <section id="how-it-works" className="py-20 lg:py-28 bg-muted/30">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <motion.div
+              variants={stagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="mb-14"
+            >
+              <motion.p variants={fadeUp} className="text-sm font-semibold text-accent uppercase tracking-wide mb-2">
+                How it works
+              </motion.p>
+              <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-foreground max-w-lg">
+                Three steps. One street. Everyone saves.
+              </motion.h2>
+            </motion.div>
+
+            <motion.div
+              variants={stagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12"
+            >
+              {home.howItWorks.steps.map((step, i) => (
+                <motion.div key={step.id} variants={fadeUp} className="relative">
+                  {i < home.howItWorks.steps.length - 1 && (
+                    <div className="hidden md:block absolute top-8 left-full w-full h-px bg-border -translate-x-1/2 z-0" />
+                  )}
+                  <div className="relative z-10">
+                    <p className="text-6xl font-extrabold text-primary/10 leading-none mb-4 select-none">
+                      {step.number}
+                    </p>
+                    <h3 className="text-xl font-bold text-foreground mb-3">{step.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        <section className="bg-primary py-20 text-primary-foreground lg:py-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="max-w-2xl mb-12">
+              <motion.p variants={fadeUp} className="text-sm font-semibold uppercase tracking-wide text-accent">{home.trustAndSafety.eyebrow}</motion.p>
+              <motion.h2 variants={fadeUp} className="mt-2 text-3xl font-extrabold sm:text-4xl">{home.trustAndSafety.headline}</motion.h2>
+              <motion.p variants={fadeUp} className="mt-4 text-base leading-relaxed text-primary-foreground/70">{home.trustAndSafety.intro}</motion.p>
+            </motion.div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {home.trustAndSafety.items.map((item) => (
+                <div key={item.id} className="border-l border-white/20 pl-5">
+                  <h3 className="font-bold">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-primary-foreground/65">{item.description}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-10 border-t border-white/15 pt-6">
+              <h3 className="font-bold">{home.trustAndSafety.reporting.title}</h3>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-primary-foreground/65">{home.trustAndSafety.reporting.description}</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-muted/30 py-20 lg:py-28">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-10">
+              <p className="text-sm font-semibold uppercase tracking-wide text-accent">{home.bookingFaq.eyebrow}</p>
+              <h2 className="mt-2 text-3xl font-extrabold text-foreground sm:text-4xl">{home.bookingFaq.headline}</h2>
+            </div>
+            <div className="divide-y divide-border border-y border-border">
+              {home.bookingFaq.items.slice(0, 3).map((item) => (
+                <details key={item.id} className="group py-5">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 font-bold text-foreground">
+                    {item.question}
+                    <ChevronRight size={18} className="shrink-0 text-accent transition-transform group-open:rotate-90" />
+                  </summary>
+                  <p className="mt-3 max-w-3xl pr-8 text-sm leading-relaxed text-muted-foreground">{item.answer}</p>
+                </details>
+              ))}
+            </div>
+            <div className="mt-6">
+              <Link to="/faq" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-accent">
+                View all FAQs <ChevronRight size={16} />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ── SOCIAL PROOF / STATS ─────────────────────────────── */}
+        <section id="pricing" className="py-20 lg:py-28 bg-background">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <motion.div
+              variants={stagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="mb-12"
+            >
+              <motion.p variants={fadeUp} className="text-sm font-semibold text-accent uppercase tracking-wide mb-2">
+                By the numbers
+              </motion.p>
+              <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-foreground">
+                Built for both sides of the street.
+              </motion.h2>
+            </motion.div>
+
+            {/* Bento grid */}
+            <motion.div
+              variants={stagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="grid grid-cols-1 md:grid-cols-3 gap-5"
+            >
+              {/* Large card — contractor earnings */}
+              <motion.div
+                variants={fadeUp}
+                className="md:col-span-2 rounded-2xl border border-border bg-primary text-primary-foreground p-8 relative overflow-hidden"
+              >
+                <svg className="absolute inset-0 w-full h-full opacity-[0.06] pointer-events-none" aria-hidden="true">
+                  <defs>
+                    <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse">
+                      <circle cx="2" cy="2" r="1.5" fill="currentColor" />
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#dots)" />
+                </svg>
+                <div className="relative">
+                  <p className="text-sm font-semibold text-primary-foreground/60 uppercase tracking-wide mb-3">
+                    Contractor earnings
+                  </p>
+                  <p className="text-5xl font-extrabold mb-2">{home.stats[0].value}</p>
+                  <p className="text-base text-primary-foreground/80 mb-6">{home.stats[0].label}</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: '4 homes', value: '$180 gross' },
+                      { label: '5% fee', value: '−$9' },
+                      { label: 'Net payout', value: '$171' },
+                    ].map((item) => (
+                      <div key={item.label} className="rounded-lg bg-white/10 px-3 py-2.5">
+                        <p className="text-xs text-primary-foreground/60 mb-0.5">{item.label}</p>
+                        <p className="text-sm font-bold">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Rating card */}
+              <motion.div
+                variants={fadeUp}
+                className="rounded-2xl border border-border bg-card p-8 flex flex-col justify-between"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                    Quality rating
+                  </p>
+                  <p className="text-5xl font-extrabold text-foreground mb-2">{home.stats[1].value}</p>
+                  <p className="text-sm text-muted-foreground">{home.stats[1].label}</p>
+                </div>
+                <p className="text-xs text-muted-foreground mt-4 pt-4 border-t border-border leading-relaxed">
+                  {home.stats[1].detail}
+                </p>
+              </motion.div>
+
+              {/* Dispute card */}
+              <motion.div
+                variants={fadeUp}
+                className="md:col-span-3 rounded-2xl border-2 border-accent/20 bg-accent/5 p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-accent uppercase tracking-wide mb-2">
+                    Dispute protection
+                  </p>
+                  <p className="text-4xl font-extrabold text-foreground mb-1">{home.stats[2].value}</p>
+                  <p className="text-sm text-muted-foreground">{home.stats[2].label}</p>
+                </div>
+                <div className="flex items-start gap-3 max-w-sm">
+                  <Shield size={20} className="text-accent flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-muted-foreground leading-relaxed">{home.stats[2].detail}</p>
+                </div>
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ── CTA SECTION ──────────────────────────────────────── */}
+        <section id="contractors" className="relative py-20 lg:py-28 bg-primary overflow-hidden">
+          <svg
+            className="absolute inset-0 w-full h-full opacity-[0.06] pointer-events-none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <defs>
+              <pattern id="cta-streets" width="80" height="80" patternUnits="userSpaceOnUse">
+                <rect x="10" y="10" width="25" height="25" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                <rect x="45" y="10" width="25" height="25" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                <rect x="10" y="45" width="25" height="25" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                <rect x="45" y="45" width="25" height="25" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#cta-streets)" />
+          </svg>
+
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <motion.div
+              variants={stagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="max-w-2xl"
+            >
+              <motion.h2
+                variants={fadeUp}
+                className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-primary-foreground mb-4 leading-tight"
+              >
+                {home.cta.headline}
+              </motion.h2>
+              <motion.p variants={fadeUp} className="text-lg text-primary-foreground/70 mb-8">
+                {home.cta.subheadline}
+              </motion.p>
+
+              <motion.div variants={fadeUp}>
+                <div className="flex flex-col sm:flex-row gap-3 max-w-lg">
+                  <input
+                    type="text"
+                    placeholder={home.cta.searchPlaceholder}
+                    className="flex-1 rounded-xl border border-white/20 bg-white/10 px-4 py-3.5 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
+                  />
+                    <button
+                      onClick={() => navigate('/book')}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3.5 text-sm font-bold text-white shadow-md hover:bg-accent/90 transition-colors whitespace-nowrap"
+                    >
+                      {home.cta.searchCta}
+                      <ArrowRight size={16} />
+                    </button>
+                  </div>
+                  <Link
+                    to="/join"
+                    className="inline-flex items-center gap-1 mt-5 text-sm font-semibold text-primary-foreground/70 hover:text-primary-foreground transition-colors"
+                  >
+                    {home.cta.contractorLink}
+                  </Link>
+              </motion.div>
+            </motion.div>
           </div>
         </section>
       </main>

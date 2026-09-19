@@ -17,9 +17,6 @@ create table if not exists public.jobs (
   customer_email text,
   customer_phone text,
   payout_cents integer not null default 0,
-  scheduled_date date,
-  time_window text check (time_window in ('morning', 'afternoon', 'flexible')),
-  flexible_slot boolean not null default false,
   estimated_duration text not null default '45 min',
   before_photo text,
   after_photo text,
@@ -29,17 +26,6 @@ create table if not exists public.jobs (
   checkout_session_id text,
   created_at timestamptz not null default now()
 );
-
-alter table public.jobs add column if not exists scheduled_date date;
-alter table public.jobs add column if not exists time_window text;
-alter table public.jobs add column if not exists flexible_slot boolean not null default false;
-
-alter table public.jobs drop constraint if exists jobs_time_window_check;
-alter table public.jobs add constraint jobs_time_window_check
-  check (time_window is null or time_window in ('morning', 'afternoon', 'flexible'));
-
-create index if not exists idx_jobs_batch_schedule
-  on public.jobs (batch_code, scheduled_date);
 
 alter table public.jobs enable row level security;
 
