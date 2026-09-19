@@ -22,7 +22,8 @@
       "@/*": ["./src/*"],
       "@airo/content": ["./content-lib/src/index.ts"]
     },
-    "baseUrl": "."
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0"
   },
   "include": ["api", "src", "vite.config.ts", "plugins"]
 }

@@ -169,11 +169,20 @@ function getInitialForm(): BookingForm {
   const params = new window.URLSearchParams(window.location.search);
   const address = params.get('address');
   const batchCode = params.get('batch');
+  const serviceId = params.get('service');
+  const selectedService = SERVICES.some((service) => service.id === serviceId) ? serviceId : null;
   return {
     ...DEMO_DEFAULTS,
     ...(address ? parseAddress(address) : {}),
     ...(batchCode ? { referralCode: batchCode.toUpperCase() } : {}),
+    ...(selectedService ? { serviceId: selectedService } : {}),
   };
+}
+
+function getInitialStep(): number {
+  if (typeof window === 'undefined') return 1;
+  const serviceId = new window.URLSearchParams(window.location.search).get('service');
+  return SERVICES.some((service) => service.id === serviceId) ? 2 : 1;
 }
 
 const fadeSlide = {
@@ -183,7 +192,7 @@ const fadeSlide = {
 };
 
 export default function BookPage() {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(getInitialStep);
   const [form, setForm] = useState<BookingForm>(getInitialForm);
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');

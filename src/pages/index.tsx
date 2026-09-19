@@ -429,6 +429,14 @@ export default function HomePage() {
                         </div>
                       ) : null;
                     })()}
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/book?service=${encodeURIComponent(tab.id)}`)}
+                      className="mt-6 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-accent/90"
+                    >
+                      Choose {tab.label}
+                      <ArrowRight size={16} />
+                    </button>
                   </div>
                 </div>
 
@@ -442,7 +450,7 @@ export default function HomePage() {
                       key={contractor.id}
                       whileHover={{ y: -2 }}
                       transition={{ duration: 0.15 }}
-                      onClick={() => navigate('/book')}
+                      onClick={() => navigate(`/book?service=${encodeURIComponent(tab.id)}`)}
                       className="flex items-center gap-4 rounded-xl border border-border bg-card px-5 py-4 cursor-pointer hover:shadow-md transition-shadow"
                     >
                       <div className="flex-shrink-0 w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
