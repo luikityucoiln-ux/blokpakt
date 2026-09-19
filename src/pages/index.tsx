@@ -83,19 +83,24 @@ export default function HomePage() {
       </Helmet>
 
       <main>
-        <section className="overflow-hidden border-b border-border bg-background">
-          <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-20">
+        <section className="relative overflow-hidden border-b border-primary/20 bg-primary text-primary-foreground">
+          <div className="absolute inset-0 opacity-20" aria-hidden="true">
+            <div className="absolute -left-20 top-10 h-80 w-80 rounded-full border-[48px] border-white/20" />
+            <div className="absolute -right-24 bottom-[-7rem] h-96 w-96 rounded-full border-[64px] border-accent/70" />
+            <div className="absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,transparent_46%,rgba(255,255,255,0.08)_46%,rgba(255,255,255,0.08)_48%,transparent_48%)]" />
+          </div>
+          <div className="relative mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-20">
             <div className="max-w-2xl">
-              <p className="inline-flex items-center gap-2 border border-primary/15 bg-primary/5 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-primary">
+              <p className="inline-flex items-center gap-2 border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white">
                 <Sparkles size={15} aria-hidden="true" />
                 Neighbourhood group rates
               </p>
-              <h1 className="mt-6 text-4xl font-extrabold leading-[1.08] text-foreground sm:text-5xl lg:text-6xl">Stop Overpaying for Home Maintenance.</h1>
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
+              <h1 className="mt-6 text-4xl font-extrabold leading-[1.08] text-white sm:text-5xl lg:text-6xl">Stop Overpaying for Home Maintenance.</h1>
+              <p className="mt-6 max-w-xl text-lg leading-relaxed text-primary-foreground/80 sm:text-xl">
                 Save 20% on gutter cleaning and pressure washing when 3 houses on your street book together.
               </p>
 
-              <div id="eligibility" className="mt-9 max-w-xl border border-border bg-card p-5 shadow-lg sm:p-6">
+              <div id="eligibility" className="mt-9 max-w-xl border border-white/15 bg-card p-5 text-foreground shadow-2xl sm:p-6">
                 {submissionState === 'success' ? (
                   <div className="py-3" role="status" aria-live="polite">
                     <CircleCheck className="text-primary" size={42} aria-hidden="true" />
@@ -131,10 +136,10 @@ export default function HomePage() {
             </div>
 
             <div className="relative mx-auto w-full max-w-lg" aria-hidden="true">
-              <div className="absolute inset-x-0 bottom-0 h-4/5 border border-primary/10 bg-primary/5" />
+              <div className="absolute inset-x-0 bottom-0 h-4/5 border border-white/20 bg-white/10" />
               <div className="relative grid grid-cols-3 gap-3 p-5 sm:gap-5 sm:p-9">
                 {[true, false, false].map((joined, index) => (
-                  <div key={index} className="border border-border bg-card p-3 shadow-sm sm:p-4">
+                  <div key={index} className="border border-white/25 bg-white/95 p-3 shadow-lg sm:p-4">
                     <Home className={joined ? 'text-primary' : 'text-muted-foreground'} size={31} />
                     <div className="mt-6 h-2 w-3/4 bg-muted" />
                     <div className="mt-2 h-2 w-1/2 bg-muted" />
@@ -142,12 +147,12 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-              <div className="relative mx-5 mb-5 border border-primary bg-primary p-5 text-primary-foreground shadow-xl sm:mx-9 sm:mb-9">
+              <div className="relative mx-5 mb-5 border border-accent bg-accent p-5 text-accent-foreground shadow-xl sm:mx-9 sm:mb-9">
                 <div className="flex items-start gap-3">
                   <UsersRound size={24} aria-hidden="true" />
-                  <div><p className="text-sm font-bold">One home is in</p><p className="mt-1 text-sm text-primary-foreground/75">Two more neighbours unlock the street rate.</p></div>
+                  <div><p className="text-sm font-bold">One home is in</p><p className="mt-1 text-sm text-accent-foreground/80">Two more neighbours unlock the street rate.</p></div>
                 </div>
-                <div className="mt-5 flex gap-2">{[true, false, false].map((filled, index) => <span key={index} className={`h-2 flex-1 ${filled ? 'bg-accent' : 'bg-white/25'}`} />)}</div>
+                <div className="mt-5 flex gap-2">{[true, false, false].map((filled, index) => <span key={index} className={`h-2 flex-1 ${filled ? 'bg-primary' : 'bg-white/35'}`} />)}</div>
               </div>
             </div>
           </div>
