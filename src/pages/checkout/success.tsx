@@ -55,6 +55,9 @@ async function persistJobFromBooking(paymentIntentId: string | null, checkoutSes
       customerEmail: pending.customerEmail || null,
       customerPhone: pending.customerPhone || null,
       payoutCents: pending.payoutCents,
+      scheduledDate: pending.scheduledDate || null,
+      timeWindow: pending.timeWindow || null,
+      flexibleSlot: pending.flexibleSlot ?? false,
       paymentIntentId,
       checkoutSessionId,
     });
@@ -95,7 +98,7 @@ export default function CheckoutSuccess() {
     }
 
     // Fetch session from backend (which calls Stripe API)
-    fetch(`/api/stripe/session/${sessionId}`)
+    globalThis.fetch(`/api/stripe/session/${sessionId}`)
       .then((res) => {
         if (!res.ok) {
           throw new Error('Failed to retrieve session');
