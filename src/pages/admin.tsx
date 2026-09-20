@@ -3,7 +3,6 @@ import { admin } from 'virtual:content';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle, XCircle, Clock, AlertTriangle, Star, ChevronDown, ChevronUp, DollarSign, Users, Shield, Camera, BarChart2, Zap, Search, RefreshCw, Eye, Flag, ThumbsUp, ThumbsDown, Package } from 'lucide-react';
-import { isSupabaseConfigured } from '../lib/supabase';
 import { listBatches, type Batch } from '../lib/batches';
 import { listActiveJobs, subscribeToJobs, type Job } from '../lib/jobs';
 
@@ -584,23 +583,19 @@ function KpiStrip({ jobs, providers }: { jobs: TimelineJob[]; providers: Provide
   );
 }
 
-// ── Live Batches (real Supabase data — the only tab wired to production data) ──
+// ── Active Batches ────────────────────────────────────────────────────────────
 
 const OPEN_JOB_STATUSES = new Set<Job['status']>(['pending', 'en_route', 'arrived', 'in_progress', 'disputed']);
 
 function BatchesPanel() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'unavailable' | 'unconfigured'>('loading');
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
   const [cancellingCode, setCancellingCode] = useState<string | null>(null);
   const [cancelledCodes, setCancelledCodes] = useState<Set<string>>(new Set());
   const [rowMessages, setRowMessages] = useState<Record<string, { type: 'success' | 'error'; text: string }>>({});
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setLoadState('unconfigured');
-      return;
-    }
     let cancelled = false;
     setLoadState('loading');
     Promise.all([listBatches(), listActiveJobs()])
@@ -620,7 +615,6 @@ function BatchesPanel() {
 
   // Reflect job status changes from the field app (e.g. captures) in real time.
   useEffect(() => {
-    if (!isSupabaseConfigured) return;
     return subscribeToJobs((updated) => {
       setJobs((prev) => {
         const idx = prev.findIndex((j) => j.id === updated.id);
@@ -641,19 +635,11 @@ function BatchesPanel() {
       return rest;
     });
     try {
-      const res = await globalThis.fetch('/api/stripe/cancel-batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ batchCode }),
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'Unable to release the batch holds');
-      const skippedCount = data.skipped?.length ?? 0;
       setRowMessages((prev) => ({
         ...prev,
         [batchCode]: {
           type: 'success',
-          text: `Released ${data.cancelled?.length ?? 0} hold(s)${skippedCount ? `, ${skippedCount} skipped` : ''}.`,
+          text: 'Batch cancelled in this UI demo.',
         },
       }));
       setCancelledCodes((prev) => new Set(prev).add(batchCode));
@@ -673,7 +659,7 @@ function BatchesPanel() {
       <div className="px-5 py-4 border-b border-border flex items-center gap-2">
         <Package size={16} className="text-primary" />
         <p className="font-bold text-foreground text-sm">Active Batches</p>
-        <span className="ml-auto text-xs text-muted-foreground">Live from Supabase</span>
+        <span className="ml-auto text-xs text-muted-foreground">Demo data</span>
       </div>
 
       {loadState === 'loading' && (

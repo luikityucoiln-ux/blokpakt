@@ -11,7 +11,6 @@ import {
   type AddOnRequest,
 } from '../lib/add-on-workflow';
 import { listActiveJobs, subscribeToJobs, updateJob, type Job, type JobStatus } from '../lib/jobs';
-import { isSupabaseConfigured } from '../lib/supabase';
 import {
   MapPin, Clock, Camera, CheckCircle,
   Zap, Plus, X, AlertCircle, ArrowRight,
@@ -530,7 +529,7 @@ function EarningsPanel({ jobs }: { jobs: FieldJob[] }) {
             <div>
               <p className="text-sm font-bold text-primary">Cashout initiated!</p>
               <p className="text-xs text-muted-foreground">
-                ${totalEarnings} sent to your bank via Stripe Connect. Arrives in 1–2 business days.
+                ${totalEarnings} marked as paid in this UI demo.
               </p>
             </div>
           </div>
@@ -547,7 +546,7 @@ function EarningsPanel({ jobs }: { jobs: FieldJob[] }) {
                   {pendingJobs > 0 && ` · ${pendingJobs} job${pendingJobs > 1 ? 's' : ''} remaining`}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Stripe Connect · 1% fee · arrives in minutes
+                  Demo payout · no real transfer
                 </p>
               </div>
               <button
@@ -679,17 +678,6 @@ export default function FieldPage() {
     if (action === 'complete') {
       setCompletingId(jobId);
       try {
-        // Release the Stripe authorization hold before marking the job done —
-        // this is the "get paid" step that never existed in demo mode.
-        if (job.paymentIntentId) {
-          const res = await globalThis.fetch('/api/stripe/capture-payment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paymentIntentId: job.paymentIntentId }),
-          });
-          const data = await res.json();
-          if (!data.success) throw new Error(data.error || 'Payment capture failed');
-        }
         const completedAt = new Date().toISOString();
         await updateJob(jobId, { status: 'complete', completedAt });
         setJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: 'complete', completedAt } : j)));
@@ -814,12 +802,6 @@ export default function FieldPage() {
         </div>
 
         <div className="max-w-lg mx-auto px-4 pt-5 space-y-4">
-          {!isSupabaseConfigured && (
-            <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-2.5 text-sm text-destructive font-medium">
-              <span className="w-2 h-2 rounded-full bg-destructive flex-shrink-0" />
-              Live data unavailable — connect Supabase to load today's route.
-            </div>
-          )}
           {actionError && (
             <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-2.5 text-sm text-destructive font-medium">
               {actionError}

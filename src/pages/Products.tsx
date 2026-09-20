@@ -17,7 +17,7 @@
  */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatPrice } from '../lib/stripe/format';
+import { formatPrice } from '../lib/format-price';
 
 interface Product {
   id: string;
@@ -81,26 +81,7 @@ export default function Products() {
     setCheckoutError(null);
     setCheckingOut(product.priceId);
 
-    try {
-      const response = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId: product.priceId }),
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.url) {
-        window.location.href = data.url;
-      } else {
-        setCheckoutError({ productId: product.id, message: data.error || 'Failed to create checkout session' });
-        setCheckingOut(null);
-      }
-    } catch (e) {
-      console.error('checkout failed', e);
-      setCheckoutError({ productId: product.id, message: 'Failed to create checkout session' });
-      setCheckingOut(null);
-    }
+    window.location.assign('/completed');
   };
 
   if (loading) {

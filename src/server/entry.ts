@@ -1,19 +1,8 @@
-import express, { type Express, type NextFunction, type Request, type Response } from "express";
+import express, { type Express, type Request, type Response } from "express";
 import { fileURLToPath } from "node:url";
 import { dirname, extname, join } from "node:path";
 import { readFileSync } from "node:fs";
 
-// <api-imports>
-import health_get_0 from "./api/health/GET";
-import provider_apply_post_1 from "./api/provider/apply/POST";
-import provider_check_zip_post_2 from "./api/provider/check-zip/POST";
-import stripe_create_checkout_session_post_3 from "./api/stripe/create-checkout-session/POST";
-import stripe_session_sessionId_get_4 from "./api/stripe/session/[sessionId]/GET";
-import stripe_update_authorization_post_5 from "./api/stripe/update-authorization/POST";
-import stripe_capture_payment_post_6 from "./api/stripe/capture-payment/POST";
-import stripe_cancel_payment_post_7 from "./api/stripe/cancel-payment/POST";
-import stripe_cancel_batch_post_8 from "./api/stripe/cancel-batch/POST";
-// </api-imports>
 import { seoRoutes } from "../lib/seo-routes";
 import {
 	loadAdSenseRuntimeConfig,
@@ -91,30 +80,6 @@ app.set("trust proxy", true);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// <api-registrations>
-app.get("/api/health", health_get_0);
-app.post("/api/provider/apply", provider_apply_post_1);
-app.post("/api/provider/check-zip", provider_check_zip_post_2);
-app.post("/api/stripe/create-checkout-session", stripe_create_checkout_session_post_3);
-app.get("/api/stripe/session/:sessionId", stripe_session_sessionId_get_4);
-app.post("/api/stripe/update-authorization", stripe_update_authorization_post_5);
-app.post("/api/stripe/capture-payment", stripe_capture_payment_post_6);
-app.post("/api/stripe/cancel-payment", stripe_cancel_payment_post_7);
-app.post("/api/stripe/cancel-batch", stripe_cancel_batch_post_8);
-// </api-registrations>
-
-// Error middleware must be registered AFTER the routes it protects; Express
-// only passes errors to middleware defined later in the stack.
-app.use("/api", (err: unknown, req: Request, res: Response, _next: NextFunction) => {
-	// Always respond JSON on /api so clients parsing response.json() don't
-	// receive Express's default HTML error page for non-Error throws.
-	console.error("ssr.api.error", {
-		url: req.url,
-		error: err instanceof Error ? err.stack : String(err),
-	});
-	res.status(500).json({ error: "Internal server error" });
-});
 
 function baseUrl(req: Request): string {
 	return `${req.protocol}://${req.hostname}`;

@@ -1,5 +1,3 @@
-import { supabase } from './supabase';
-
 export interface Batch {
   code: string;
   street: string;
@@ -10,46 +8,15 @@ export interface Batch {
   targetHomes: number;
 }
 
-interface BatchRow {
-  code: string;
-  street: string;
-  service: string;
-  batch_price_cents: number;
-  solo_price_cents: number;
-  homes_booked: number;
-  target_homes: number;
-}
-
-function fromRow(row: BatchRow): Batch {
-  return {
-    code: row.code,
-    street: row.street,
-    service: row.service,
-    batchPrice: row.batch_price_cents / 100,
-    soloPrice: row.solo_price_cents / 100,
-    homesBooked: row.homes_booked,
-    targetHomes: row.target_homes,
-  };
-}
+const batches: Batch[] = [
+  { code: 'MAPLE-2026', street: 'Maple Ave', service: 'Lawn Care', batchPrice: 45, soloPrice: 50, homesBooked: 2, targetHomes: 4 },
+  { code: 'OAK-2026', street: 'Oak Street', service: 'Gutter Cleaning', batchPrice: 162, soloPrice: 180, homesBooked: 3, targetHomes: 4 },
+];
 
 export async function getBatchByCode(code: string): Promise<Batch | null> {
-  if (!supabase) return null;
-  const { data, error } = await supabase
-    .from('batches')
-    .select('code, street, service, batch_price_cents, solo_price_cents, homes_booked, target_homes')
-    .eq('code', code)
-    .maybeSingle();
-  if (error) throw error;
-  return data ? fromRow(data as BatchRow) : null;
+  return batches.find((batch) => batch.code === code) ?? null;
 }
 
 export async function listBatches(): Promise<Batch[]> {
-  if (!supabase) return [];
-  const { data, error } = await supabase
-    .from('batches')
-    .select('code, street, service, batch_price_cents, solo_price_cents, homes_booked, target_homes')
-    .order('code', { ascending: true });
-  if (error) throw error;
-  return (data as BatchRow[]).map(fromRow);
+  return [...batches];
 }
-

@@ -154,27 +154,9 @@ function Step1({
       setForm((f) => ({ ...f, zips: [...f.zips, trimmed] }));
       setZipInput('');
 
-      try {
-        const res = await fetch('/api/provider/check-zip', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ zips: [trimmed] }),
-        });
-        const data = await res.json();
-        const result = data.results?.[0];
-        setZipStatuses((prev) =>
-          prev.map((z) =>
-            z.zip === trimmed
-              ? { ...z, covered: result?.covered ?? true, isBlockCaptainAvailable: result?.isBlockCaptainAvailable ?? true, checking: false }
-              : z,
-          ),
-        );
-      } catch {
-        // Demo fallback: mark as covered
-        setZipStatuses((prev) =>
-          prev.map((z) => (z.zip === trimmed ? { ...z, checking: false, covered: true, isBlockCaptainAvailable: true } : z)),
-        );
-      }
+      setZipStatuses((prev) =>
+        prev.map((z) => (z.zip === trimmed ? { ...z, checking: false, covered: true, isBlockCaptainAvailable: true } : z)),
+      );
     },
     [form.zips, setForm, setZipStatuses],
   );
@@ -734,28 +716,16 @@ export default function JoinPage() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    try {
-      const res = await fetch('/api/provider/apply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          services: form.services,
-          zips: form.zips,
-          firstName: form.firstName,
-          lastName: form.lastName,
-          email: form.email,
-          phone: form.phone,
-          activationMethod: form.activationMethod,
-          referralEmail: form.referralEmail || undefined,
-        }),
-      });
-      const data = await res.json();
-      setResult(data);
-    } catch {
-      setResult(null);
-    } finally {
-      setSubmitting(false);
-    }
+    setResult({
+      status: form.activationMethod === 'referral' ? 'pending_referral' : 'pending_activation',
+      activationMethod: form.activationMethod || 'starter',
+      applicationId: `demo-${Date.now()}`,
+      isBlockCaptain: zipStatuses.some((zip) => zip.isBlockCaptainAvailable),
+      blockCaptainZips: zipStatuses.filter((zip) => zip.isBlockCaptainAvailable).map((zip) => zip.zip),
+      coveredZips: form.zips,
+      uncoveredZips: [],
+    });
+    setSubmitting(false);
   };
 
   const resetForm = () => {

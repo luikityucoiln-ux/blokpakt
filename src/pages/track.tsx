@@ -161,7 +161,7 @@ function AddOnModal({
           </div>
         </div>
         <p className="text-xs text-muted-foreground mb-4">
-          Your contractor is on-site and requesting approval. Approving adds this to your Stripe authorization hold.
+          Your contractor is on-site and requesting approval. Approving updates this UI demo only.
         </p>
         <div className="grid grid-cols-2 gap-3">
           <button
@@ -294,13 +294,6 @@ export default function TrackPage() {
     setApprovedRequests((prev) => [...prev, addon]);
     setPendingAddons((prev) => prev.filter((a) => a.id !== id));
     setActiveAddon(null);
-    if (job.paymentIntentId) {
-      void globalThis.fetch('/api/stripe/update-authorization', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentIntentId: job.paymentIntentId, amount: addon.price * 100, addOnId: id }),
-      });
-    }
   }
 
   async function handleDeclineAddon(id: string) {
@@ -449,7 +442,7 @@ export default function TrackPage() {
                     />
                   </div>
                   <div className="rounded-lg bg-muted/40 border border-border px-3 py-2 mb-4 text-xs text-muted-foreground">
-                    Filing a dispute immediately freezes the Stripe payment capture. Our team reviews within 4 hours using contractor photo proof.
+                    Filing a dispute updates the demo status. Our team reviews within 4 hours using contractor photo proof.
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <button onClick={() => setShowDispute(false)} className="rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors">

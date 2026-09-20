@@ -1,9 +1,5 @@
 /**
- * Bridges booking form data across the Stripe-hosted checkout redirect.
- * Stripe Checkout takes the browser to a different origin and back, so any
- * in-memory React state from book.tsx is lost — sessionStorage survives the
- * round trip and lets checkout/success.tsx create the job record once the
- * payment authorization is confirmed.
+ * Bridges booking form data between the booking and confirmation screens.
  */
 const STORAGE_KEY = 'blokpakt:pending_booking';
 

@@ -340,8 +340,7 @@ export default function BookPage() {
 
     setLoading(true);
 
-    // Stash the booking details so the success page can create the job
-    // record once Stripe confirms the authorization (see checkout/success.tsx).
+    // Stash the booking details so the confirmation screen can create a local demo job.
     const jobCode = `BLK-${Date.now().toString(36).toUpperCase()}`;
     savePendingBooking({
       jobCode,
@@ -361,35 +360,7 @@ export default function BookPage() {
       providerName: selectedProvider?.name ?? 'Provider pending confirmation',
     });
 
-    try {
-      const response = await globalThis.fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          priceId: selectedService.priceId,
-          metadata: {
-            jobCode,
-            service: selectedService.label,
-            scheduledWindow: form.preferredSlot,
-            scheduledDate: confirmedSchedule?.date ?? '',
-            timeWindow: confirmedSchedule?.windowId ?? '',
-            flexibleSlot: String(confirmedWindow?.id === 'flexible'),
-            preferredProvider: selectedProvider?.name ?? '',
-            address: `${form.address}, ${form.city}, ${form.state} ${form.zip}`,
-          },
-        }),
-      });
-      const data = await response.json();
-      if (!data?.success || !data?.url) {
-        throw new Error(data?.error || 'Unable to start checkout');
-      }
-      window.location.href = data.url;
-    } catch (error) {
-      console.error('checkout creation failed:', error);
-      clearPendingBooking();
-      setCheckoutError(error instanceof Error ? error.message : 'Unable to start checkout. Please try again.');
-      setLoading(false);
-    }
+    window.location.assign('/checkout/success');
   }
 
   const stepLabels = ['Service', 'Property', 'Contact & Schedule'];
@@ -942,9 +913,9 @@ export default function BookPage() {
           {/* Trust footer */}
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { icon: <Shield size={16} />, label: 'Stripe-secured', detail: 'Auth hold only — no charge until done' },
-              { icon: <Camera size={16} />, label: 'Photo verified', detail: 'Before & after required to release payment' },
-              { icon: <Clock size={16} />, label: '48-hr dispute window', detail: 'Flag any issue to freeze capture instantly' },
+              { icon: <Shield size={16} />, label: 'UI demo', detail: 'No payment is collected in this prototype' },
+              { icon: <Camera size={16} />, label: 'Photo verified', detail: 'Before and after photos are part of the service flow' },
+              { icon: <Clock size={16} />, label: '48-hr dispute window', detail: 'Flag an issue for the demo support flow' },
             ].map((item) => (
               <div key={item.label} className="flex items-start gap-3 rounded-xl bg-card border border-border px-4 py-3">
                 <span className="text-primary mt-0.5 flex-shrink-0">{item.icon}</span>
