@@ -694,12 +694,16 @@ export default function BookPage() {
                         <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>
                       </label>
                       <textarea
-                        rows={3}
+                        rows={1}
                         maxLength={150}
                         value={form.propertyNotes}
                         onChange={(e) => update('propertyNotes', e.target.value)}
+                        onInput={(e) => {
+                          e.currentTarget.style.height = 'auto';
+                          e.currentTarget.style.height = `${Math.min(e.currentTarget.scrollHeight, 144)}px`;
+                        }}
                         placeholder="e.g. Dog in backyard, skip side gate"
-                        className="h-24 w-full resize-none overflow-y-auto rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="min-h-[44px] max-h-36 w-full resize-none overflow-y-auto rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
                     </div>
                   </div>
