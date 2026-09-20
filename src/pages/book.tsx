@@ -699,7 +699,7 @@ export default function BookPage() {
                         value={form.propertyNotes}
                         onChange={(e) => update('propertyNotes', e.target.value)}
                         placeholder="e.g. Dog in backyard, skip side gate"
-                        className="w-full resize-none rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="h-24 w-full resize-none overflow-y-auto rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
                     </div>
                   </div>
