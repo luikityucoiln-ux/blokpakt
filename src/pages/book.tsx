@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router';
-import { ArrowRight, ArrowLeft, Shield, Clock, Camera, CheckCircle, LocateFixed, CalendarDays } from 'lucide-react';
-import { savePendingBooking, clearPendingBooking } from '../lib/pending-booking';
+import { ArrowRight, ArrowLeft, Lock, Shield, Clock, Camera, CheckCircle, LocateFixed, CalendarDays } from 'lucide-react';
+import { savePendingBooking } from '../lib/pending-booking';
+import { ContractorCard, type ContractorProfile } from '../components/ContractorCard';
+import { InAppChat } from '../components/InAppChat';
 
 interface GoogleAutocompletePlace {
   address_components?: Array<{ long_name: string; short_name: string; types: string[] }>;
@@ -41,8 +43,31 @@ declare global {
   }
 }
 
-// ── Stripe product IDs ────────────────────────────────────────────────────────
-const SERVICES = [
+interface Service {
+  id: string;
+  label: string;
+  description: string;
+  batchPrice: number;
+  soloPrice: number;
+  priceId: string;
+  icon: string;
+  included: string[];
+  excluded: string[];
+}
+
+interface Provider {
+  id: string;
+  name: string;
+  initials: string;
+  publicId: string;
+  services: string[];
+  rating: number;
+  jobs: number;
+  distance: string;
+  blockCaptain?: boolean;
+}
+
+const SERVICES: Service[] = [
   {
     id: 'lawn',
     label: 'Lawn Care',
@@ -51,6 +76,8 @@ const SERVICES = [
     soloPrice: 50,
     priceId: 'price_1UAu4SEJF8FW6JeNvwIUueOx',
     icon: '🌿',
+    included: ['Mow and edge accessible lawn areas', 'Blow clippings from walkways and driveways', 'Basic cleanup of the serviced area'],
+    excluded: ['Overgrown-lot restoration over 6 inches', 'Tree trimming or hedge work', 'Bagging and hauling without an add-on'],
   },
   {
     id: 'gutter',
@@ -60,6 +87,8 @@ const SERVICES = [
     soloPrice: 180,
     priceId: 'price_1UAu4XEJF8FW6JeNIwausphW',
     icon: '🏠',
+    included: ['Remove accessible gutter debris', 'Flush gutters and downspouts', 'Clear the ground-level work area'],
+    excluded: ['Structural gutter repairs', 'Unsafe roof access', 'Interior drainage repairs'],
   },
   {
     id: 'pressure',
@@ -69,6 +98,8 @@ const SERVICES = [
     soloPrice: 220,
     priceId: 'price_1UAu4dEJF8FW6JeNLy1JKH22',
     icon: '💧',
+    included: ['Wash driveway and walkway surfaces', 'Apply surface-safe cleaning solution', 'Rinse adjacent work areas'],
+    excluded: ['Paint removal', 'Window cleaning', 'Sealed-stone restoration'],
   },
   {
     id: 'snow',
@@ -78,13 +109,15 @@ const SERVICES = [
     soloPrice: 64,
     priceId: 'price_1UAu4fEJF8FW6JeNddVHVpel',
     icon: '❄️',
+    included: ['Clear driveway and front walkway', 'Create a safe path to the entry', 'Stack snow at the curbside edge'],
+    excluded: ['Hauling snow off-site', 'Roof snow removal', 'Clearing private roads'],
   },
 ];
 
-const PROVIDERS = [
-  { id: 'marcus-t', name: 'Marcus T.', services: ['lawn', 'gutter', 'pressure', 'snow'] },
-  { id: 'devon-r', name: 'Devon R.', services: ['lawn', 'gutter', 'pressure', 'snow'] },
-  { id: 'priya-s', name: 'Priya S.', services: ['lawn', 'gutter', 'pressure', 'snow'] },
+const PROVIDERS: Provider[] = [
+  { id: 'marcus-t', name: 'Marcus T.', initials: 'MT', publicId: 'BP-501231', services: ['lawn', 'gutter', 'pressure', 'snow'], rating: 4.9, jobs: 312, distance: '2.4 mi', blockCaptain: true },
+  { id: 'devon-r', name: 'Devon R.', initials: 'DR', publicId: 'BP-583904', services: ['lawn', 'gutter', 'pressure', 'snow'], rating: 4.7, jobs: 189, distance: '8.1 mi' },
+  { id: 'priya-s', name: 'Priya S.', initials: 'PS', publicId: 'BP-672148', services: ['lawn', 'gutter', 'pressure', 'snow'], rating: 4.8, jobs: 241, distance: '13.5 mi' },
 ];
 
 interface BookingForm {
@@ -121,14 +154,6 @@ const DEMO_DEFAULTS: BookingForm = {
   preferredSlot: '',
   referralCode: '',
 };
-
-const SERVICE_WINDOW_OPTIONS = [
-  { id: 'morning', label: 'Morning', window: '8am–12pm', description: '8am – 12pm' },
-  { id: 'afternoon', label: 'Afternoon', window: '12pm–4pm', description: '12pm – 4pm' },
-  { id: 'flexible', label: 'Flexible / Any Time', window: '8am–5pm', description: '8am – 5pm', discountCents: 200 },
-] as const;
-
-const FLEXIBLE_DISCOUNT_CENTS = 200;
 
 function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -207,28 +232,128 @@ const fadeSlide = {
   exit: { opacity: 0, x: -24, transition: { duration: 0.2, ease: 'easeIn' as const } },
 };
 
+interface ServiceStepProps {
+  services: Service[];
+  providers: Provider[];
+  selectedServiceId: string;
+  selectedProviderId: string;
+  isPremiumUser: boolean;
+  onServiceSelect: (serviceId: string) => void;
+  onProviderSelect: (providerId: string) => void;
+  onNext: () => void;
+}
+
+function ServiceStep({ services, providers, selectedServiceId, selectedProviderId, isPremiumUser, onServiceSelect, onProviderSelect, onNext }: ServiceStepProps) {
+  const selectedService = services.find((service) => service.id === selectedServiceId) ?? services[0];
+  const availableProviders = providers.filter((provider) => provider.services.includes(selectedService.id));
+  const savings = selectedService.soloPrice - selectedService.batchPrice;
+  const [chatContractor, setChatContractor] = useState<ContractorProfile | null>(null);
+
+  function toContractorProfile(provider: Provider): ContractorProfile {
+    return {
+      ...provider,
+      services: provider.services.map((serviceId) => services.find((service) => service.id === serviceId)?.label ?? serviceId),
+    };
+  }
+
+  return (
+    <div className="p-6 sm:p-10">
+      <h2 className="text-xl font-bold text-foreground">Choose your service</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Neighborhood pricing unlocks when two or more homes book the same service.</p>
+
+      <div className="mt-6 grid items-start gap-8 lg:grid-cols-12">
+        <section className="lg:col-span-7">
+          <div aria-label="Services" className="flex flex-wrap gap-2">
+            {services.map((service) => {
+              const selected = service.id === selectedService.id;
+              return (
+                <button key={service.id} type="button" aria-pressed={selected} onClick={() => onServiceSelect(service.id)} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${selected ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-foreground hover:bg-muted/75'}`}>
+                  <span aria-hidden="true">{service.icon}</span>
+                  {service.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-5 rounded-lg border border-border bg-background p-5 sm:p-6">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-primary/75">{selectedService.label} pricing</h3>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-lg border border-border bg-muted/30 p-4">
+                <p className="font-semibold text-foreground">👤 Solo Rate</p>
+                <p className="mt-1 text-sm text-muted-foreground">Just you on the route</p>
+                <p className="mt-3 text-2xl font-bold text-foreground">${selectedService.soloPrice}</p>
+              </div>
+              <div className="rounded-lg border-2 border-foreground bg-card p-4 shadow-sm">
+                <p className="font-semibold text-foreground">🏘️ Street Batch Rate</p>
+                <p className="mt-1 text-sm text-muted-foreground">Two or more neighbors</p>
+                <div className="mt-3 flex items-end justify-between gap-2">
+                  <p className="text-2xl font-bold text-foreground">${selectedService.batchPrice}</p>
+                  <span className="rounded bg-accent px-2 py-0.5 text-xs font-bold text-accent-foreground">Save ${savings}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-6 border-t border-border pt-6 text-sm sm:grid-cols-2">
+              <div>
+                <h4 className="font-bold text-foreground">What is included</h4>
+                <ul className="mt-3 space-y-2 text-muted-foreground">
+                  {selectedService.included.map((item) => <li key={item} className="flex gap-2"><span aria-hidden="true">✅</span><span>{item}</span></li>)}
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-bold text-foreground">Usually not included</h4>
+                <ul className="mt-3 space-y-2 text-muted-foreground">
+                  {selectedService.excluded.map((item) => <li key={item} className="flex gap-2"><span aria-hidden="true">❌</span><span>{item}</span></li>)}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside className="lg:col-span-5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-primary/75">Available Contractors Near You</h3>
+          <div className="mt-3 space-y-3">
+            {availableProviders.map((provider) => {
+              const contractor = toContractorProfile(provider);
+              return <ContractorCard key={provider.id} contractor={contractor} isSelected={provider.id === selectedProviderId} isInteractive={isPremiumUser} onSelect={onProviderSelect} onContact={setChatContractor} />;
+            })}
+          </div>
+          {!isPremiumUser && (
+            <div className="mt-4 flex gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm text-foreground">
+              <Lock aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />
+              <p>Upgrade to Blokpakt Premium to hand-pick your pro and get priority routing.</p>
+            </div>
+          )}
+        </aside>
+      </div>
+
+      <div className="mt-8 flex justify-end">
+        <button type="button" onClick={onNext} className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-accent/90">
+          Next: Property details
+          <ArrowRight size={16} />
+        </button>
+      </div>
+
+      {chatContractor && <InAppChat contractor={chatContractor} onClose={() => setChatContractor(null)} />}
+    </div>
+  );
+}
+
 export default function BookPage() {
   const [step, setStep] = useState(getInitialStep);
   const [form, setForm] = useState<BookingForm>(getInitialForm);
+    const [isPremiumUser] = useState(() => typeof window !== 'undefined' && new window.URLSearchParams(window.location.search).get('premium') === 'true');
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [selectedBookingDate, setSelectedBookingDate] = useState<Date | null>(null);
-  const [confirmedSchedule, setConfirmedSchedule] = useState<{ date: string; windowId: string } | null>(null);
   const [locationMessage, setLocationMessage] = useState('');
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<GoogleAutocomplete | null>(null);
   const locationRef = useRef<{ lat: number; lng: number } | null>(null);
 
   const selectedService = SERVICES.find((s) => s.id === form.serviceId) ?? SERVICES[0];
-  const invitedProviderId = getInvitedProviderId();
-  const availableProviders = PROVIDERS
-    .filter((provider) => provider.services.includes(form.serviceId))
-    .sort((first, second) => Number(second.id === invitedProviderId) - Number(first.id === invitedProviderId));
-  const selectedProvider = availableProviders.find((provider) => provider.id === form.providerId);
-  const selectedWindow = SERVICE_WINDOW_OPTIONS.find((option) => form.preferredSlot.endsWith(` · ${option.window}`));
-  const confirmedWindow = SERVICE_WINDOW_OPTIONS.find((option) => option.id === confirmedSchedule?.windowId);
-  const flexibleDiscountCents = confirmedWindow?.id === 'flexible' ? FLEXIBLE_DISCOUNT_CENTS : 0;
-  const orderTotalCents = Math.round(selectedService.batchPrice * 100) - flexibleDiscountCents;
+  const selectedProvider = PROVIDERS.find((provider) => provider.id === form.providerId);
+  const orderTotalCents = Math.round(selectedService.batchPrice * 100);
   const minimumBookingDate = addDays(new Date(), 7);
   const maximumBookingDate = addDays(new Date(), 90);
 
@@ -238,23 +363,8 @@ export default function BookPage() {
 
   function selectBookingDate(date: Date) {
     if (date < minimumBookingDate || date > maximumBookingDate) return;
-    setConfirmedSchedule(null);
     setSelectedBookingDate(date);
-    if (form.preferredSlot) {
-      const timeWindow = form.preferredSlot.split(' · ').at(-1) ?? '';
-      update('preferredSlot', `${formatBookingDate(date)} · ${timeWindow}`);
-    }
-  }
-
-  function selectServiceWindow(timeWindow: string) {
-    if (!selectedBookingDate) return;
-    setConfirmedSchedule(null);
-    update('preferredSlot', `${formatBookingDate(selectedBookingDate)} · ${timeWindow}`);
-  }
-
-  function confirmSchedule() {
-    if (!selectedBookingDate || !selectedWindow) return;
-    setConfirmedSchedule({ date: dateKey(selectedBookingDate), windowId: selectedWindow.id });
+    update('preferredSlot', formatBookingDate(date));
   }
 
   useEffect(() => {
@@ -333,8 +443,8 @@ export default function BookPage() {
   async function handleCheckout() {
     setCheckoutError('');
 
-    if (!selectedBookingDate || !selectedWindow || !confirmedSchedule || selectedBookingDate < minimumBookingDate || selectedBookingDate > maximumBookingDate) {
-      setCheckoutError('Please select a valid date and service window before continuing.');
+    if (!selectedBookingDate || selectedBookingDate < minimumBookingDate || selectedBookingDate > maximumBookingDate) {
+      setCheckoutError('Please select a valid service date before continuing.');
       return;
     }
 
@@ -471,99 +581,20 @@ export default function BookPage() {
                   initial="hidden"
                   animate="visible"
                   exit="exit"
-                  className="p-6 sm:p-10"
                 >
-                  <h2 className="text-xl font-bold text-foreground mb-1">Choose your service</h2>
-                  <p className="text-sm text-muted-foreground mb-6">
-                    Batch pricing unlocks automatically when 2+ homes on your street book the same window.
-                  </p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {SERVICES.map((svc) => (
-                      <button
-                        key={svc.id}
-                        onClick={() => update('serviceId', svc.id)}
-                        className={`text-left rounded-xl border-2 p-5 transition-all ${
-                          form.serviceId === svc.id
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border bg-background hover:border-primary/40'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="font-bold text-foreground">{svc.label}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">{svc.description}</p>
-                          </div>
-                          <span className="text-2xl">{svc.icon}</span>
-                        </div>
-                        <div className="mt-4 flex items-end gap-3">
-                          <div>
-                            <p className="text-xs text-muted-foreground">Batch rate</p>
-                            <p className="text-xl font-extrabold text-primary">${svc.batchPrice}</p>
-                          </div>
-                          <div className="text-muted-foreground/50 text-sm pb-0.5">vs</div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Solo rate</p>
-                            <p className="text-sm font-semibold text-muted-foreground line-through">${svc.soloPrice}</p>
-                          </div>
-                          <span className="ml-auto inline-block rounded-full bg-accent/10 px-2 py-0.5 text-xs font-bold text-accent">
-                            Save ${svc.soloPrice - svc.batchPrice}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="mt-8 border-t border-border pt-7">
-                    <div className="mb-4">
-                      <h3 className="text-base font-bold text-foreground">Choose your provider</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">Select the provider you prefer for this service.</p>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {availableProviders.map((provider) => {
-                        const selected = form.providerId === provider.id;
-                        const invited = provider.id === invitedProviderId;
-                        return (
-                          <button
-                            key={provider.id}
-                            type="button"
-                            onClick={() => update('providerId', provider.id)}
-                            className={`rounded-xl border-2 p-4 text-left transition-colors ${
-                              selected
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border bg-background hover:border-primary/40'
-                            }`}
-                          >
-                            <div className="flex items-start gap-3">
-                              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                                {provider.name.split(' ').map((part) => part[0]).join('')}
-                              </span>
-                              <span>
-                                <span className="block text-sm font-bold text-foreground">{provider.name}</span>
-                                <span className="mt-0.5 block text-xs text-muted-foreground">Available for {selectedService.label.toLowerCase()}</span>
-                                {invited && (
-                                  <span className="mt-2 inline-flex rounded-full bg-accent/10 px-2 py-0.5 text-xs font-bold text-accent">
-                                    Invited you
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="mt-8 flex justify-end">
-                    <button
-                      onClick={() => setStep(2)}
-                      disabled={!selectedProvider}
-                      className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      Next: Property details
-                      <ArrowRight size={16} />
-                    </button>
-                  </div>
+                  <ServiceStep
+                    services={SERVICES}
+                    providers={PROVIDERS}
+                    selectedServiceId={form.serviceId}
+                    selectedProviderId={form.providerId}
+                    isPremiumUser={isPremiumUser}
+                    onServiceSelect={(serviceId) => {
+                      update('serviceId', serviceId);
+                      if (!isPremiumUser) update('providerId', '');
+                    }}
+                    onProviderSelect={(providerId) => update('providerId', providerId)}
+                    onNext={() => setStep(2)}
+                  />
                 </motion.div>
               )}
 
@@ -789,51 +820,6 @@ export default function BookPage() {
                             );
                           })}
                         </div>
-                        <div className="mt-3 border-t border-border pt-3">
-                          <p className="mb-1.5 text-[11px] font-semibold text-muted-foreground">Choose a time window</p>
-                          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                            {SERVICE_WINDOW_OPTIONS.map((option) => {
-                              const selected = selectedWindow?.id === option.id;
-                              return (
-                                <button
-                                  key={option.id}
-                                  type="button"
-                                  disabled={!selectedBookingDate}
-                                  onClick={() => selectServiceWindow(option.window)}
-                                  className={`rounded-xl border px-3 py-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-                                    selected
-                                      ? option.id === 'flexible'
-                                        ? 'border-amber-500 bg-amber-50/50 text-amber-900 shadow-sm'
-                                        : 'border-slate-900 bg-slate-900 text-white shadow-sm'
-                                      : 'border-slate-200 bg-white text-slate-900 hover:border-slate-400'
-                                  }`}
-                                >
-                                  <span className="flex items-center gap-2 text-sm font-bold">
-                                    <Clock size={14} /> {option.label}
-                                  </span>
-                                  <span className="mt-1 block text-xs text-muted-foreground">{option.description}</span>
-                                  {option.id === 'flexible' && (
-                                    <span className="mt-2 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900">
-                                      Save an extra $2
-                                    </span>
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
-                          <button
-                            type="button"
-                            disabled={!selectedBookingDate || !selectedWindow}
-                            onClick={confirmSchedule}
-                            className={`mt-2 w-full rounded-lg px-3 py-2 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-                              confirmedSchedule
-                                ? 'bg-primary/10 text-primary'
-                                : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                            }`}
-                          >
-                            {confirmedSchedule ? 'Date & Time Confirmed' : 'Confirm Date & Time'}
-                          </button>
-                        </div>
                       </div>
                     </div>
 
@@ -859,12 +845,6 @@ export default function BookPage() {
                       <span className="text-muted-foreground">{selectedService.label} — Street Batch</span>
                       <span className="font-bold text-foreground">${selectedService.batchPrice}.00</span>
                     </div>
-                    {flexibleDiscountCents > 0 && (
-                      <div className="flex items-center justify-between text-sm mb-1.5 text-primary">
-                        <span>Flexible Slot Discount</span>
-                        <span className="font-bold">-$2.00</span>
-                      </div>
-                    )}
                     <div className="flex items-center justify-between border-t border-border pt-1.5 text-sm mb-1.5">
                       <span className="font-semibold text-foreground">Total</span>
                       <span className="font-extrabold text-foreground">${(orderTotalCents / 100).toFixed(2)}</span>
@@ -888,7 +868,7 @@ export default function BookPage() {
                       Back
                     </button>
                     <button
-                      disabled={loading || !confirmedSchedule}
+                      disabled={loading || !selectedBookingDate}
                       onClick={handleCheckout}
                       className="inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3 text-sm font-bold text-primary-foreground disabled:opacity-60 hover:bg-primary/90 transition-colors"
                     >
