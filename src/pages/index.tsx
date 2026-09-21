@@ -48,6 +48,7 @@ const PROVIDER_INVITE_CODES: Record<string, string> = {
 
 export default function HomePage() {
   const [streetAddress, setStreetAddress] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
   const [locationMessage, setLocationMessage] = useState('');
   const addressInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -61,16 +62,18 @@ export default function HomePage() {
 
   function handleStreetCheck() {
     const address = streetAddress.trim();
-    const providerId = PROVIDER_INVITE_CODES[address.toUpperCase()];
+    navigate(address ? `/book?address=${encodeURIComponent(address)}` : '/book');
+  }
+
+  function handleInviteCode() {
+    const code = inviteCode.trim();
+    if (!code) return;
+    const providerId = PROVIDER_INVITE_CODES[code.toUpperCase()];
     if (providerId) {
       navigate(`/book?provider=${encodeURIComponent(providerId)}`);
       return;
     }
-    if (/^[A-Z0-9]+(?:-[A-Z0-9]+)+$/i.test(address)) {
-      navigate(`/batch/${encodeURIComponent(address.toUpperCase())}`);
-      return;
-    }
-    navigate(address ? `/book?address=${encodeURIComponent(address)}` : '/book');
+    navigate(`/batch/${encodeURIComponent(code.toUpperCase())}`);
   }
 
   function handleLocateMe() {
@@ -201,7 +204,7 @@ export default function HomePage() {
                         type="text"
                         value={streetAddress}
                         onChange={(event) => setStreetAddress(event.target.value)}
-                        placeholder="Enter your address, batch, or invite code..."
+                        placeholder="Enter your street address..."
                         className="w-full rounded-xl border border-border bg-card px-4 py-3.5 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 shadow-sm"
                       />
                       <button
@@ -222,17 +225,26 @@ export default function HomePage() {
                       <ArrowRight size={16} />
                     </button>
                   </div>
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    No account needed to check availability. Free to browse.
-                  </p>
-                  {locationMessage && <p className="mt-1 text-xs text-muted-foreground" role="status">{locationMessage}</p>}
-                  <button
-                    type="button"
-                    onClick={() => addressInputRef.current?.focus()}
-                    className="mt-1 text-left text-xs font-medium text-primary underline-offset-2 hover:underline focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  >
-                    Have a batch or provider invite code? Enter it directly above.
-                  </button>
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                    <input
+                      type="text"
+                      value={inviteCode}
+                      onChange={(event) => setInviteCode(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') handleInviteCode();
+                      }}
+                      placeholder="Neighbor's invite code (e.g. OAK-2024)"
+                      className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleInviteCode}
+                      className="rounded-lg px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    >
+                      Apply Code
+                    </button>
+                  </div>
+                  {locationMessage && <p className="mt-2 text-xs text-muted-foreground" role="status">{locationMessage}</p>}
                 </motion.div>
               </motion.div>
 
