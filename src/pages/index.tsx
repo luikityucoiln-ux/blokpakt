@@ -53,6 +53,8 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   const site = 'https://blokpakt.com';
+  const logoUrl = `${site}/assets/blokpakt-bp-mark.svg`;
+  const socialImageUrl = `${site}/assets/og-image.png`;
   const title = 'Blokpakt — Your Whole Block Saves Together';
   const description =
     'Blokpakt batches home services by street. More neighbors booking = lower prices for everyone and higher earnings for contractors. Lawn care, gutters, pressure washing & snow removal.';
@@ -110,7 +112,10 @@ export default function HomePage() {
         <meta property="og:description" content={description} />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={site} />
+        <meta property="og:image" content={socialImageUrl} />
+        <meta property="og:image:alt" content="Blokpakt saves neighbors money on home services" />
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content={socialImageUrl} />
         <script type="application/ld+json">{JSON.stringify({
           '@context': 'https://schema.org',
           '@graph': [
@@ -120,6 +125,8 @@ export default function HomePage() {
               '@id': `${site}/#organization`,
               name: 'Blokpakt',
               url: `${site}/`,
+              logo: logoUrl,
+              image: logoUrl,
               description,
             },
             {
