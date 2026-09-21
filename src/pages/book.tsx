@@ -124,8 +124,6 @@ interface BookingForm {
   serviceId: string;
   providerId: string;
   address: string;
-  city: string;
-  state: string;
   zip: string;
   propertyNotes: string;
   gateCode: string;
@@ -142,8 +140,6 @@ const DEMO_DEFAULTS: BookingForm = {
   serviceId: 'lawn',
   providerId: '',
   address: '247 Oak Street',
-  city: 'Springfield',
-  state: 'IL',
   zip: '62701',
   propertyNotes: '',
   gateCode: '',
@@ -198,7 +194,7 @@ function formatBookingWindow(dates: Date[]): string {
   return `Choose a date: ${shortMonth.format(firstDate)} ${firstDate.getFullYear()} - ${shortMonth.format(lastDate)} ${lastDate.getFullYear()}`;
 }
 
-function parseAddress(value: string): Pick<BookingForm, 'address' | 'city' | 'state' | 'zip'> {
+function parseAddress(value: string): Pick<BookingForm, 'address' | 'zip'> {
   const parts = value.split(',').map((part) => part.trim()).filter(Boolean);
   const lastPart = parts.at(-1) ?? '';
   const stateZipMatch = lastPart.match(/^([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
@@ -206,13 +202,11 @@ function parseAddress(value: string): Pick<BookingForm, 'address' | 'city' | 'st
   if (parts.length >= 3 && stateZipMatch) {
     return {
       address: parts.slice(0, -2).join(', '),
-      city: parts.at(-2) ?? '',
-      state: stateZipMatch[1].toUpperCase(),
       zip: stateZipMatch[2],
     };
   }
 
-  return { address: value, city: '', state: '', zip: '' };
+  return { address: value, zip: '' };
 }
 
 function getInvitedProviderId(): string | null {
@@ -404,14 +398,10 @@ export default function BookPage() {
         const getComponent = (type: string) => components.find((component) => component.types.includes(type));
         const streetNumber = getComponent('street_number')?.long_name ?? '';
         const route = getComponent('route')?.long_name ?? '';
-        const city = getComponent('locality')?.long_name ?? getComponent('postal_town')?.long_name ?? '';
-        const state = getComponent('administrative_area_level_1')?.short_name ?? '';
         const zip = getComponent('postal_code')?.long_name ?? '';
         setForm((previous) => ({
           ...previous,
           address: [streetNumber, route].filter(Boolean).join(' ') || previous.address,
-          city: city || previous.city,
-          state: state || previous.state,
           zip: zip || previous.zip,
         }));
       });
@@ -479,7 +469,6 @@ export default function BookPage() {
       serviceIcon: selectedService.icon,
       payoutCents: orderTotalCents,
       address: form.address,
-      city: form.city,
       zip: form.zip,
       gateCode: form.gateCode,
       propertyNotes: form.propertyNotes,
@@ -634,8 +623,8 @@ export default function BookPage() {
                     Your contractor needs this to find and access your property.
                   </p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div className="sm:col-span-2">
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+                    <div className="sm:col-span-3">
                       <label className="block text-sm font-semibold text-foreground mb-1.5">Street address</label>
                       <div className="relative">
                         <input
@@ -660,42 +649,18 @@ export default function BookPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-foreground mb-1.5">City</label>
+                      <label className="block text-sm font-semibold text-foreground mb-1.5">ZIP</label>
                       <input
                         type="text"
-                        value={form.city}
-                        onChange={(e) => update('city', e.target.value)}
-                        placeholder="Springfield"
+                        value={form.zip}
+                        onChange={(e) => update('zip', e.target.value)}
+                        placeholder="62701"
+                        maxLength={5}
                         className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-semibold text-foreground mb-1.5">State</label>
-                        <input
-                          type="text"
-                          value={form.state}
-                          onChange={(e) => update('state', e.target.value)}
-                          placeholder="IL"
-                          maxLength={2}
-                          className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 uppercase"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-foreground mb-1.5">ZIP</label>
-                        <input
-                          type="text"
-                          value={form.zip}
-                          onChange={(e) => update('zip', e.target.value)}
-                          placeholder="62701"
-                          maxLength={5}
-                          className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
+                    <div className="sm:col-span-2">
                       <label className="block text-sm font-semibold text-foreground mb-1.5">
                         Gate / access code
                         <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>
@@ -709,7 +674,7 @@ export default function BookPage() {
                       />
                     </div>
 
-                    <div>
+                    <div className="sm:col-span-3">
                       <label className="block text-sm font-semibold text-foreground mb-1.5">
                         Property notes
                         <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>

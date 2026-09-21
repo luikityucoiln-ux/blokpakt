@@ -23,7 +23,6 @@ export default function CheckoutSuccess() {
       service: booking.service,
       serviceIcon: booking.serviceIcon,
       address: booking.address,
-      city: booking.city,
       zip: booking.zip,
       gateCode: booking.gateCode || null,
       propertyNotes: booking.propertyNotes,

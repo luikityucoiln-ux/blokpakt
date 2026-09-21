@@ -9,7 +9,6 @@ export interface PendingBooking {
   serviceIcon: string;
   payoutCents: number;
   address: string;
-  city: string;
   zip: string;
   gateCode: string;
   propertyNotes: string;

@@ -9,7 +9,6 @@ export interface Job {
   service: string;
   serviceIcon: string;
   address: string;
-  city: string;
   zip: string;
   gateCode: string | null;
   propertyNotes: string;
@@ -36,7 +35,6 @@ export interface CreateJobInput {
   service: string;
   serviceIcon: string;
   address: string;
-  city: string;
   zip: string;
   gateCode: string | null;
   propertyNotes: string;
@@ -62,13 +60,13 @@ const now = new Date().toISOString();
 let jobs: Job[] = [
   {
     id: 'mock-job-1', code: 'BLK-DEMO1', batchCode: 'MAPLE-2026', position: 1, status: 'en_route', service: 'Lawn Care', serviceIcon: '🌱',
-    address: '112 Maple Ave', city: 'Springfield', zip: '62701', gateCode: null, propertyNotes: 'Gate opens from the side path.', scheduledWindow: '8am - 12pm',
+    address: '112 Maple Ave', zip: '62701', gateCode: null, propertyNotes: 'Gate opens from the side path.', scheduledWindow: '8am - 12pm',
     providerName: 'Marcus T.', customerName: 'Alex Johnson', customerEmail: 'alex@example.com', customerPhone: '(312) 555-0100', payout: 45, estimatedDuration: '30 min',
     beforePhoto: null, afterPhoto: null, arrivedAt: null, completedAt: null, paymentIntentId: null, checkoutSessionId: null, createdAt: now,
   },
   {
     id: 'mock-job-2', code: 'BLK-DEMO2', batchCode: 'MAPLE-2026', position: 2, status: 'pending', service: 'Gutter Cleaning', serviceIcon: '🍂',
-    address: '247 Oak St', city: 'Springfield', zip: '62701', gateCode: null, propertyNotes: '', scheduledWindow: '12pm - 4pm',
+    address: '247 Oak St', zip: '62701', gateCode: null, propertyNotes: '', scheduledWindow: '12pm - 4pm',
     providerName: 'Devon R.', customerName: 'Taylor Morgan', customerEmail: 'taylor@example.com', customerPhone: '(312) 555-0112', payout: 162, estimatedDuration: '90 min',
     beforePhoto: null, afterPhoto: null, arrivedAt: null, completedAt: null, paymentIntentId: null, checkoutSessionId: null, createdAt: now,
   },

@@ -10,12 +10,13 @@ import {
   subscribeToAddOnStatusChanges,
   type AddOnRequest,
 } from '../lib/add-on-workflow';
+import { listBatches, type Batch } from '../lib/batches';
 import { listActiveJobs, subscribeToJobs, updateJob, type Job, type JobStatus } from '../lib/jobs';
 import {
   MapPin, Clock, Camera, CheckCircle,
   Zap, Plus, X, AlertCircle, ArrowRight,
   Navigation, Phone, MessageSquare, TrendingUp, Banknote,
-  CalendarDays, ChevronDown, ChevronUp, Lock, Unlock
+  CalendarDays, ChevronDown, ChevronUp, Unlock
 } from 'lucide-react';
 
 interface DisplayAddOn {
@@ -51,40 +52,6 @@ function formatTime(iso: string | null): string {
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
-
-function PhotoSlot({
-  label,
-  hasPhoto,
-  onCapture,
-}: {
-  label: string;
-  hasPhoto: boolean;
-  onCapture: () => void;
-}) {
-  return (
-    <button
-      onClick={onCapture}
-      className={`flex-1 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 py-5 transition-all ${
-        hasPhoto
-          ? 'border-primary bg-primary/5 text-primary'
-          : 'border-border bg-muted/30 text-muted-foreground hover:border-primary/40'
-      }`}
-    >
-      {hasPhoto ? (
-        <>
-          <CheckCircle size={22} className="text-primary" />
-          <span className="text-xs font-semibold text-primary">{label} ✓</span>
-        </>
-      ) : (
-        <>
-          <Camera size={22} />
-          <span className="text-xs font-semibold">{label}</span>
-          <span className="text-xs text-muted-foreground">Tap to capture</span>
-        </>
-      )}
-    </button>
-  );
-}
 
 function AddOnLogger({
   addOns,
@@ -216,7 +183,7 @@ function JobCard({
   expanded: boolean;
   onToggle: () => void;
   onAction: (jobId: string, action: 'arrive' | 'start' | 'complete') => void;
-  onPhoto: (jobId: string, type: 'before' | 'after') => void;
+  onPhoto: (jobId: string) => void;
   onAddAddOn: (jobId: string, item: { label: string; description: string; price: number; photo: string | null }) => void;
   onRemoveAddOn: (jobId: string, addOnId: string) => void;
   isCompleting: boolean;
@@ -251,7 +218,7 @@ function JobCard({
                 {cfg.label}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground mt-0.5 truncate">{job.address}, {job.city}</p>
+            <p className="text-sm text-muted-foreground mt-0.5 truncate">{job.address}, {job.zip}</p>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
               {job.scheduledWindow && (
                 <span className="text-xs font-semibold text-accent flex items-center gap-1">
@@ -275,6 +242,32 @@ function JobCard({
         </div>
       </button>
 
+      <div className="border-t border-border px-5 pb-4 pt-3">
+        <p className="mb-3 text-xs text-muted-foreground">
+          {job.propertyNotes ? `Note: ${job.propertyNotes}` : 'No access notes provided.'}
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <a
+            href={`https://maps.google.com/?q=${encodeURIComponent(`${job.address}, ${job.zip}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
+          >
+            <MapPin size={14} />
+            Get Directions
+          </a>
+          <button
+            type="button"
+            disabled={job.status === 'complete' || isCompleting}
+            onClick={() => onPhoto(job.id)}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {job.status === 'complete' ? <CheckCircle size={14} /> : <Camera size={14} />}
+            {job.status === 'complete' ? 'Payment released' : isCompleting ? 'Capturing payment…' : 'Upload Completion Photo'}
+          </button>
+        </div>
+      </div>
+
       {/* Expanded detail */}
       <AnimatePresence>
         {expanded && (
@@ -291,7 +284,7 @@ function JobCard({
                 <div className="rounded-xl bg-muted/40 p-3">
                   <p className="text-xs text-muted-foreground font-medium mb-1">Address</p>
                   <p className="text-sm font-semibold text-foreground">{job.address}</p>
-                  <p className="text-xs text-muted-foreground">{job.city} {job.zip}</p>
+                  <p className="text-xs text-muted-foreground">ZIP {job.zip}</p>
                 </div>
                 <div className="rounded-xl bg-muted/40 p-3">
                   <p className="text-xs text-muted-foreground font-medium mb-1">Customer</p>
@@ -319,23 +312,6 @@ function JobCard({
                 </div>
               )}
 
-              {/* Map pin placeholder */}
-              <div className="rounded-xl overflow-hidden border border-border h-28 bg-muted/40 flex items-center justify-center relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-100" />
-                <div className="relative flex flex-col items-center gap-1 text-primary">
-                  <MapPin size={24} className="drop-shadow" />
-                  <span className="text-xs font-semibold">{job.address}</span>
-                  <span className="text-xs text-muted-foreground">Tap to open Maps</span>
-                </div>
-                <a
-                  href={`https://maps.google.com/?q=${encodeURIComponent(job.address + ', ' + job.city)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="absolute inset-0"
-                  aria-label={`Open ${job.address} in Google Maps`}
-                />
-              </div>
-
               {/* Timestamps */}
               {(job.arrivedAt || job.completedAt) && (
                 <div className="flex gap-3">
@@ -350,31 +326,6 @@ function JobCard({
                       <p className="text-xs text-primary font-medium">Completed</p>
                       <p className="text-sm font-bold text-primary">{formatTime(job.completedAt)}</p>
                     </div>
-                  )}
-                </div>
-              )}
-
-              {/* Photo upload — show when arrived or in_progress or complete */}
-              {(job.status === 'arrived' || job.status === 'in_progress' || job.status === 'complete') && (
-                <div>
-                  <p className="text-xs font-semibold text-foreground mb-2">Photo verification</p>
-                  <div className="flex gap-3">
-                    <PhotoSlot
-                      label="Before"
-                      hasPhoto={!!job.beforePhoto}
-                      onCapture={() => onPhoto(job.id, 'before')}
-                    />
-                    <PhotoSlot
-                      label="After"
-                      hasPhoto={!!job.afterPhoto}
-                      onCapture={() => onPhoto(job.id, 'after')}
-                    />
-                  </div>
-                  {job.status !== 'complete' && !job.afterPhoto && (
-                    <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
-                      <Lock size={10} />
-                      After photo required to mark complete
-                    </p>
                   )}
                 </div>
               )}
@@ -411,14 +362,12 @@ function JobCard({
                 {job.status === 'in_progress' && (
                   <button
                     onClick={() => onAction(job.id, 'complete')}
-                    disabled={!job.beforePhoto || !job.afterPhoto || isCompleting}
+                    disabled={isCompleting}
                     className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-40 hover:bg-primary/90 transition-colors"
                   >
                     <CheckCircle size={16} />
                     {isCompleting
                       ? 'Capturing payment…'
-                      : !job.beforePhoto || !job.afterPhoto
-                      ? 'Upload both photos to complete'
                       : `Mark Complete — ${now()}`}
                   </button>
                 )}
@@ -590,13 +539,103 @@ function EarningsPanel({ jobs }: { jobs: FieldJob[] }) {
   );
 }
 
+function BatchDiscovery({
+  batches,
+  claimedCodes,
+  onClaim,
+}: {
+  batches: Batch[];
+  claimedCodes: Set<string>;
+  onClaim: (code: string) => void;
+}) {
+  const pinPositions = [
+    { left: '18%', top: '28%' },
+    { left: '58%', top: '19%' },
+    { left: '35%', top: '63%' },
+    { left: '72%', top: '57%' },
+  ];
+
+  return (
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+      <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+        <div className="mb-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-primary">Batch discovery</p>
+          <h2 className="mt-1 text-xl font-extrabold text-foreground">Claim nearby route density</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Pick up grouped work where every stop earns more per mile.</p>
+        </div>
+        <div className="space-y-3">
+          {batches.map((batch) => {
+            const totalPayout = batch.batchPrice * batch.homesBooked;
+            const claimed = claimedCodes.has(batch.code);
+            return (
+              <article key={batch.code} className="rounded-lg border border-border bg-background p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-foreground">{batch.street} Batch - 62701</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">{batch.service} · {batch.homesBooked} homes</p>
+                  </div>
+                  <p className="shrink-0 text-lg font-extrabold text-primary">${totalPayout.toFixed(2)}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onClaim(batch.code)}
+                  disabled={claimed}
+                  className="mt-4 w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-primary"
+                >
+                  {claimed ? 'Batch claimed' : 'Claim Batch'}
+                </button>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="relative min-h-[360px] overflow-hidden rounded-xl border border-border bg-slate-100 p-5 sm:min-h-[440px]" aria-label="Available batch map">
+        <div
+          className="absolute inset-0 opacity-60"
+          aria-hidden="true"
+          style={{ backgroundImage: 'linear-gradient(#d5ddd8 1px, transparent 1px), linear-gradient(90deg, #d5ddd8 1px, transparent 1px)', backgroundSize: '32px 32px' }}
+        />
+        <div className="relative flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-primary">62701 availability</p>
+            <h2 className="mt-1 text-lg font-extrabold text-foreground">Neighborhood batch map</h2>
+          </div>
+          <span className="rounded-full border border-white bg-white/90 px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm">{batches.length} live batches</span>
+        </div>
+        {batches.map((batch, index) => {
+          const position = pinPositions[index % pinPositions.length];
+          const totalPayout = batch.batchPrice * batch.homesBooked;
+          return (
+            <button
+              key={batch.code}
+              type="button"
+              onClick={() => onClaim(batch.code)}
+              aria-label={`Claim ${batch.street} batch for $${totalPayout}`}
+              className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-foreground shadow-md transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary"
+              style={position}
+            >
+              ${totalPayout} ({batch.homesBooked} homes)
+            </button>
+          );
+        })}
+        <div className="absolute bottom-5 left-5 rounded-lg border border-white/80 bg-white/90 px-3 py-2 text-xs text-muted-foreground shadow-sm">
+          Select a payout pin to claim its batch.
+        </div>
+      </section>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function FieldPage() {
   const [jobs, setJobs] = useState<FieldJob[]>([]);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'route' | 'earnings'>('route');
+  const [activeTab, setActiveTab] = useState<'route' | 'discover' | 'earnings'>('route');
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [claimedBatchCodes, setClaimedBatchCodes] = useState<Set<string>>(() => new Set());
   const [actionError, setActionError] = useState('');
   const [completingId, setCompletingId] = useState<string | null>(null);
 
@@ -628,6 +667,10 @@ export default function FieldPage() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    void listBatches().then(setBatches).catch(() => setBatches([]));
   }, []);
 
   // Reflect job changes made elsewhere (e.g. a new booking landing on the route).
@@ -670,6 +713,10 @@ export default function FieldPage() {
     setExpandedId((prev) => (prev === id ? null : id));
   }
 
+  function claimBatch(code: string) {
+    setClaimedBatchCodes((current) => new Set(current).add(code));
+  }
+
   async function handleAction(jobId: string, action: 'arrive' | 'start' | 'complete') {
     const job = jobs.find((j) => j.id === jobId);
     if (!job) return;
@@ -702,13 +749,16 @@ export default function FieldPage() {
     }
   }
 
-  async function handlePhoto(jobId: string, type: 'before' | 'after') {
-    const patch = type === 'before' ? { beforePhoto: 'captured' } : { afterPhoto: 'captured' };
+  async function handlePhoto(jobId: string) {
+    setCompletingId(jobId);
     try {
-      await updateJob(jobId, patch);
-      setJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, ...patch } : j)));
+      const completedAt = new Date().toISOString();
+      await updateJob(jobId, { afterPhoto: 'captured', status: 'complete', completedAt });
+      setJobs((prev) => prev.map((job) => (job.id === jobId ? { ...job, afterPhoto: 'captured', status: 'complete', completedAt } : job)));
     } catch (error) {
       console.error('photo update failed', error);
+    } finally {
+      setCompletingId(null);
     }
   }
 
@@ -750,6 +800,9 @@ export default function FieldPage() {
   const completedCount = jobs.filter((j) => j.status === 'complete').length;
   const inProgressJob = jobs.find((j) => j.status === 'in_progress' || j.status === 'arrived');
   const providerLabel = jobs[0]?.providerName ?? 'Your route';
+  const activeBatch = batches.find((batch) => batch.code === jobs[0]?.batchCode);
+  const routeTitle = activeBatch ? `${activeBatch.street} Batch` : 'Today\'s Route';
+  const routePayout = jobs.reduce((total, job) => total + job.payout + job.addOns.filter((addOn) => addOn.approved).reduce((sum, addOn) => sum + addOn.price, 0), 0);
 
   return (
     <>
@@ -765,14 +818,14 @@ export default function FieldPage() {
         <h1 className="sr-only">Provider Field Execution App — Blokpakt</h1>
         {/* Top bar */}
         <div className="sticky top-0 z-30 bg-card border-b border-border shadow-sm">
-          <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+          <div className={`${activeTab === 'discover' ? 'max-w-6xl' : 'max-w-lg'} mx-auto px-4 py-3 flex items-center justify-between`}>
             <div>
               <p className="text-xs text-muted-foreground font-medium">Provider App</p>
-              <p className="text-sm font-bold text-foreground">{providerLabel} · {today()}</p>
+              <p className="text-sm font-bold text-foreground">{activeTab === 'route' ? `Today's Route: ${routeTitle}` : `${providerLabel} · ${today()}`}</p>
             </div>
             <div className="flex items-center gap-2">
               <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-                {completedCount}/{jobs.length} done
+                {activeTab === 'route' ? `${jobs.length} jobs · $${routePayout.toFixed(2)}` : `${completedCount}/${jobs.length} done`}
               </div>
               {inProgressJob && (
                 <span className="flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent">
@@ -784,8 +837,8 @@ export default function FieldPage() {
           </div>
 
           {/* Tab switcher */}
-          <div className="max-w-lg mx-auto px-4 pb-3 flex gap-2">
-            {(['route', 'earnings'] as const).map((tab) => (
+          <div className={`${activeTab === 'discover' ? 'max-w-6xl' : 'max-w-lg'} mx-auto px-4 pb-3 flex gap-2`}>
+            {(['route', 'discover', 'earnings'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -795,13 +848,13 @@ export default function FieldPage() {
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
-                {tab === 'route' ? '📍 Route' : '💰 Earnings'}
+                  {tab === 'route' ? '📍 Route' : tab === 'discover' ? '🗺️ Discover' : '💰 Earnings'}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="max-w-lg mx-auto px-4 pt-5 space-y-4">
+        <div className={`${activeTab === 'discover' ? 'max-w-6xl' : 'max-w-lg'} mx-auto px-4 pt-5 space-y-4`}>
           {actionError && (
             <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-2.5 text-sm text-destructive font-medium">
               {actionError}
@@ -888,6 +941,18 @@ export default function FieldPage() {
                 transition={{ duration: 0.2 }}
               >
                 <EarningsPanel jobs={jobs} />
+              </motion.div>
+            )}
+
+            {activeTab === 'discover' && (
+              <motion.div
+                key="discover"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+              >
+                <BatchDiscovery batches={batches} claimedCodes={claimedBatchCodes} onClaim={claimBatch} />
               </motion.div>
             )}
           </AnimatePresence>
