@@ -180,6 +180,24 @@ function availableBookingDates(weekOffset: number): Date[] {
   return Array.from({ length: 14 }, (_, index) => addDays(new Date(), index + 7 + weekOffset * 7));
 }
 
+function formatBookingWindow(dates: Date[]): string {
+  const firstDate = dates[0];
+  const lastDate = dates.at(-1);
+  if (!firstDate || !lastDate) return 'Choose a date';
+
+  const fullMonth = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
+  if (firstDate.getMonth() === lastDate.getMonth() && firstDate.getFullYear() === lastDate.getFullYear()) {
+    return `Choose a date: ${fullMonth.format(firstDate)}`;
+  }
+
+  const shortMonth = new Intl.DateTimeFormat('en-US', { month: 'short' });
+  if (firstDate.getFullYear() === lastDate.getFullYear()) {
+    return `Choose a date: ${shortMonth.format(firstDate)} - ${shortMonth.format(lastDate)} ${lastDate.getFullYear()}`;
+  }
+
+  return `Choose a date: ${shortMonth.format(firstDate)} ${firstDate.getFullYear()} - ${shortMonth.format(lastDate)} ${lastDate.getFullYear()}`;
+}
+
 function parseAddress(value: string): Pick<BookingForm, 'address' | 'city' | 'state' | 'zip'> {
   const parts = value.split(',').map((part) => part.trim()).filter(Boolean);
   const lastPart = parts.at(-1) ?? '';
@@ -357,6 +375,8 @@ export default function BookPage() {
   const orderTotalCents = Math.round(selectedService.batchPrice * 100);
   const minimumBookingDate = addDays(new Date(), 7);
   const maximumBookingDate = addDays(new Date(), 90);
+  const bookingDates = availableBookingDates(weekOffset);
+  const bookingWindowTitle = formatBookingWindow(bookingDates);
 
   function update(field: keyof BookingForm, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -793,10 +813,10 @@ export default function BookPage() {
                         Preferred service window
                       </label>
                       <div className="w-full rounded-2xl border border-border bg-muted/20 p-3 sm:p-4">
-                        <div className="mb-2 flex items-center justify-between text-xs font-semibold text-muted-foreground">
+                        <div className="mb-2 flex items-center justify-between gap-3 text-xs">
                           <div className="flex items-center gap-2">
                             <CalendarDays size={14} className="text-primary" />
-                            Choose a date
+                            <span className="font-semibold text-gray-900">{bookingWindowTitle}</span>
                           </div>
                           <div className="flex gap-1">
                             <button
@@ -824,7 +844,7 @@ export default function BookPage() {
                           Bookings start 7 days out so your neighborhood has time to batch together and save.
                         </p>
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-7">
-                          {availableBookingDates(weekOffset).map((date) => {
+                          {bookingDates.map((date) => {
                             const selected = selectedBookingDate ? dateKey(selectedBookingDate) === dateKey(date) : false;
                             return (
                               <button
