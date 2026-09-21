@@ -74,7 +74,7 @@ export default function Header() {
             <img
               src="/assets/blokpakt-logo.svg"
               alt="Blokpakt"
-              className="block h-auto max-h-9 w-auto max-w-[160px] object-contain"
+              className="block h-8 w-auto object-contain"
             />
           </Link>
 

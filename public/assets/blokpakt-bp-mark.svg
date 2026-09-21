@@ -1,5 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
   <title id="title">Blokpakt Bp logo</title>
-  <rect width="512" height="512" rx="104" fill="#1f7a4c"/>
-  <text x="256" y="335" fill="#ffffff" font-family="Arial, sans-serif" font-size="260" font-weight="800" letter-spacing="-20" text-anchor="middle">Bp</text>
+  <desc id="desc">Navy blue and sage green Bp monogram with a shared vertical spine</desc>
+  <rect width="512" height="512" rx="104" fill="#f4f8f5"/>
+  <g transform="translate(94 92) scale(3.6)" stroke-linejoin="round">
+    <path d="M18 14h28c16 0 26 9 26 22 0 8-4 14-11 17 9 3 14 10 14 19 0 15-11 24-29 24H18Z M36 29v17h9c6 0 10-3 10-9s-4-8-10-8Z M36 60v20h11c7 0 11-4 11-10s-4-10-11-10Z" fill="#173a5e"/>
+    <path d="M36 47h16c17 0 29 10 29 26 0 17-12 28-29 28h-16v-54Zm17 15v25c7 0 12-5 12-13 0-7-5-12-12-12Z" fill="#8eaa91"/>
+    <path d="M36 14v72" stroke="#ffffff" stroke-width="4" opacity=".94"/>
+  </g>
 </svg>

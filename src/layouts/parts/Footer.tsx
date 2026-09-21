@@ -8,7 +8,7 @@ export default function Footer() {
             <img
               src="/assets/blokpakt-logo-light.svg"
               alt="Blokpakt"
-              className="block h-auto max-h-9 w-auto max-w-[160px] object-contain mb-4"
+              className="block h-8 w-auto object-contain mb-4"
             />
             <p className="text-sm text-white/60 leading-relaxed max-w-xs">
               Your whole block saves. Your contractor earns more. Hyper-local home services, powered by neighborhood density.
