@@ -72,7 +72,7 @@ export default function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <img
-              src="/airo-assets/images/logo/horizontal"
+              src="/assets/blokpakt-logo.svg"
               alt="Blokpakt"
               className="block h-auto max-h-9 w-auto max-w-[160px] object-contain"
             />

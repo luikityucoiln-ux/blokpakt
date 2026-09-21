@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router';
-import { ArrowRight, ArrowLeft, Lock, Shield, Clock, Camera, CheckCircle, LocateFixed, CalendarDays } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Lock, Shield, Clock, Camera, CheckCircle, LocateFixed, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { savePendingBooking } from '../lib/pending-booking';
 import { ContractorCard, type ContractorProfile } from '../components/ContractorCard';
 import { InAppChat } from '../components/InAppChat';
@@ -176,8 +176,8 @@ function formatBookingDate(date: Date): string {
   return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-function availableBookingDates(): Date[] {
-  return Array.from({ length: 14 }, (_, index) => addDays(new Date(), index + 7));
+function availableBookingDates(weekOffset: number): Date[] {
+  return Array.from({ length: 14 }, (_, index) => addDays(new Date(), index + 7 + weekOffset * 7));
 }
 
 function parseAddress(value: string): Pick<BookingForm, 'address' | 'city' | 'state' | 'zip'> {
@@ -346,6 +346,7 @@ export default function BookPage() {
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [selectedBookingDate, setSelectedBookingDate] = useState<Date | null>(null);
+  const [weekOffset, setWeekOffset] = useState(0);
   const [locationMessage, setLocationMessage] = useState('');
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<GoogleAutocomplete | null>(null);
@@ -792,15 +793,38 @@ export default function BookPage() {
                         Preferred service window
                       </label>
                       <div className="w-full rounded-2xl border border-border bg-muted/20 p-3 sm:p-4">
-                        <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-                          <CalendarDays size={14} className="text-primary" />
-                          Choose a date
+                        <div className="mb-2 flex items-center justify-between text-xs font-semibold text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <CalendarDays size={14} className="text-primary" />
+                            Choose a date
+                          </div>
+                          <div className="flex gap-1">
+                            <button
+                              type="button"
+                              aria-label="Previous week"
+                              title="Previous week"
+                              disabled={weekOffset === 0}
+                              onClick={() => setWeekOffset((offset) => offset - 1)}
+                              className="rounded-md border border-gray-200 p-2 text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <ChevronLeft size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              aria-label="Next week"
+                              title="Next week"
+                              onClick={() => setWeekOffset((offset) => offset + 1)}
+                              className="rounded-md border border-gray-200 p-2 text-gray-600 hover:bg-gray-100"
+                            >
+                              <ChevronRight size={14} />
+                            </button>
+                          </div>
                         </div>
                         <p className="mb-2 text-[11px] leading-4 text-muted-foreground">
                           Bookings start 7 days out so your neighborhood has time to batch together and save.
                         </p>
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-7">
-                          {availableBookingDates().map((date) => {
+                          {availableBookingDates(weekOffset).map((date) => {
                             const selected = selectedBookingDate ? dateKey(selectedBookingDate) === dateKey(date) : false;
                             return (
                               <button

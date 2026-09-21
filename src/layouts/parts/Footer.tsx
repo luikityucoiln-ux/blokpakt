@@ -6,7 +6,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <img
-              src="/airo-assets/images/logo/horizontal/dark"
+              src="/assets/blokpakt-logo-light.svg"
               alt="Blokpakt"
               className="block h-auto max-h-9 w-auto max-w-[160px] object-contain mb-4"
             />

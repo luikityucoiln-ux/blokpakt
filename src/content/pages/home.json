@@ -250,12 +250,5 @@
       "label": "dispute protection on every single booking",
       "detail": "Flag any issue within 48 hours to freeze payment capture instantly."
     }
-  ],
-  "cta": {
-    "headline": "Ready to get your block on the list?",
-    "subheadline": "Check your address — it takes 30 seconds.",
-    "searchPlaceholder": "Enter your address or ZIP code",
-    "searchCta": "Check Your Street",
-    "contractorLink": "Are you a contractor? Join the network →"
-  }
+  ]
 }

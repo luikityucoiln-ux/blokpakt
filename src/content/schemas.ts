@@ -82,14 +82,7 @@ export const schemas = {
         "value": z.string(),
         "label": z.string(),
         "detail": z.string()
-      })),
-      "cta": z.object({
-        "headline": z.string(),
-        "subheadline": z.string(),
-        "searchPlaceholder": z.string(),
-        "searchCta": z.string(),
-        "contractorLink": z.string()
-      })
+      }))
     }),
     book: z.object({
       "TIME_SLOTS": z.array(z.string())

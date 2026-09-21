@@ -533,67 +533,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── CTA SECTION ──────────────────────────────────────── */}
-        <section id="contractors" className="relative py-20 lg:py-28 bg-primary overflow-hidden">
-          <svg
-            className="absolute inset-0 w-full h-full opacity-[0.06] pointer-events-none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <defs>
-              <pattern id="cta-streets" width="80" height="80" patternUnits="userSpaceOnUse">
-                <rect x="10" y="10" width="25" height="25" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                <rect x="45" y="10" width="25" height="25" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                <rect x="10" y="45" width="25" height="25" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                <rect x="45" y="45" width="25" height="25" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#cta-streets)" />
-          </svg>
-
-          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <motion.div
-              variants={stagger}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              className="max-w-2xl"
-            >
-              <motion.h2
-                variants={fadeUp}
-                className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-primary-foreground mb-4 leading-tight"
-              >
-                {home.cta.headline}
-              </motion.h2>
-              <motion.p variants={fadeUp} className="text-lg text-primary-foreground/70 mb-8">
-                {home.cta.subheadline}
-              </motion.p>
-
-              <motion.div variants={fadeUp}>
-                <div className="flex flex-col sm:flex-row gap-3 max-w-lg">
-                  <input
-                    type="text"
-                    placeholder={home.cta.searchPlaceholder}
-                    className="flex-1 rounded-xl border border-white/20 bg-white/10 px-4 py-3.5 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
-                  />
-                    <button
-                      onClick={() => navigate('/book')}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3.5 text-sm font-bold text-white shadow-md hover:bg-accent/90 transition-colors whitespace-nowrap"
-                    >
-                      {home.cta.searchCta}
-                      <ArrowRight size={16} />
-                    </button>
-                  </div>
-                  <Link
-                    to="/join"
-                    className="inline-flex items-center gap-1 mt-5 text-sm font-semibold text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-                  >
-                    {home.cta.contractorLink}
-                  </Link>
-              </motion.div>
-            </motion.div>
-          </div>
-        </section>
       </main>
     </>
   );
