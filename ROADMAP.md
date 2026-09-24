@@ -89,6 +89,15 @@ When backend work starts, introduce authenticated APIs for:
 
 Do not trust price, Premium status, contractor eligibility, distance, review rating, or evidence requirements sent by the client. Validate all of them on the server.
 
+### In-App Messaging and Notifications
+
+1. Add authenticated, booking-scoped in-app messaging between a customer and the assigned contractor. Do not expose either party's raw phone number.
+2. When a new message is received while the chat is open, show it in the conversation and announce it to assistive technology.
+3. Offer an optional incoming-message sound. It must be off until the user has interacted with the site, respect a persistent mute preference, and never play for messages sent by the current user.
+4. Do not play sounds when the browser tab is hidden. Use a browser or push notification instead when the user has explicitly granted permission.
+5. Store the notification preference per authenticated user and provide a visible setting to turn the sound on or off.
+6. The messaging service must enforce booking membership server-side, rate-limit sends, retain an audit trail, and prevent a contractor or customer from accessing conversations outside their own booking.
+
 ## Implementation Sequence
 
 1. Finalize all UI layouts and interaction states using mock data.

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
+import 'leaflet/dist/leaflet.css';
 import { field } from 'virtual:content';
 import {
   createAddOnRequest,
@@ -27,6 +28,24 @@ interface DisplayAddOn {
 }
 
 type FieldJob = Job & { addOns: DisplayAddOn[] };
+
+type DiscoverMapModules = {
+  leaflet: typeof import('leaflet');
+  reactLeaflet: typeof import('react-leaflet');
+};
+
+type BatchMapPin = Batch & {
+  coordinates: [number, number];
+};
+
+const SPRINGFIELD_CENTER: [number, number] = [39.78, -89.65];
+
+const BATCH_PIN_COORDINATES: [number, number][] = [
+  [39.789, -89.661],
+  [39.785, -89.642],
+  [39.773, -89.657],
+  [39.776, -89.635],
+];
 
 const STATUS_CONFIG: Record<JobStatus, { label: string; color: string; bg: string; dot: string }> = {
   pending: { label: 'Pending', color: 'text-muted-foreground', bg: 'bg-muted', dot: 'bg-muted-foreground' },
@@ -548,12 +567,29 @@ function BatchDiscovery({
   claimedCodes: Set<string>;
   onClaim: (code: string) => void;
 }) {
-  const pinPositions = [
-    { left: '18%', top: '28%' },
-    { left: '58%', top: '19%' },
-    { left: '35%', top: '63%' },
-    { left: '72%', top: '57%' },
-  ];
+  const [mapModules, setMapModules] = useState<DiscoverMapModules | null>(null);
+  const [mapError, setMapError] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState<BatchMapPin | null>(null);
+  const mapPins: BatchMapPin[] = batches.slice(0, BATCH_PIN_COORDINATES.length).map((batch, index) => ({
+    ...batch,
+    coordinates: BATCH_PIN_COORDINATES[index],
+  }));
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void Promise.all([import('leaflet'), import('react-leaflet')])
+      .then(([leaflet, reactLeaflet]) => {
+        if (!cancelled) setMapModules({ leaflet, reactLeaflet });
+      })
+      .catch(() => {
+        if (!cancelled) setMapError(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
@@ -590,40 +626,135 @@ function BatchDiscovery({
         </div>
       </section>
 
-      <section className="relative min-h-[360px] overflow-hidden rounded-xl border border-border bg-slate-100 p-5 sm:min-h-[440px]" aria-label="Available batch map">
-        <div
-          className="absolute inset-0 opacity-60"
-          aria-hidden="true"
-          style={{ backgroundImage: 'linear-gradient(#d5ddd8 1px, transparent 1px), linear-gradient(90deg, #d5ddd8 1px, transparent 1px)', backgroundSize: '32px 32px' }}
-        />
-        <div className="relative flex items-start justify-between gap-3">
+      <section className="relative min-h-[360px] overflow-hidden rounded-xl border border-border bg-muted sm:min-h-[440px]" aria-label="Available batch map">
+        <div className="absolute left-5 right-5 top-5 z-10 flex items-start justify-between gap-3 pointer-events-none">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-primary">62701 availability</p>
-            <h2 className="mt-1 text-lg font-extrabold text-foreground">Neighborhood batch map</h2>
+            <p className="text-xs font-bold uppercase tracking-wider text-primary drop-shadow-sm">62701 availability</p>
+            <h2 className="mt-1 text-lg font-extrabold text-foreground drop-shadow-sm">Neighborhood batch map</h2>
           </div>
-          <span className="rounded-full border border-white bg-white/90 px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm">{batches.length} live batches</span>
+          <span className="rounded-full border border-white bg-white/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm">{batches.length} live batches</span>
         </div>
-        {batches.map((batch, index) => {
-          const position = pinPositions[index % pinPositions.length];
-          const totalPayout = batch.batchPrice * batch.homesBooked;
-          return (
-            <button
-              key={batch.code}
-              type="button"
-              onClick={() => onClaim(batch.code)}
-              aria-label={`Claim ${batch.street} batch for $${totalPayout}`}
-              className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-foreground shadow-md transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary"
-              style={position}
-            >
-              ${totalPayout} ({batch.homesBooked} homes)
-            </button>
-          );
-        })}
-        <div className="absolute bottom-5 left-5 rounded-lg border border-white/80 bg-white/90 px-3 py-2 text-xs text-muted-foreground shadow-sm">
-          Select a payout pin to claim its batch.
+
+        {mapModules ? (
+          <DiscoverMap mapModules={mapModules} pins={mapPins} onSelect={setSelectedBatch} />
+        ) : (
+          <div className="flex min-h-[360px] items-center justify-center text-sm font-medium text-muted-foreground sm:min-h-[440px]">
+            {mapError ? 'Map unavailable. Please refresh to try again.' : 'Loading nearby batches...'}
+          </div>
+        )}
+
+        <AnimatePresence>
+          {selectedBatch && (() => {
+            const totalPayout = selectedBatch.batchPrice * selectedBatch.homesBooked;
+            const estimatedHours = Math.max(0.75, selectedBatch.homesBooked * 0.375);
+            const claimed = claimedCodes.has(selectedBatch.code);
+
+            return (
+              <motion.aside
+                initial={{ opacity: 0, x: 24 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 24 }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-x-4 bottom-4 z-20 rounded-xl border border-primary/20 bg-card p-4 shadow-xl sm:inset-x-auto sm:right-4 sm:w-80"
+                aria-label={`${selectedBatch.street} route details`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-primary">Route density</p>
+                    <h3 className="mt-1 text-lg font-extrabold text-foreground">{selectedBatch.street} Batch</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedBatch(null)}
+                    className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label="Close route details"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="mt-4 grid grid-cols-3 divide-x divide-border rounded-lg border border-border bg-muted/40 py-3 text-center">
+                  <div className="px-2">
+                    <p className="text-xs text-muted-foreground">Payout</p>
+                    <p className="mt-1 text-base font-extrabold text-primary">${totalPayout}</p>
+                  </div>
+                  <div className="px-2">
+                    <p className="text-xs text-muted-foreground">Stops</p>
+                    <p className="mt-1 text-base font-extrabold text-foreground">{selectedBatch.homesBooked}</p>
+                  </div>
+                  <div className="px-2">
+                    <p className="text-xs text-muted-foreground">Est. time</p>
+                    <p className="mt-1 text-base font-extrabold text-foreground">{estimatedHours}h</p>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {selectedBatch.homesBooked} {selectedBatch.service} stop{selectedBatch.homesBooked === 1 ? '' : 's'} across one street.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => onClaim(selectedBatch.code)}
+                  disabled={claimed}
+                  className="mt-4 min-h-11 w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-primary"
+                >
+                  {claimed ? 'Route claimed' : 'Claim Route'}
+                </button>
+              </motion.aside>
+            );
+          })()}
+        </AnimatePresence>
+
+        <div className="absolute bottom-5 left-5 z-10 rounded-lg border border-white/80 bg-white/95 px-3 py-2 text-xs text-muted-foreground shadow-sm pointer-events-none">
+          Select a route pin to compare payout and density.
         </div>
       </section>
     </div>
+  );
+}
+
+function DiscoverMap({
+  mapModules,
+  pins,
+  onSelect,
+}: {
+  mapModules: DiscoverMapModules;
+  pins: BatchMapPin[];
+  onSelect: (pin: BatchMapPin) => void;
+}) {
+  const { MapContainer, Marker, TileLayer } = mapModules.reactLeaflet;
+
+  return (
+    <MapContainer
+      center={SPRINGFIELD_CENTER}
+      zoom={13}
+      scrollWheelZoom
+      className="h-[360px] w-full sm:h-[440px]"
+      aria-label="Interactive map of available Springfield service batches"
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      {pins.map((pin) => {
+        const totalPayout = Math.round(pin.batchPrice * pin.homesBooked);
+        const priceIcon = mapModules.leaflet.divIcon({
+          className: 'discover-price-pin-container',
+          html: `<span class="discover-price-pin"><span>$${totalPayout}</span><span class="discover-price-pin-density"><span class="discover-price-pin-divider"></span>${pin.homesBooked} Houses</span></span>`,
+          iconSize: [158, 38],
+          iconAnchor: [79, 19],
+        });
+
+        return (
+          <Marker
+            key={pin.code}
+            position={pin.coordinates}
+            icon={priceIcon}
+            eventHandlers={{ click: () => onSelect(pin) }}
+            title={`${pin.street} batch: $${totalPayout}, ${pin.homesBooked} houses`}
+          />
+        );
+      })}
+    </MapContainer>
   );
 }
 

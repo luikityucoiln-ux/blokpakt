@@ -52,3 +52,59 @@
 .bg-footer {
   background-color: hsl(var(--footer-bg));
 }
+
+.discover-price-pin-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+}
+
+.discover-price-pin {
+  display: inline-flex;
+  min-width: 4.75rem;
+  min-height: 2.375rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #1f2937;
+  border-radius: 9999px;
+  background: #111827;
+  box-shadow: 0 5px 14px rgb(0 0 0 / 0.28);
+  color: #b7ff39;
+  font-family: var(--font-heading);
+  font-size: 0.875rem;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+.discover-price-pin:hover {
+  transform: scale(1.08);
+  box-shadow: 0 7px 18px rgb(0 0 0 / 0.38);
+  background: #030712;
+}
+
+.discover-price-pin-density {
+  display: inline-flex;
+  max-width: 0;
+  align-items: center;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-width 180ms ease, opacity 120ms ease;
+}
+
+.discover-price-pin:hover .discover-price-pin-density {
+  max-width: 5.75rem;
+  opacity: 1;
+}
+
+.discover-price-pin-divider {
+  display: inline-block;
+  width: 1px;
+  height: 1rem;
+  margin: 0 0.5rem;
+  background: rgb(183 255 57 / 0.55);
+}
