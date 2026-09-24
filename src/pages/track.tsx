@@ -1,15 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { useSearchParams, Link } from 'react-router';
 import { track } from 'virtual:content';
-import {
-  listAddOnRequestsForJob,
-  subscribeToAddOnRequests,
-  subscribeToAddOnStatusChanges,
-  updateAddOnStatus,
-  type AddOnRequest,
-} from '../lib/add-on-workflow';
-import { getJobByCode, subscribeToJob, updateJob, type Job, type JobStatus } from '../lib/jobs';
-import { getBatchByCode, type Batch } from '../lib/batches';
+import { readAddOnRequests, subscribeToAddOnRequests, updateAddOnStatus, type AddOnRequest } from '../lib/add-on-workflow';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -27,25 +18,41 @@ import {
   Plus,
 } from 'lucide-react';
 
-// ── Status steps ──────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
+type JobStatus = 'scheduled' | 'en_route' | 'arrived' | 'in_progress' | 'completed' | 'disputed';
+
+// ── Mock data ─────────────────────────────────────────────────────────────────
+const MOCK_JOB = {
+  id: 'BLK-20240912-0042',
+  service: 'Lawn Care — Street Batch',
+  address: '247 Oak Street, Springfield, IL',
+  scheduledWindow: 'Thursday 8am–12pm',
+  contractorName: 'Marcus T.',
+  batchCount: 4,
+  batchStreet: 'Oak Street',
+  status: 'en_route' as JobStatus,
+  estimatedArrival: '9:15 AM',
+  referralCode: 'OAK-2024',
+  referralSavings: 18,
+  neighborsSaved: 3,
+  paymentIntentId: null as string | null,
+};
+
 const STATUS_STEPS: { key: JobStatus; label: string }[] = [
-  { key: 'pending', label: 'Scheduled' },
+  { key: 'scheduled', label: 'Scheduled' },
   { key: 'en_route', label: 'Contractor en route' },
   { key: 'arrived', label: 'Arrived' },
   { key: 'in_progress', label: 'In progress' },
-  { key: 'complete', label: 'Completed' },
+  { key: 'completed', label: 'Completed' },
 ];
 
-const TIMELINE_STEPS: { key: JobStatus; label: (job: Job) => string }[] = [
-  { key: 'pending', label: () => 'Contractor confirmed your booking' },
-  { key: 'en_route', label: (j) => `${j.providerName} is on the way` },
-  { key: 'arrived', label: (j) => `${j.providerName} has arrived` },
-  { key: 'in_progress', label: () => 'Job in progress' },
-  { key: 'complete', label: () => 'Before & after photos uploaded' },
+const MOCK_ADDONS: AddOnRequest[] = [
+  { id: 'ao1', jobId: MOCK_JOB.id, service: 'Edge trimming — driveway border', description: 'Contractor noticed overgrowth along your driveway edge.', price: 25, photo: null, status: 'pending', createdAt: new Date().toISOString() },
+  { id: 'ao2', jobId: MOCK_JOB.id, service: 'Bag & haul clippings', description: 'Clippings are heavy today — bagging recommended.', price: 15, photo: null, status: 'pending', createdAt: new Date().toISOString() },
 ];
 
 // ── Share hub component ───────────────────────────────────────────────────────
-function ShareHub({ referralCode, batchStreet, savings, neighborsSaved }: { referralCode: string; batchStreet: string; savings: number; neighborsSaved: number }) {
+function ShareHub({ referralCode, batchStreet, savings }: { referralCode: string; batchStreet: string; savings: number }) {
   const [copied, setCopied] = useState(false);
   const batchUrl = `https://blokpakt.com/batch/${encodeURIComponent(referralCode)}`;
   const shareText = `I just booked a yard crew for ${batchStreet} today. If anyone else needs a cut, we can batch it for a discount and save $${savings}.\n\nBook here: ${batchUrl}\nOr Google "Blokpakt" and enter code: ${referralCode}`;
@@ -108,9 +115,7 @@ function ShareHub({ referralCode, batchStreet, savings, neighborsSaved }: { refe
       <div className="mt-3 flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2">
         <Users size={12} className="text-accent flex-shrink-0" />
         <p className="text-xs text-accent font-medium">
-          {neighborsSaved > 0
-            ? `${neighborsSaved} neighbor${neighborsSaved > 1 ? 's' : ''} already saved using your code`
-            : 'Be the first to invite your neighbors and start the batch discount'}
+          3 neighbors already saved using your code this month
         </p>
       </div>
     </div>
@@ -161,7 +166,7 @@ function AddOnModal({
           </div>
         </div>
         <p className="text-xs text-muted-foreground mb-4">
-          Your contractor is on-site and requesting approval. Approving updates this UI demo only.
+          Your contractor is on-site and requesting approval. Approving adds this to your Stripe authorization hold.
         </p>
         <div className="grid grid-cols-2 gap-3">
           <button
@@ -183,19 +188,18 @@ function AddOnModal({
 }
 
 // ── Status banner ─────────────────────────────────────────────────────────────
-function StatusBanner({ job }: { job: Job }) {
+function StatusBanner({ status, eta }: { status: JobStatus; eta: string }) {
   const config: Record<JobStatus, { color: string; bg: string; icon: ReactNode; label: string; sub: string }> = {
-    pending: { color: 'text-primary', bg: 'bg-primary/10 border-primary/20', icon: <Clock size={18} />, label: 'Job scheduled', sub: job.scheduledWindow ? `Confirmed for ${job.scheduledWindow}.` : 'Your contractor has confirmed the booking.' },
-    en_route: { color: 'text-accent', bg: 'bg-accent/10 border-accent/20', icon: <MapPin size={18} />, label: 'Contractor en route', sub: `${job.providerName} is on the way to your property.` },
+    scheduled: { color: 'text-primary', bg: 'bg-primary/10 border-primary/20', icon: <Clock size={18} />, label: 'Job scheduled', sub: 'Your contractor has confirmed the booking.' },
+    en_route: { color: 'text-accent', bg: 'bg-accent/10 border-accent/20', icon: <MapPin size={18} />, label: `Contractor en route — ETA ${eta}`, sub: 'Marcus T. is on the way to your property.' },
     arrived: { color: 'text-primary', bg: 'bg-primary/10 border-primary/20', icon: <CheckCircle size={18} />, label: 'Contractor has arrived', sub: 'Work is about to begin.' },
     in_progress: { color: 'text-accent', bg: 'bg-accent/10 border-accent/20', icon: <Zap size={18} />, label: 'Job in progress', sub: 'Your contractor is working on your property now.' },
-    complete: { color: 'text-primary', bg: 'bg-primary/10 border-primary/20', icon: <CheckCircle size={18} />, label: 'Job completed', sub: 'Before & after photos uploaded. Payment will be captured shortly.' },
+    completed: { color: 'text-primary', bg: 'bg-primary/10 border-primary/20', icon: <CheckCircle size={18} />, label: 'Job completed', sub: 'Before & after photos uploaded. Payment will be captured shortly.' },
     disputed: { color: 'text-destructive', bg: 'bg-destructive/10 border-destructive/20', icon: <AlertTriangle size={18} />, label: 'Dispute under review', sub: 'Payment capture is frozen. Our team is reviewing your case.' },
-    cancelled: { color: 'text-muted-foreground', bg: 'bg-muted border-border', icon: <X size={18} />, label: 'Booking cancelled', sub: 'Your authorization hold has been released — you were not charged.' },
   };
-  const c = config[job.status];
+  const c = config[status];
   return (
-    <motion.div key={job.status} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className={`rounded-xl border px-4 py-3 flex items-start gap-3 ${c.bg}`}>
+    <motion.div key={status} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className={`rounded-xl border px-4 py-3 flex items-start gap-3 ${c.bg}`}>
       <span className={`mt-0.5 flex-shrink-0 ${c.color}`}>{c.icon}</span>
       <div>
         <p className={`text-sm font-bold ${c.color}`}>{c.label}</p>
@@ -207,14 +211,11 @@ function StatusBanner({ job }: { job: Job }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function TrackPage() {
-  const [searchParams] = useSearchParams();
-  const code = searchParams.get('code');
-
-  const [job, setJob] = useState<Job | null>(null);
-  const [batch, setBatch] = useState<Batch | null>(null);
-  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'not_found' | 'unavailable'>('loading');
+  const job = MOCK_JOB;
+  const [currentStatus, setCurrentStatus] = useState<JobStatus>(job.status);
   const [pendingAddons, setPendingAddons] = useState<AddOnRequest[]>([]);
   const [activeAddon, setActiveAddon] = useState<AddOnRequest | null>(null);
+  const [approvedAddons, setApprovedAddons] = useState<string[]>([]);
   const [approvedRequests, setApprovedRequests] = useState<AddOnRequest[]>([]);
   const [showDispute, setShowDispute] = useState(false);
   const [disputeFiled, setDisputeFiled] = useState(false);
@@ -222,78 +223,39 @@ export default function TrackPage() {
   const [disputeDetails, setDisputeDetails] = useState('');
   const [disputeSubmitted, setDisputeSubmitted] = useState(false);
 
-  // Look up the job by its public tracking code (from the checkout success link).
   useEffect(() => {
-    if (!code) {
-      setLoadState('not_found');
-      return;
-    }
-    let cancelled = false;
-    setLoadState('loading');
-    getJobByCode(code)
-      .then(async (found) => {
-        if (cancelled) return;
-        if (!found) {
-          setLoadState('not_found');
-          return;
-        }
-        setJob(found);
-        setLoadState('ready');
-        const relatedBatch = await getBatchByCode(found.batchCode ?? found.code);
-        if (!cancelled) setBatch(relatedBatch);
-      })
-      .catch(() => {
-        if (!cancelled) setLoadState('unavailable');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [code]);
-
-  // Reflect status changes made by the field app in real time.
-  useEffect(() => {
-    if (!code) return;
-    const unsubscribe = subscribeToJob(code, (updated) => setJob(updated));
-    return () => unsubscribe();
-  }, [code]);
-
-  // Load and subscribe to add-on requests scoped to this job only.
-  useEffect(() => {
-    if (!job) return;
     const showPending = (requests: AddOnRequest[]) => {
       const pending = requests.filter((addon) => addon.status === 'pending');
       setPendingAddons(pending);
       setActiveAddon((current) => current ?? pending[0] ?? null);
     };
-    void listAddOnRequestsForJob(job.id).then(showPending).catch(() => setPendingAddons([]));
-
-    const unsubscribeInsert = subscribeToAddOnRequests((request) => {
-      if (request.jobId !== job.id || request.status !== 'pending') return;
-      setPendingAddons((current) => (current.some((item) => item.id === request.id) ? current : [...current, request]));
-      setActiveAddon((current) => current ?? request);
-    });
-    const unsubscribeStatus = subscribeToAddOnStatusChanges((request) => {
-      if (request.jobId !== job.id) return;
-      setPendingAddons((prev) => prev.filter((item) => item.id !== request.id));
-      if (request.status === 'approved') {
-        setApprovedRequests((prev) => (prev.some((item) => item.id === request.id) ? prev : [...prev, request]));
+    void readAddOnRequests().then(showPending).catch(() => setPendingAddons([]));
+    const unsubscribe = subscribeToAddOnRequests((request) => {
+      if (request.status === 'pending') {
+        setPendingAddons((current) => current.some((item) => item.id === request.id) ? current : [...current, request]);
+        setActiveAddon((current) => current ?? request);
       }
     });
     return () => {
-      unsubscribeInsert();
-      unsubscribeStatus();
+      unsubscribe();
     };
-    // Only re-subscribe when the job identity changes, not on every field update.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [job?.id]);
+  }, [job.id]);
 
   async function handleApproveAddon(id: string) {
     const addon = pendingAddons.find((item) => item.id === id);
-    if (!addon || !job) return;
+    if (!addon) return;
     await updateAddOnStatus(id, 'approved');
+    setApprovedAddons((prev) => [...prev, id]);
     setApprovedRequests((prev) => [...prev, addon]);
     setPendingAddons((prev) => prev.filter((a) => a.id !== id));
     setActiveAddon(null);
+    if (job.paymentIntentId) {
+      void globalThis.fetch('/api/stripe/update-authorization', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentIntentId: job.paymentIntentId, amount: addon.price * 100, addOnId: id }),
+      });
+    }
   }
 
   async function handleDeclineAddon(id: string) {
@@ -302,61 +264,18 @@ export default function TrackPage() {
     setActiveAddon(null);
   }
 
-  async function handleDisputeSubmit() {
-    if (!disputeReason || !job) return;
+  function handleDisputeSubmit() {
+    if (!disputeReason) return;
     setDisputeSubmitted(true);
-    try {
-      await updateJob(job.id, { status: 'disputed' });
-    } catch (error) {
-      console.error('dispute update failed', error);
-    }
     window.setTimeout(() => {
       setShowDispute(false);
       setDisputeFiled(true);
-      setJob((current) => (current ? { ...current, status: 'disputed' } : current));
+      setCurrentStatus('disputed');
       setDisputeSubmitted(false);
     }, 1800);
   }
 
-  if (loadState === 'not_found') {
-    return (
-      <main className="min-h-screen bg-muted/30 flex items-center justify-center px-4 py-20">
-        <div className="mx-auto max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
-          <h1 className="text-xl font-extrabold text-foreground">No active job to track</h1>
-          <p className="mt-3 text-sm text-muted-foreground">Use the tracking link from your booking confirmation, or book a service to get started.</p>
-          <Link to="/book" className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-bold text-white">
-            Book a service
-          </Link>
-        </div>
-      </main>
-    );
-  }
-
-  if (loadState === 'unavailable') {
-    return (
-      <main className="min-h-screen bg-muted/30 flex items-center justify-center px-4 py-20">
-        <div className="mx-auto max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
-          <h1 className="text-xl font-extrabold text-foreground">Tracking is temporarily unavailable</h1>
-          <p className="mt-3 text-sm text-muted-foreground">We couldn't reach the database. Please try again shortly.</p>
-        </div>
-      </main>
-    );
-  }
-
-  if (loadState === 'loading' || !job) {
-    return (
-      <main className="min-h-screen bg-muted/30 flex items-center justify-center px-4 py-20">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </main>
-    );
-  }
-
-  const currentStepIndex = STATUS_STEPS.findIndex((s) => s.key === job.status);
-  const referralCode = job.batchCode ?? job.code;
-  const homesBooked = batch?.homesBooked ?? 1;
-  const targetHomes = batch?.targetHomes ?? Math.max(homesBooked, 5);
-  const referralSavings = batch ? Math.max(Math.round(batch.soloPrice - batch.batchPrice), 0) : 0;
-  const neighborsSaved = Math.max(homesBooked - 1, 0);
+  const currentStepIndex = STATUS_STEPS.findIndex((s) => s.key === currentStatus);
 
   return (
     <>
@@ -442,7 +361,7 @@ export default function TrackPage() {
                     />
                   </div>
                   <div className="rounded-lg bg-muted/40 border border-border px-3 py-2 mb-4 text-xs text-muted-foreground">
-                    Filing a dispute updates the demo status. Our team reviews within 4 hours using contractor photo proof.
+                    Filing a dispute immediately freezes the Stripe payment capture. Our team reviews within 4 hours using contractor photo proof.
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <button onClick={() => setShowDispute(false)} className="rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors">
@@ -470,14 +389,14 @@ export default function TrackPage() {
           <div className="mb-8">
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Booking {job.code}</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Booking {job.id}</p>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">{job.service}</h1>
                 <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
                   <MapPin size={13} />
                   {job.address}
                 </p>
               </div>
-              {!disputeFiled && job.status === 'complete' && (
+              {!disputeFiled && currentStatus === 'completed' && (
                 <button
                   onClick={() => setShowDispute(true)}
                   className="inline-flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-2 text-sm font-semibold text-destructive hover:bg-destructive/10 transition-colors"
@@ -491,7 +410,7 @@ export default function TrackPage() {
 
           {/* Status banner */}
           <div className="mb-6">
-            <StatusBanner job={job} />
+            <StatusBanner status={currentStatus} eta={job.estimatedArrival} />
           </div>
 
           {/* Progress stepper */}
@@ -526,39 +445,35 @@ export default function TrackPage() {
             {/* ── Left column ── */}
             <div className="flex flex-col gap-6">
 
-              {/* Activity timeline — derived from live job status */}
+              {/* Activity timeline — content from virtual:content */}
               <div className="bg-card rounded-xl border border-border p-5">
                 <p className="text-sm font-bold text-foreground mb-4">Activity timeline</p>
                 <div className="relative">
                   <div className="absolute left-3 top-0 bottom-0 w-px bg-border" />
                   <div className="flex flex-col gap-4">
-                    {TIMELINE_STEPS.map((step, i) => {
-                      const done = i <= currentStepIndex;
-                      const time = step.key === 'arrived' ? job.arrivedAt : step.key === 'complete' ? job.completedAt : null;
-                      return (
-                        <div key={step.key} className="flex items-start gap-4 pl-8 relative">
-                          <div className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${done ? 'bg-primary' : 'bg-muted border border-border'}`}>
-                            {done
-                              ? <CheckCircle size={12} className="text-primary-foreground" />
-                              : <Clock size={11} className="text-muted-foreground" />
-                            }
-                          </div>
-                          <div>
-                            <p className={`text-xs font-semibold ${done ? 'text-foreground' : 'text-muted-foreground'}`}>{step.label(job)}</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">{time ?? (done ? 'Done' : 'Pending')}</p>
-                          </div>
+                    {track.MOCK_UPDATES.map((u) => (
+                      <div key={u.id} className="flex items-start gap-4 pl-8 relative">
+                        <div className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${u.done ? 'bg-primary' : 'bg-muted border border-border'}`}>
+                          {u.done
+                            ? <CheckCircle size={12} className="text-primary-foreground" />
+                            : <Clock size={11} className="text-muted-foreground" />
+                          }
                         </div>
-                      );
-                    })}
+                        <div>
+                          <p className={`text-xs font-semibold ${u.done ? 'text-foreground' : 'text-muted-foreground'}`}>{u.label}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">{u.time}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
               {/* Approved add-ons */}
-              {approvedRequests.length > 0 && (
+              {approvedAddons.length > 0 && (
                 <div className="bg-card rounded-xl border border-border p-5">
                   <p className="text-sm font-bold text-foreground mb-3">Approved add-ons</p>
-                  {approvedRequests.map((a) => (
+                  {[...MOCK_ADDONS, ...approvedRequests].filter((a) => approvedAddons.includes(a.id) || approvedRequests.some((approved) => approved.id === a.id)).map((a) => (
                     <div key={a.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                       <div className="flex items-center gap-2">
                         <CheckCircle size={13} className="text-primary flex-shrink-0" />
@@ -588,7 +503,7 @@ export default function TrackPage() {
               )}
 
               {/* Dispute trigger (during active job) */}
-              {!disputeFiled && job.status !== 'complete' && job.status !== 'disputed' && (
+              {!disputeFiled && currentStatus !== 'completed' && currentStatus !== 'disputed' && (
                 <button
                   onClick={() => setShowDispute(true)}
                   className="flex items-center gap-3 rounded-xl border border-border p-4 text-left hover:bg-muted transition-colors"
@@ -608,14 +523,14 @@ export default function TrackPage() {
             <div className="flex flex-col gap-6">
 
               {/* Share hub */}
-              <ShareHub referralCode={referralCode} batchStreet={job.address} savings={referralSavings} neighborsSaved={neighborsSaved} />
+              <ShareHub referralCode={job.referralCode} batchStreet={job.batchStreet} savings={job.referralSavings} />
 
               {/* Neighborhood zone map — homes from virtual:content */}
               <div className="rounded-xl border border-border bg-muted/30 overflow-hidden">
                 <div className="px-4 pt-4 pb-2 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-foreground">{job.address} batch zone</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{homesBooked} home{homesBooked === 1 ? '' : 's'} booked · {Math.max(targetHomes - homesBooked, 0)} spots open</p>
+                    <p className="text-sm font-semibold text-foreground">{job.batchStreet} batch zone</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">4 homes booked · 4 spots open</p>
                   </div>
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
                     <Zap size={10} />
@@ -634,7 +549,7 @@ export default function TrackPage() {
                   </div>
 
                   <div className="my-4 flex w-full items-center justify-center rounded-full bg-stone-200/50 py-2">
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-amber-900/60">{job.address}</span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-amber-900/60">{job.batchStreet}</span>
                   </div>
 
                   <div className="grid w-full grid-cols-4 gap-2" aria-label="Bottom houses">
@@ -668,18 +583,34 @@ export default function TrackPage() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-xl border border-border bg-card p-3 text-center">
                   <span className="text-primary flex justify-center mb-1"><Users size={14} /></span>
-                  <p className="text-lg font-extrabold text-foreground">{homesBooked}</p>
+                  <p className="text-lg font-extrabold text-foreground">{job.batchCount}</p>
                   <p className="text-[10px] text-muted-foreground leading-tight">Homes in batch</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-3 text-center">
                   <span className="text-primary flex justify-center mb-1"><Zap size={14} /></span>
-                  <p className="text-lg font-extrabold text-foreground">${referralSavings}</p>
+                  <p className="text-lg font-extrabold text-foreground">${job.referralSavings}</p>
                   <p className="text-[10px] text-muted-foreground leading-tight">Your savings</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-3 text-center">
                   <span className="text-primary flex justify-center mb-1"><MessageSquare size={14} /></span>
-                  <p className="text-lg font-extrabold text-foreground">{neighborsSaved}</p>
+                  <p className="text-lg font-extrabold text-foreground">{job.neighborsSaved}</p>
                   <p className="text-[10px] text-muted-foreground leading-tight">Neighbors saved</p>
+                </div>
+              </div>
+
+              {/* Dev: status switcher */}
+              <div className="rounded-xl border border-dashed border-border p-4">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">Preview: change status</p>
+                <div className="flex flex-wrap gap-2">
+                  {STATUS_STEPS.map((s) => (
+                    <button
+                      key={s.key}
+                      onClick={() => setCurrentStatus(s.key)}
+                      className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${currentStatus === s.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 

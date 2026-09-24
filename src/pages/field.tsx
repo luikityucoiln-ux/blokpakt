@@ -1,83 +1,198 @@
-import { useEffect, useState } from 'react';
+import { useState, useRef } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
-import 'leaflet/dist/leaflet.css';
 import { field } from 'virtual:content';
-import {
-  createAddOnRequest,
-  deleteAddOnRequest,
-  listAddOnRequestsForJob,
-  subscribeToAddOnRequests,
-  subscribeToAddOnStatusChanges,
-  type AddOnRequest,
-} from '../lib/add-on-workflow';
-import { listBatches, type Batch } from '../lib/batches';
-import { listActiveJobs, subscribeToJobs, updateJob, type Job, type JobStatus } from '../lib/jobs';
+import { createAddOnRequest, type AddOnRequest } from '../lib/add-on-workflow';
 import {
   MapPin, Clock, Camera, CheckCircle,
   Zap, Plus, X, AlertCircle, ArrowRight,
   Navigation, Phone, MessageSquare, TrendingUp, Banknote,
-  CalendarDays, ChevronDown, ChevronUp, Unlock
+  ChevronDown, ChevronUp, Lock, Unlock
 } from 'lucide-react';
 
-interface DisplayAddOn {
+// ── Demo data ─────────────────────────────────────────────────────────────────
+const TODAY = 'Wed, Sep 2';
+
+interface Job {
+  id: string;
+  order: number;
+  status: 'pending' | 'en_route' | 'arrived' | 'in_progress' | 'complete';
+  service: string;
+  serviceIcon: string;
+  address: string;
+  city: string;
+  zip: string;
+  gateCode: string | null;
+  propertyNotes: string;
+  customerName: string;
+  customerPhone: string;
+  batchSize: number;
+  payout: number;
+  estimatedDuration: string;
+  arrivedAt: string | null;
+  completedAt: string | null;
+  beforePhoto: string | null;
+  afterPhoto: string | null;
+  addOns: AddOn[];
+  pin: { lat: number; lng: number };
+}
+
+interface AddOn {
   id: string;
   label: string;
   price: number;
   approved: boolean;
 }
 
-type FieldJob = Job & { addOns: DisplayAddOn[] };
-
-type DiscoverMapModules = {
-  leaflet: typeof import('leaflet');
-  reactLeaflet: typeof import('react-leaflet');
-};
-
-type BatchMapPin = Batch & {
-  coordinates: [number, number];
-};
-
-const SPRINGFIELD_CENTER: [number, number] = [39.78, -89.65];
-
-const BATCH_PIN_COORDINATES: [number, number][] = [
-  [39.789, -89.661],
-  [39.785, -89.642],
-  [39.773, -89.657],
-  [39.776, -89.635],
+const INITIAL_JOBS: Job[] = [
+  {
+    id: 'j1',
+    order: 1,
+    status: 'complete',
+    service: 'Lawn Care',
+    serviceIcon: '🌿',
+    address: '112 Maple Ave',
+    city: 'Springfield, IL',
+    zip: '62701',
+    gateCode: null,
+    propertyNotes: 'Side gate unlocked. Avoid flower bed on left.',
+    customerName: 'Sarah Chen',
+    customerPhone: '(312) 555-0141',
+    batchSize: 4,
+    payout: 36,
+    estimatedDuration: '45 min',
+    arrivedAt: '8:02 AM',
+    completedAt: '8:51 AM',
+    beforePhoto: 'before',
+    afterPhoto: 'after',
+    addOns: [{ id: 'a1', label: 'Fertilizer application', price: 35, approved: true }],
+    pin: { lat: 39.7817, lng: -89.6501 },
+  },
+  {
+    id: 'j2',
+    order: 2,
+    status: 'in_progress',
+    service: 'Lawn Care',
+    serviceIcon: '🌿',
+    address: '247 Oak Street',
+    city: 'Springfield, IL',
+    zip: '62701',
+    gateCode: '#4821',
+    propertyNotes: 'Dog in backyard — keep gate closed.',
+    customerName: 'Alex Johnson',
+    customerPhone: '(312) 555-0100',
+    batchSize: 4,
+    payout: 36,
+    estimatedDuration: '40 min',
+    arrivedAt: '9:05 AM',
+    completedAt: null,
+    beforePhoto: 'before',
+    afterPhoto: null,
+    addOns: [],
+    pin: { lat: 39.7820, lng: -89.6498 },
+  },
+  {
+    id: 'j3',
+    order: 3,
+    status: 'pending',
+    service: 'Lawn Care',
+    serviceIcon: '🌿',
+    address: '389 Elm Drive',
+    city: 'Springfield, IL',
+    zip: '62701',
+    gateCode: null,
+    propertyNotes: '',
+    customerName: 'Marcus Brown',
+    customerPhone: '(312) 555-0188',
+    batchSize: 4,
+    payout: 36,
+    estimatedDuration: '35 min',
+    arrivedAt: null,
+    completedAt: null,
+    beforePhoto: null,
+    afterPhoto: null,
+    addOns: [],
+    pin: { lat: 39.7825, lng: -89.6492 },
+  },
+  {
+    id: 'j4',
+    order: 4,
+    status: 'pending',
+    service: 'Gutter Cleaning',
+    serviceIcon: '🏠',
+    address: '501 Pine Court',
+    city: 'Springfield, IL',
+    zip: '62701',
+    gateCode: '#0099',
+    propertyNotes: '2-story home. Bring tall ladder.',
+    customerName: 'Linda Park',
+    customerPhone: '(312) 555-0155',
+    batchSize: 3,
+    payout: 130,
+    estimatedDuration: '60 min',
+    arrivedAt: null,
+    completedAt: null,
+    beforePhoto: null,
+    afterPhoto: null,
+    addOns: [],
+    pin: { lat: 39.7830, lng: -89.6485 },
+  },
 ];
 
-const STATUS_CONFIG: Record<JobStatus, { label: string; color: string; bg: string; dot: string }> = {
+const STATUS_CONFIG = {
   pending: { label: 'Pending', color: 'text-muted-foreground', bg: 'bg-muted', dot: 'bg-muted-foreground' },
   en_route: { label: 'En Route', color: 'text-blue-600', bg: 'bg-blue-50', dot: 'bg-blue-500' },
   arrived: { label: 'Arrived', color: 'text-amber-600', bg: 'bg-amber-50', dot: 'bg-amber-500' },
   in_progress: { label: 'In Progress', color: 'text-accent', bg: 'bg-accent/10', dot: 'bg-accent' },
   complete: { label: 'Complete', color: 'text-primary', bg: 'bg-primary/10', dot: 'bg-primary' },
-  disputed: { label: 'Disputed', color: 'text-destructive', bg: 'bg-destructive/10', dot: 'bg-destructive' },
-  cancelled: { label: 'Cancelled', color: 'text-muted-foreground', bg: 'bg-muted', dot: 'bg-muted-foreground' },
 };
 
 function now() {
   return new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
-function today() {
-  return new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-}
-
-function formatTime(iso: string | null): string {
-  if (!iso) return '';
-  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-}
-
 // ── Sub-components ────────────────────────────────────────────────────────────
+
+function PhotoSlot({
+  label,
+  hasPhoto,
+  onCapture,
+}: {
+  label: string;
+  hasPhoto: boolean;
+  onCapture: () => void;
+}) {
+  return (
+    <button
+      onClick={onCapture}
+      className={`flex-1 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 py-5 transition-all ${
+        hasPhoto
+          ? 'border-primary bg-primary/5 text-primary'
+          : 'border-border bg-muted/30 text-muted-foreground hover:border-primary/40'
+      }`}
+    >
+      {hasPhoto ? (
+        <>
+          <CheckCircle size={22} className="text-primary" />
+          <span className="text-xs font-semibold text-primary">{label} ✓</span>
+        </>
+      ) : (
+        <>
+          <Camera size={22} />
+          <span className="text-xs font-semibold">{label}</span>
+          <span className="text-xs text-muted-foreground">Tap to capture</span>
+        </>
+      )}
+    </button>
+  );
+}
 
 function AddOnLogger({
   addOns,
   onAdd,
   onRemove,
 }: {
-  addOns: DisplayAddOn[];
+  addOns: AddOn[];
   onAdd: (item: { label: string; description: string; price: number; photo: string | null }) => void;
   onRemove: (id: string) => void;
 }) {
@@ -188,24 +303,20 @@ function AddOnLogger({
 
 function JobCard({
   job,
-  order,
   expanded,
   onToggle,
   onAction,
   onPhoto,
   onAddAddOn,
   onRemoveAddOn,
-  isCompleting,
 }: {
-  job: FieldJob;
-  order: number;
+  job: Job;
   expanded: boolean;
   onToggle: () => void;
   onAction: (jobId: string, action: 'arrive' | 'start' | 'complete') => void;
-  onPhoto: (jobId: string) => void;
+  onPhoto: (jobId: string, type: 'before' | 'after') => void;
   onAddAddOn: (jobId: string, item: { label: string; description: string; price: number; photo: string | null }) => void;
   onRemoveAddOn: (jobId: string, addOnId: string) => void;
-  isCompleting: boolean;
 }) {
   const cfg = STATUS_CONFIG[job.status];
   const addOnTotal = job.addOns.filter((a) => a.approved).reduce((s, a) => s + a.price, 0);
@@ -226,7 +337,7 @@ function JobCard({
       <button onClick={onToggle} className="w-full text-left px-5 py-4">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground">
-            {order}
+            {job.order}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -237,13 +348,8 @@ function JobCard({
                 {cfg.label}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground mt-0.5 truncate">{job.address}, {job.zip}</p>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-              {job.scheduledWindow && (
-                <span className="text-xs font-semibold text-accent flex items-center gap-1">
-                  <CalendarDays size={11} /> {job.scheduledWindow}
-                </span>
-              )}
+            <p className="text-sm text-muted-foreground mt-0.5 truncate">{job.address}, {job.city}</p>
+            <div className="flex items-center gap-3 mt-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <Clock size={11} /> {job.estimatedDuration}
               </span>
@@ -261,32 +367,6 @@ function JobCard({
         </div>
       </button>
 
-      <div className="border-t border-border px-5 pb-4 pt-3">
-        <p className="mb-3 text-xs text-muted-foreground">
-          {job.propertyNotes ? `Note: ${job.propertyNotes}` : 'No access notes provided.'}
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          <a
-            href={`https://maps.google.com/?q=${encodeURIComponent(`${job.address}, ${job.zip}`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
-          >
-            <MapPin size={14} />
-            Get Directions
-          </a>
-          <button
-            type="button"
-            disabled={job.status === 'complete' || isCompleting}
-            onClick={() => onPhoto(job.id)}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {job.status === 'complete' ? <CheckCircle size={14} /> : <Camera size={14} />}
-            {job.status === 'complete' ? 'Payment released' : isCompleting ? 'Capturing payment…' : 'Upload Completion Photo'}
-          </button>
-        </div>
-      </div>
-
       {/* Expanded detail */}
       <AnimatePresence>
         {expanded && (
@@ -303,7 +383,7 @@ function JobCard({
                 <div className="rounded-xl bg-muted/40 p-3">
                   <p className="text-xs text-muted-foreground font-medium mb-1">Address</p>
                   <p className="text-sm font-semibold text-foreground">{job.address}</p>
-                  <p className="text-xs text-muted-foreground">ZIP {job.zip}</p>
+                  <p className="text-xs text-muted-foreground">{job.city} {job.zip}</p>
                 </div>
                 <div className="rounded-xl bg-muted/40 p-3">
                   <p className="text-xs text-muted-foreground font-medium mb-1">Customer</p>
@@ -331,20 +411,62 @@ function JobCard({
                 </div>
               )}
 
+              {/* Map pin placeholder */}
+              <div className="rounded-xl overflow-hidden border border-border h-28 bg-muted/40 flex items-center justify-center relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-100" />
+                <div className="relative flex flex-col items-center gap-1 text-primary">
+                  <MapPin size={24} className="drop-shadow" />
+                  <span className="text-xs font-semibold">{job.address}</span>
+                  <span className="text-xs text-muted-foreground">Tap to open Maps</span>
+                </div>
+                <a
+                  href={`https://maps.google.com/?q=${encodeURIComponent(job.address + ', ' + job.city)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute inset-0"
+                  aria-label={`Open ${job.address} in Google Maps`}
+                />
+              </div>
+
               {/* Timestamps */}
               {(job.arrivedAt || job.completedAt) && (
                 <div className="flex gap-3">
                   {job.arrivedAt && (
                     <div className="flex-1 rounded-xl bg-amber-50 border border-amber-200 p-3 text-center">
                       <p className="text-xs text-amber-700 font-medium">Arrived</p>
-                      <p className="text-sm font-bold text-amber-900">{formatTime(job.arrivedAt)}</p>
+                      <p className="text-sm font-bold text-amber-900">{job.arrivedAt}</p>
                     </div>
                   )}
                   {job.completedAt && (
                     <div className="flex-1 rounded-xl bg-primary/10 border border-primary/20 p-3 text-center">
                       <p className="text-xs text-primary font-medium">Completed</p>
-                      <p className="text-sm font-bold text-primary">{formatTime(job.completedAt)}</p>
+                      <p className="text-sm font-bold text-primary">{job.completedAt}</p>
                     </div>
+                  )}
+                </div>
+              )}
+
+              {/* Photo upload — show when arrived or in_progress or complete */}
+              {(job.status === 'arrived' || job.status === 'in_progress' || job.status === 'complete') && (
+                <div>
+                  <p className="text-xs font-semibold text-foreground mb-2">Photo verification</p>
+                  <div className="flex gap-3">
+                    <PhotoSlot
+                      label="Before"
+                      hasPhoto={!!job.beforePhoto}
+                      onCapture={() => onPhoto(job.id, 'before')}
+                    />
+                    <PhotoSlot
+                      label="After"
+                      hasPhoto={!!job.afterPhoto}
+                      onCapture={() => onPhoto(job.id, 'after')}
+                    />
+                  </div>
+                  {job.status !== 'complete' && !job.afterPhoto && (
+                    <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
+                      <Lock size={10} />
+                      After photo required to mark complete
+                    </p>
                   )}
                 </div>
               )}
@@ -381,12 +503,12 @@ function JobCard({
                 {job.status === 'in_progress' && (
                   <button
                     onClick={() => onAction(job.id, 'complete')}
-                    disabled={isCompleting}
+                    disabled={!job.beforePhoto || !job.afterPhoto}
                     className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-40 hover:bg-primary/90 transition-colors"
                   >
                     <CheckCircle size={16} />
-                    {isCompleting
-                      ? 'Capturing payment…'
+                    {!job.beforePhoto || !job.afterPhoto
+                      ? 'Upload both photos to complete'
                       : `Mark Complete — ${now()}`}
                   </button>
                 )}
@@ -425,7 +547,7 @@ function JobCard({
 
 // ── Earnings Panel ────────────────────────────────────────────────────────────
 
-function EarningsPanel({ jobs }: { jobs: FieldJob[] }) {
+function EarningsPanel({ jobs }: { jobs: Job[] }) {
   const [cashoutLoading, setCashoutLoading] = useState(false);
   const [cashoutDone, setCashoutDone] = useState(false);
 
@@ -452,7 +574,7 @@ function EarningsPanel({ jobs }: { jobs: FieldJob[] }) {
       <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2">
           <TrendingUp size={16} className="text-primary" />
-          <p className="font-bold text-foreground text-sm">Today's Earnings — {today()}</p>
+          <p className="font-bold text-foreground text-sm">Today's Earnings — {TODAY}</p>
         </div>
         <span className="text-xs text-muted-foreground">{completed.length}/{jobs.length} jobs done</span>
       </div>
@@ -497,7 +619,7 @@ function EarningsPanel({ jobs }: { jobs: FieldJob[] }) {
             <div>
               <p className="text-sm font-bold text-primary">Cashout initiated!</p>
               <p className="text-xs text-muted-foreground">
-                ${totalEarnings} marked as paid in this UI demo.
+                ${totalEarnings} sent to your bank via Stripe Connect. Arrives in 1–2 business days.
               </p>
             </div>
           </div>
@@ -514,7 +636,7 @@ function EarningsPanel({ jobs }: { jobs: FieldJob[] }) {
                   {pendingJobs > 0 && ` · ${pendingJobs} job${pendingJobs > 1 ? 's' : ''} remaining`}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Demo payout · no real transfer
+                  Stripe Connect · 1% fee · arrives in minutes
                 </p>
               </div>
               <button
@@ -558,344 +680,43 @@ function EarningsPanel({ jobs }: { jobs: FieldJob[] }) {
   );
 }
 
-function BatchDiscovery({
-  batches,
-  claimedCodes,
-  onClaim,
-}: {
-  batches: Batch[];
-  claimedCodes: Set<string>;
-  onClaim: (code: string) => void;
-}) {
-  const [mapModules, setMapModules] = useState<DiscoverMapModules | null>(null);
-  const [mapError, setMapError] = useState(false);
-  const [selectedBatch, setSelectedBatch] = useState<BatchMapPin | null>(null);
-  const mapPins: BatchMapPin[] = batches.slice(0, BATCH_PIN_COORDINATES.length).map((batch, index) => ({
-    ...batch,
-    coordinates: BATCH_PIN_COORDINATES[index],
-  }));
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void Promise.all([import('leaflet'), import('react-leaflet')])
-      .then(([leaflet, reactLeaflet]) => {
-        if (!cancelled) setMapModules({ leaflet, reactLeaflet });
-      })
-      .catch(() => {
-        if (!cancelled) setMapError(true);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
-      <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
-        <div className="mb-4">
-          <p className="text-xs font-bold uppercase tracking-wider text-primary">Batch discovery</p>
-          <h2 className="mt-1 text-xl font-extrabold text-foreground">Claim nearby route density</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Pick up grouped work where every stop earns more per mile.</p>
-        </div>
-        <div className="space-y-3">
-          {batches.map((batch) => {
-            const totalPayout = batch.batchPrice * batch.homesBooked;
-            const claimed = claimedCodes.has(batch.code);
-            return (
-              <article key={batch.code} className="rounded-lg border border-border bg-background p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-foreground">{batch.street} Batch - 62701</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{batch.service} · {batch.homesBooked} homes</p>
-                  </div>
-                  <p className="shrink-0 text-lg font-extrabold text-primary">${totalPayout.toFixed(2)}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onClaim(batch.code)}
-                  disabled={claimed}
-                  className="mt-4 w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-primary"
-                >
-                  {claimed ? 'Batch claimed' : 'Claim Batch'}
-                </button>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="relative min-h-[360px] overflow-hidden rounded-xl border border-border bg-muted sm:min-h-[440px]" aria-label="Available batch map">
-        <div className="absolute left-5 right-5 top-5 z-10 flex items-start justify-between gap-3 pointer-events-none">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-primary drop-shadow-sm">62701 availability</p>
-            <h2 className="mt-1 text-lg font-extrabold text-foreground drop-shadow-sm">Neighborhood batch map</h2>
-          </div>
-          <span className="rounded-full border border-white bg-white/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm">{batches.length} live batches</span>
-        </div>
-
-        {mapModules ? (
-          <DiscoverMap mapModules={mapModules} pins={mapPins} onSelect={setSelectedBatch} />
-        ) : (
-          <div className="flex min-h-[360px] items-center justify-center text-sm font-medium text-muted-foreground sm:min-h-[440px]">
-            {mapError ? 'Map unavailable. Please refresh to try again.' : 'Loading nearby batches...'}
-          </div>
-        )}
-
-        <AnimatePresence>
-          {selectedBatch && (() => {
-            const totalPayout = selectedBatch.batchPrice * selectedBatch.homesBooked;
-            const estimatedHours = Math.max(0.75, selectedBatch.homesBooked * 0.375);
-            const claimed = claimedCodes.has(selectedBatch.code);
-
-            return (
-              <motion.aside
-                initial={{ opacity: 0, x: 24 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 24 }}
-                transition={{ duration: 0.2 }}
-                className="absolute inset-x-4 bottom-4 z-20 rounded-xl border border-primary/20 bg-card p-4 shadow-xl sm:inset-x-auto sm:right-4 sm:w-80"
-                aria-label={`${selectedBatch.street} route details`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-primary">Route density</p>
-                    <h3 className="mt-1 text-lg font-extrabold text-foreground">{selectedBatch.street} Batch</h3>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedBatch(null)}
-                    className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    aria-label="Close route details"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-
-                <div className="mt-4 grid grid-cols-3 divide-x divide-border rounded-lg border border-border bg-muted/40 py-3 text-center">
-                  <div className="px-2">
-                    <p className="text-xs text-muted-foreground">Payout</p>
-                    <p className="mt-1 text-base font-extrabold text-primary">${totalPayout}</p>
-                  </div>
-                  <div className="px-2">
-                    <p className="text-xs text-muted-foreground">Stops</p>
-                    <p className="mt-1 text-base font-extrabold text-foreground">{selectedBatch.homesBooked}</p>
-                  </div>
-                  <div className="px-2">
-                    <p className="text-xs text-muted-foreground">Est. time</p>
-                    <p className="mt-1 text-base font-extrabold text-foreground">{estimatedHours}h</p>
-                  </div>
-                </div>
-
-                <p className="mt-3 text-sm text-muted-foreground">
-                  {selectedBatch.homesBooked} {selectedBatch.service} stop{selectedBatch.homesBooked === 1 ? '' : 's'} across one street.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => onClaim(selectedBatch.code)}
-                  disabled={claimed}
-                  className="mt-4 min-h-11 w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-primary"
-                >
-                  {claimed ? 'Route claimed' : 'Claim Route'}
-                </button>
-              </motion.aside>
-            );
-          })()}
-        </AnimatePresence>
-
-        <div className="absolute bottom-5 left-5 z-10 rounded-lg border border-white/80 bg-white/95 px-3 py-2 text-xs text-muted-foreground shadow-sm pointer-events-none">
-          Select a route pin to compare payout and density.
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function DiscoverMap({
-  mapModules,
-  pins,
-  onSelect,
-}: {
-  mapModules: DiscoverMapModules;
-  pins: BatchMapPin[];
-  onSelect: (pin: BatchMapPin) => void;
-}) {
-  const { MapContainer, Marker, TileLayer } = mapModules.reactLeaflet;
-
-  return (
-    <MapContainer
-      center={SPRINGFIELD_CENTER}
-      zoom={13}
-      scrollWheelZoom
-      className="h-[360px] w-full sm:h-[440px]"
-      aria-label="Interactive map of available Springfield service batches"
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      {pins.map((pin) => {
-        const totalPayout = Math.round(pin.batchPrice * pin.homesBooked);
-        const priceIcon = mapModules.leaflet.divIcon({
-          className: 'discover-price-pin-container',
-          html: `<span class="discover-price-pin"><span>$${totalPayout}</span><span class="discover-price-pin-density"><span class="discover-price-pin-divider"></span>${pin.homesBooked} Houses</span></span>`,
-          iconSize: [158, 38],
-          iconAnchor: [79, 19],
-        });
-
-        return (
-          <Marker
-            key={pin.code}
-            position={pin.coordinates}
-            icon={priceIcon}
-            eventHandlers={{ click: () => onSelect(pin) }}
-            title={`${pin.street} batch: $${totalPayout}, ${pin.homesBooked} houses`}
-          />
-        );
-      })}
-    </MapContainer>
-  );
-}
-
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function FieldPage() {
-  const [jobs, setJobs] = useState<FieldJob[]>([]);
-  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'route' | 'discover' | 'earnings'>('route');
-  const [batches, setBatches] = useState<Batch[]>([]);
-  const [claimedBatchCodes, setClaimedBatchCodes] = useState<Set<string>>(() => new Set());
-  const [actionError, setActionError] = useState('');
-  const [completingId, setCompletingId] = useState<string | null>(null);
-
-  // Load today's route and merge in any add-on requests already filed per job.
-  useEffect(() => {
-    let cancelled = false;
-    listActiveJobs()
-      .then(async (found) => {
-        if (cancelled) return;
-        const withAddOns = await Promise.all(
-          found.map(async (j) => {
-            const requests = await listAddOnRequestsForJob(j.id).catch(() => []);
-            return {
-              ...j,
-              addOns: requests
-                .filter((r) => r.status !== 'declined')
-                .map((r) => ({ id: r.id, label: r.service, price: r.price, approved: r.status === 'approved' })),
-            };
-          }),
-        );
-        if (cancelled) return;
-        setJobs(withAddOns);
-        setLoadState('ready');
-        setExpandedId((current) => current ?? withAddOns.find((j) => j.status === 'in_progress' || j.status === 'arrived')?.id ?? null);
-      })
-      .catch(() => {
-        if (!cancelled) setLoadState('unavailable');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    void listBatches().then(setBatches).catch(() => setBatches([]));
-  }, []);
-
-  // Reflect job changes made elsewhere (e.g. a new booking landing on the route).
-  useEffect(() => {
-    const unsubscribe = subscribeToJobs((updated) => {
-      setJobs((prev) => {
-        if (!prev.some((j) => j.id === updated.id)) return [...prev, { ...updated, addOns: [] }];
-        return prev.map((j) => (j.id === updated.id ? { ...updated, addOns: j.addOns } : j));
-      });
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Keep add-on approval status in sync with the customer tracking page.
-  useEffect(() => {
-    const unsubscribeInsert = subscribeToAddOnRequests((request) => {
-      setJobs((prev) =>
-        prev.map((j) => {
-          if (j.id !== request.jobId || j.addOns.some((a) => a.id === request.id)) return j;
-          return { ...j, addOns: [...j.addOns, { id: request.id, label: request.service, price: request.price, approved: false }] };
-        }),
-      );
-    });
-    const unsubscribeStatus = subscribeToAddOnStatusChanges((request) => {
-      setJobs((prev) =>
-        prev.map((j) => {
-          if (j.id !== request.jobId) return j;
-          if (request.status === 'declined') return { ...j, addOns: j.addOns.filter((a) => a.id !== request.id) };
-          return { ...j, addOns: j.addOns.map((a) => (a.id === request.id ? { ...a, approved: request.status === 'approved' } : a)) };
-        }),
-      );
-    });
-    return () => {
-      unsubscribeInsert();
-      unsubscribeStatus();
-    };
-  }, []);
+  const [jobs, setJobs] = useState<Job[]>(INITIAL_JOBS);
+  const [expandedId, setExpandedId] = useState<string | null>('j2');
+  const [activeTab, setActiveTab] = useState<'route' | 'earnings'>('route');
+  const addOnCounter = useRef(100);
 
   function toggleExpand(id: string) {
     setExpandedId((prev) => (prev === id ? null : id));
   }
 
-  function claimBatch(code: string) {
-    setClaimedBatchCodes((current) => new Set(current).add(code));
+  function handleAction(jobId: string, action: 'arrive' | 'start' | 'complete') {
+    setJobs((prev) =>
+      prev.map((j) => {
+        if (j.id !== jobId) return j;
+        if (action === 'arrive') return { ...j, status: 'arrived', arrivedAt: now() };
+        if (action === 'start') return { ...j, status: 'in_progress' };
+        if (action === 'complete') return { ...j, status: 'complete', completedAt: now() };
+        return j;
+      }),
+    );
   }
 
-  async function handleAction(jobId: string, action: 'arrive' | 'start' | 'complete') {
-    const job = jobs.find((j) => j.id === jobId);
-    if (!job) return;
-    setActionError('');
-
-    if (action === 'complete') {
-      setCompletingId(jobId);
-      try {
-        const completedAt = new Date().toISOString();
-        await updateJob(jobId, { status: 'complete', completedAt });
-        setJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: 'complete', completedAt } : j)));
-      } catch (error) {
-        console.error('complete job failed', error);
-        setActionError(error instanceof Error ? error.message : 'Unable to capture payment for this job.');
-      } finally {
-        setCompletingId(null);
-      }
-      return;
-    }
-
-    const patch = action === 'arrive'
-      ? { status: 'arrived' as const, arrivedAt: new Date().toISOString() }
-      : { status: 'in_progress' as const };
-    try {
-      await updateJob(jobId, patch);
-      setJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, ...patch } : j)));
-    } catch (error) {
-      console.error('job update failed', error);
-      setActionError('Unable to update this job. Please try again.');
-    }
-  }
-
-  async function handlePhoto(jobId: string) {
-    setCompletingId(jobId);
-    try {
-      const completedAt = new Date().toISOString();
-      await updateJob(jobId, { afterPhoto: 'captured', status: 'complete', completedAt });
-      setJobs((prev) => prev.map((job) => (job.id === jobId ? { ...job, afterPhoto: 'captured', status: 'complete', completedAt } : job)));
-    } catch (error) {
-      console.error('photo update failed', error);
-    } finally {
-      setCompletingId(null);
-    }
+  function handlePhoto(jobId: string, type: 'before' | 'after') {
+    setJobs((prev) =>
+      prev.map((j) => {
+        if (j.id !== jobId) return j;
+        return { ...j, [type === 'before' ? 'beforePhoto' : 'afterPhoto']: 'captured' };
+      }),
+    );
   }
 
   async function handleAddAddOn(jobId: string, item: { label: string; description: string; price: number; photo: string | null }) {
+    addOnCounter.current += 1;
     const request: AddOnRequest = {
-      id: globalThis.crypto?.randomUUID?.() ?? `pitch-${Date.now()}`,
+      id: `pitch-${addOnCounter.current}`,
       jobId,
       service: item.label,
       description: item.description,
@@ -909,17 +730,18 @@ export default function FieldPage() {
       prev.map((j) => {
         if (j.id !== jobId) return j;
         if (j.addOns.some((a) => a.label === item.label)) return j;
-        return { ...j, addOns: [...j.addOns, { id: request.id, label: item.label, price: item.price, approved: false }] };
+        return {
+          ...j,
+          addOns: [
+            ...j.addOns,
+            { id: request.id, label: item.label, price: item.price, approved: false },
+          ],
+        };
       }),
     );
   }
 
-  async function handleRemoveAddOn(jobId: string, addOnId: string) {
-    try {
-      await deleteAddOnRequest(addOnId);
-    } catch (error) {
-      console.error('remove add-on failed', error);
-    }
+  function handleRemoveAddOn(jobId: string, addOnId: string) {
     setJobs((prev) =>
       prev.map((j) => {
         if (j.id !== jobId) return j;
@@ -930,10 +752,6 @@ export default function FieldPage() {
 
   const completedCount = jobs.filter((j) => j.status === 'complete').length;
   const inProgressJob = jobs.find((j) => j.status === 'in_progress' || j.status === 'arrived');
-  const providerLabel = jobs[0]?.providerName ?? 'Your route';
-  const activeBatch = batches.find((batch) => batch.code === jobs[0]?.batchCode);
-  const routeTitle = activeBatch ? `${activeBatch.street} Batch` : 'Today\'s Route';
-  const routePayout = jobs.reduce((total, job) => total + job.payout + job.addOns.filter((addOn) => addOn.approved).reduce((sum, addOn) => sum + addOn.price, 0), 0);
 
   return (
     <>
@@ -949,14 +767,14 @@ export default function FieldPage() {
         <h1 className="sr-only">Provider Field Execution App — Blokpakt</h1>
         {/* Top bar */}
         <div className="sticky top-0 z-30 bg-card border-b border-border shadow-sm">
-          <div className={`${activeTab === 'discover' ? 'max-w-6xl' : 'max-w-lg'} mx-auto px-4 py-3 flex items-center justify-between`}>
+          <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground font-medium">Provider App</p>
-              <p className="text-sm font-bold text-foreground">{activeTab === 'route' ? `Today's Route: ${routeTitle}` : `${providerLabel} · ${today()}`}</p>
+              <p className="text-sm font-bold text-foreground">Marcus Thompson · {TODAY}</p>
             </div>
             <div className="flex items-center gap-2">
               <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-                {activeTab === 'route' ? `${jobs.length} jobs · $${routePayout.toFixed(2)}` : `${completedCount}/${jobs.length} done`}
+                {completedCount}/{jobs.length} done
               </div>
               {inProgressJob && (
                 <span className="flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent">
@@ -968,8 +786,8 @@ export default function FieldPage() {
           </div>
 
           {/* Tab switcher */}
-          <div className={`${activeTab === 'discover' ? 'max-w-6xl' : 'max-w-lg'} mx-auto px-4 pb-3 flex gap-2`}>
-            {(['route', 'discover', 'earnings'] as const).map((tab) => (
+          <div className="max-w-lg mx-auto px-4 pb-3 flex gap-2">
+            {(['route', 'earnings'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -979,18 +797,18 @@ export default function FieldPage() {
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
-                  {tab === 'route' ? '📍 Route' : tab === 'discover' ? '🗺️ Discover' : '💰 Earnings'}
+                {tab === 'route' ? '📍 Route' : '💰 Earnings'}
               </button>
             ))}
           </div>
         </div>
 
-        <div className={`${activeTab === 'discover' ? 'max-w-6xl' : 'max-w-lg'} mx-auto px-4 pt-5 space-y-4`}>
-          {actionError && (
-            <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-2.5 text-sm text-destructive font-medium">
-              {actionError}
-            </div>
-          )}
+        <div className="max-w-lg mx-auto px-4 pt-5 space-y-4">
+          {/* Demo banner */}
+          <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 px-4 py-2.5 text-sm text-accent font-medium">
+            <span className="w-2 h-2 rounded-full bg-accent animate-pulse flex-shrink-0" />
+            Demo mode — tap job cards to expand, use action buttons to advance status.
+          </div>
 
           <AnimatePresence mode="wait">
             {activeTab === 'route' && (
@@ -1002,64 +820,40 @@ export default function FieldPage() {
                 transition={{ duration: 0.2 }}
                 className="space-y-3"
               >
-                {loadState === 'loading' && (
-                  <div className="flex justify-center py-10">
-                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                  </div>
-                )}
-
-                {loadState === 'unavailable' && (
-                  <div className="rounded-xl border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
-                    Couldn't reach the database. Please try again shortly.
-                  </div>
-                )}
-
-                {loadState === 'ready' && jobs.length === 0 && (
-                  <div className="rounded-xl border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
-                    No jobs on your route today.
-                  </div>
-                )}
-
-                {loadState === 'ready' && jobs.length > 0 && (
-                  <>
-                    {/* Route summary strip */}
-                    <div className="rounded-xl border border-border bg-card px-4 py-3 flex items-center gap-4 overflow-x-auto">
-                      {jobs.map((j, i) => (
-                        <div key={j.id} className="flex items-center gap-2 flex-shrink-0">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                            j.status === 'complete' ? 'bg-primary text-primary-foreground' :
-                            j.status === 'in_progress' || j.status === 'arrived' ? 'bg-accent text-white' :
-                            'bg-muted text-muted-foreground'
-                          }`}>
-                            {j.status === 'complete' ? '✓' : i + 1}
-                          </div>
-                          {i < jobs.length - 1 && (
-                            <ArrowRight size={12} className="text-muted-foreground" />
-                          )}
-                        </div>
-                      ))}
-                      <div className="ml-auto flex-shrink-0 text-xs text-muted-foreground">
-                        ~{jobs.reduce((s, j) => s + (parseInt(j.estimatedDuration, 10) || 0), 0)} min total
+                {/* Route summary strip */}
+                <div className="rounded-xl border border-border bg-card px-4 py-3 flex items-center gap-4 overflow-x-auto">
+                  {jobs.map((j, i) => (
+                    <div key={j.id} className="flex items-center gap-2 flex-shrink-0">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                        j.status === 'complete' ? 'bg-primary text-primary-foreground' :
+                        j.status === 'in_progress' || j.status === 'arrived' ? 'bg-accent text-white' :
+                        'bg-muted text-muted-foreground'
+                      }`}>
+                        {j.status === 'complete' ? '✓' : j.order}
                       </div>
+                      {i < jobs.length - 1 && (
+                        <ArrowRight size={12} className="text-muted-foreground" />
+                      )}
                     </div>
+                  ))}
+                  <div className="ml-auto flex-shrink-0 text-xs text-muted-foreground">
+                    ~{jobs.reduce((s, j) => s + parseInt(j.estimatedDuration), 0)} min total
+                  </div>
+                </div>
 
-                    {/* Job cards */}
-                    {jobs.map((job, index) => (
-                      <JobCard
-                        key={job.id}
-                        job={job}
-                        order={index + 1}
-                        expanded={expandedId === job.id}
-                        onToggle={() => toggleExpand(job.id)}
-                        onAction={handleAction}
-                        onPhoto={handlePhoto}
-                        onAddAddOn={handleAddAddOn}
-                        onRemoveAddOn={handleRemoveAddOn}
-                        isCompleting={completingId === job.id}
-                      />
-                    ))}
-                  </>
-                )}
+                {/* Job cards */}
+                {jobs.map((job) => (
+                  <JobCard
+                    key={job.id}
+                    job={job}
+                    expanded={expandedId === job.id}
+                    onToggle={() => toggleExpand(job.id)}
+                    onAction={handleAction}
+                    onPhoto={handlePhoto}
+                    onAddAddOn={handleAddAddOn}
+                    onRemoveAddOn={handleRemoveAddOn}
+                  />
+                ))}
               </motion.div>
             )}
 
@@ -1074,22 +868,9 @@ export default function FieldPage() {
                 <EarningsPanel jobs={jobs} />
               </motion.div>
             )}
-
-            {activeTab === 'discover' && (
-              <motion.div
-                key="discover"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-              >
-                <BatchDiscovery batches={batches} claimedCodes={claimedBatchCodes} onClaim={claimBatch} />
-              </motion.div>
-            )}
           </AnimatePresence>
         </div>
       </main>
     </>
   );
 }
-
