@@ -7,6 +7,8 @@ export default function Header() {
   const [demoOpen, setDemoOpen] = useState(false);
   const location = useLocation();
 
+  if (location.pathname === '/field') return null;
+
   const navLinks = [
     { label: 'How It Works', href: '/#how-it-works' },
     { label: 'Services', href: '/book' },
