@@ -7,7 +7,7 @@ import { createAddOnRequest, type AddOnRequest } from '../lib/add-on-workflow';
 import { listBatches, type Batch } from '../lib/batches';
 import {
   MapPin, Clock, Camera, CheckCircle,
-  Zap, Plus, X, AlertCircle, ArrowRight,
+  Zap, Plus, X, AlertCircle,
   Navigation, Phone, MessageSquare, TrendingUp, Banknote,
   ChevronDown, ChevronUp, Lock, Unlock
 } from 'lucide-react';
@@ -596,16 +596,7 @@ function BatchDiscovery({ batches, claimedCodes, onClaim }: { batches: Batch[]; 
   }, []);
 
   return (
-    <div className="space-y-3">
-      <header className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-4 py-3">
-        <div>
-          <h2 className="text-lg font-extrabold text-foreground">Available Routes Near You</h2>
-          <p className="text-sm text-muted-foreground">Grouped stops to minimize driving time.</p>
-        </div>
-        <span className="shrink-0 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary">{batches.length} routes</span>
-      </header>
-
-      <section className="relative h-[calc(100dvh-184px)] min-h-[520px] max-h-[820px] overflow-hidden rounded-xl border border-border bg-muted" aria-label="Available routes map">
+      <section className="absolute inset-0 bg-muted" aria-label="Available routes map">
         {mapModules ? <DiscoverMap mapModules={mapModules} pins={mapPins} onSelect={setSelectedBatch} /> : <div className="flex h-full items-center justify-center text-sm font-medium text-muted-foreground">Loading nearby routes...</div>}
         <AnimatePresence>
           {selectedBatch && (() => {
@@ -614,7 +605,7 @@ function BatchDiscovery({ batches, claimedCodes, onClaim }: { batches: Batch[]; 
             const unavailable = UNAVAILABLE_BATCH_CODES.has(selectedBatch.code);
             const actionLabel = unavailable ? 'Unavailable' : claimed ? 'View Active Route' : `Claim Route — $${payout}`;
             return (
-              <motion.aside initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 24 }} transition={{ duration: 0.2 }} className="absolute inset-x-4 bottom-4 z-20 rounded-xl border border-primary/20 bg-card p-4 shadow-xl sm:inset-x-auto sm:right-4 sm:w-80">
+              <motion.aside initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.2 }} className="absolute inset-x-4 top-20 z-30 rounded-xl border border-primary/20 bg-card p-4 shadow-xl sm:inset-x-auto sm:right-5 sm:w-80">
                 <div className="flex items-start justify-between gap-3">
                   <div><p className="text-xs font-bold uppercase tracking-wider text-primary">Available route</p><h3 className="mt-1 text-lg font-extrabold text-foreground">{selectedBatch.street} Batch</h3></div>
                   <button type="button" onClick={() => setSelectedBatch(null)} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted" aria-label="Close route details"><X size={18} /></button>
@@ -631,23 +622,32 @@ function BatchDiscovery({ batches, claimedCodes, onClaim }: { batches: Batch[]; 
           })()}
         </AnimatePresence>
       </section>
+  );
+}
 
-      <section aria-label="Available route list" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {mapPins.map((batch) => {
+function AvailableRoutesPanel({ batches, claimedCodes, onClaim }: { batches: Batch[]; claimedCodes: Set<string>; onClaim: (code: string) => void }) {
+  return (
+    <>
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-primary">Available routes</p>
+        <h2 className="mt-1 text-xl font-extrabold text-foreground">Nearby work, less driving</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Grouped stops to minimize driving time.</p>
+      </div>
+      <div className="mt-4 space-y-3">
+        {batches.map((batch) => {
           const payout = batch.batchPrice * batch.homesBooked;
           const claimed = claimedCodes.has(batch.code);
           const unavailable = UNAVAILABLE_BATCH_CODES.has(batch.code);
           const actionLabel = unavailable ? 'Unavailable' : claimed ? 'View Active Route' : `Claim Route — $${payout}`;
           return (
-            <article key={batch.code} className="rounded-xl border border-border bg-card p-4">
-              <p className="font-bold text-foreground">{batch.street} Batch</p>
-              <p className="mt-1 text-sm text-muted-foreground">{batch.service} · {batch.homesBooked} stops</p>
-              <button type="button" onClick={() => !unavailable && (claimed ? setSelectedBatch(batch) : onClaim(batch.code))} disabled={unavailable} className="mt-4 min-h-11 w-full rounded-lg bg-accent px-3 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground">{actionLabel}</button>
+            <article key={batch.code} className="rounded-xl border border-border bg-background p-4">
+              <div className="flex items-start justify-between gap-3"><div><p className="font-bold text-foreground">{batch.street} Batch</p><p className="mt-1 text-sm text-muted-foreground">{batch.service} · {batch.homesBooked} stops</p></div><p className="text-lg font-extrabold text-primary">${payout}</p></div>
+              <button type="button" onClick={() => !unavailable && onClaim(batch.code)} disabled={unavailable || claimed} className="mt-3 min-h-11 w-full rounded-lg bg-accent px-3 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground">{actionLabel}</button>
             </article>
           );
         })}
-      </section>
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -667,7 +667,7 @@ function DiscoverMap({ mapModules, pins, onSelect }: { mapModules: DiscoverMapMo
 
 // ── Earnings Panel ────────────────────────────────────────────────────────────
 
-function EarningsPanel({ jobs }: { jobs: Job[] }) {
+export function EarningsPanel({ jobs }: { jobs: Job[] }) {
   const [cashoutLoading, setCashoutLoading] = useState(false);
   const [cashoutDone, setCashoutDone] = useState(false);
 
@@ -805,7 +805,6 @@ function EarningsPanel({ jobs }: { jobs: Job[] }) {
 export default function FieldPage() {
   const [jobs, setJobs] = useState<Job[]>(INITIAL_JOBS);
   const [expandedId, setExpandedId] = useState<string | null>('j2');
-  const [activeTab, setActiveTab] = useState<'route' | 'discover' | 'earnings'>('route');
   const [batches, setBatches] = useState<Batch[]>([]);
   const [claimedBatchCodes, setClaimedBatchCodes] = useState<Set<string>>(() => new Set());
   const addOnCounter = useRef(100);
@@ -883,6 +882,8 @@ export default function FieldPage() {
 
   const completedCount = jobs.filter((j) => j.status === 'complete').length;
   const inProgressJob = jobs.find((j) => j.status === 'in_progress' || j.status === 'arrived');
+  const currentJob = inProgressJob ?? jobs.find((j) => j.status !== 'complete');
+  const completedJobs = jobs.filter((j) => j.status === 'complete');
 
   return (
     <>
@@ -893,12 +894,12 @@ export default function FieldPage() {
         <meta name="robots" content="noindex" />
       </Helmet>
 
-      <main className="min-h-screen bg-muted/30 pb-20">
-        {/* Visually hidden h1 for SEO/a11y */}
+      <main className="relative h-[100dvh] overflow-hidden bg-muted">
         <h1 className="sr-only">Provider Field Execution App — Blokpakt</h1>
-        {/* Top bar */}
-        <div className="sticky top-0 z-30 border-b border-border bg-card shadow-sm">
-          <div className={`${activeTab === 'discover' ? 'max-w-6xl' : 'max-w-lg'} mx-auto flex items-center justify-between px-4 py-3`}>
+        <BatchDiscovery batches={batches} claimedCodes={claimedBatchCodes} onClaim={claimBatch} />
+
+        <header className="absolute inset-x-0 top-0 z-30 border-b border-border/70 bg-card/95 shadow-sm backdrop-blur">
+          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2.5">
               <img src="/assets/blokpakt-bp-mark.svg" alt="Blokpakt" className="h-8 w-8" />
               <p className="text-sm font-extrabold text-foreground">Field Dispatch</p>
@@ -916,93 +917,19 @@ export default function FieldPage() {
               )}
             </div>
           </div>
+        </header>
 
-          {/* Tab switcher */}
-          <div className={`${activeTab === 'discover' ? 'max-w-6xl' : 'max-w-lg'} mx-auto flex gap-2 px-4 pb-3`}>
-            {(['route', 'discover', 'earnings'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === tab
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
-              >
-                {tab === 'route' ? '📍 Route' : tab === 'discover' ? '🗺️ Discover' : '💰 Earnings'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className={`${activeTab === 'discover' ? 'max-w-6xl' : 'max-w-lg'} mx-auto space-y-4 px-4 pt-5`}>
-
-          <AnimatePresence mode="wait">
-            {activeTab === 'route' && (
-              <motion.div
-                key="route"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-3"
-              >
-                {/* Route summary strip */}
-                <div className="rounded-xl border border-border bg-card px-4 py-3 flex items-center gap-4 overflow-x-auto">
-                  {jobs.map((j, i) => (
-                    <div key={j.id} className="flex items-center gap-2 flex-shrink-0">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                        j.status === 'complete' ? 'bg-primary text-primary-foreground' :
-                        j.status === 'in_progress' || j.status === 'arrived' ? 'bg-accent text-white' :
-                        'bg-muted text-muted-foreground'
-                      }`}>
-                        {j.status === 'complete' ? '✓' : j.order}
-                      </div>
-                      {i < jobs.length - 1 && (
-                        <ArrowRight size={12} className="text-muted-foreground" />
-                      )}
-                    </div>
-                  ))}
-                  <div className="ml-auto flex-shrink-0 text-xs text-muted-foreground">
-                    ~{jobs.reduce((s, j) => s + parseInt(j.estimatedDuration), 0)} min total
-                  </div>
-                </div>
-
-                {/* Job cards */}
-                {jobs.map((job) => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    expanded={expandedId === job.id}
-                    onToggle={() => toggleExpand(job.id)}
-                    onAction={handleAction}
-                    onPhoto={handlePhoto}
-                    onAddAddOn={handleAddAddOn}
-                    onRemoveAddOn={handleRemoveAddOn}
-                  />
-                ))}
-              </motion.div>
-            )}
-
-            {activeTab === 'earnings' && (
-              <motion.div
-                key="earnings"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-              >
-                <EarningsPanel jobs={jobs} />
-              </motion.div>
-            )}
-
-            {activeTab === 'discover' && (
-              <motion.div key="discover" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-                <BatchDiscovery batches={batches} claimedCodes={claimedBatchCodes} onClaim={claimBatch} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        <motion.aside initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="absolute inset-x-0 bottom-0 z-20 max-h-[72dvh] overflow-y-auto rounded-t-2xl border border-border bg-card p-4 shadow-2xl lg:inset-y-24 lg:left-5 lg:right-auto lg:w-[390px] lg:max-h-none lg:rounded-2xl">
+          {currentJob ? (
+            <div className="space-y-3">
+              <div><p className="text-xs font-bold uppercase tracking-wider text-primary">Active route</p><h2 className="mt-1 text-xl font-extrabold text-foreground">Stop {currentJob.order} of {jobs.length}</h2></div>
+              {completedJobs.map((job) => <JobCard key={job.id} job={job} expanded={false} onToggle={() => undefined} onAction={handleAction} onPhoto={handlePhoto} onAddAddOn={handleAddAddOn} onRemoveAddOn={handleRemoveAddOn} />)}
+              <JobCard key={currentJob.id} job={currentJob} expanded={expandedId === currentJob.id} onToggle={() => toggleExpand(currentJob.id)} onAction={handleAction} onPhoto={handlePhoto} onAddAddOn={handleAddAddOn} onRemoveAddOn={handleRemoveAddOn} />
+            </div>
+          ) : (
+            <AvailableRoutesPanel batches={batches} claimedCodes={claimedBatchCodes} onClaim={claimBatch} />
+          )}
+        </motion.aside>
       </main>
     </>
   );
