@@ -162,7 +162,63 @@
           }
         ]
       }
+    ],
+    "details": [
+      {
+        "id": "lawn",
+        "included": ["Mow and edge accessible lawn areas", "Blow clippings from hard surfaces"],
+        "notIncluded": ["Tree work", "Hauling oversized yard waste"],
+        "duration": "30–45 min per home",
+        "addonExamples": ["Fertilizer application", "Hedge trimming"]
+      },
+      {
+        "id": "gutter",
+        "included": ["Remove accessible gutter debris", "Bag collected debris"],
+        "notIncluded": ["Roof repair", "Guard installation"],
+        "duration": "45–60 min per home",
+        "addonExamples": ["Downspout flushing", "Gutter guard quote"]
+      },
+      {
+        "id": "pressure",
+        "included": ["Wash selected exterior hard surfaces", "Rinse adjacent work areas"],
+        "notIncluded": ["Paint removal", "Window restoration"],
+        "duration": "60–90 min per home",
+        "addonExamples": ["Driveway sealing quote", "Patio furniture cleaning"]
+      },
+      {
+        "id": "snow",
+        "included": ["Clear selected driveway and walkway", "Apply basic traction material"],
+        "notIncluded": ["Ice dam removal", "Roof snow removal"],
+        "duration": "30–60 min per home",
+        "addonExamples": ["Corner lot walkway", "Salt refill"]
+      }
     ]
+  },
+  "trustAndSafety": {
+    "eyebrow": "Built for accountable service",
+    "headline": "Every job has a clear record.",
+    "intro": "Booking details, photo evidence, and approved changes stay attached to the job from start to finish.",
+    "items": [
+      {
+        "id": "verified",
+        "title": "Verified completion",
+        "description": "Providers submit before-and-after evidence for the completed scope."
+      },
+      {
+        "id": "approval",
+        "title": "Clear add-on approval",
+        "description": "No added service is charged until the homeowner approves it."
+      },
+      {
+        "id": "support",
+        "title": "Issue reporting",
+        "description": "Homeowners can flag a concern while the job record is still available."
+      }
+    ],
+    "reporting": {
+      "title": "Need to report an issue?",
+      "description": "Open your booking record to share photos and details with support."
+    }
   },
   "howItWorks": {
     "steps": [

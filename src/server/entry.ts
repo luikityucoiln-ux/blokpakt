@@ -4,6 +4,7 @@ import { dirname, extname, join } from "node:path";
 import { readFileSync } from "node:fs";
 
 import { seoRoutes } from "../lib/seo-routes";
+import { render as renderSsr } from "../entry-server";
 import {
 	loadAdSenseRuntimeConfig,
 	resolveAdSenseTextFile,
@@ -196,34 +197,6 @@ if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
 		.replace("<!--app-head-->", "")
 		.replace("<!--app-html-->", "");
 
-	// Resolve the SSR module once into a stable render function. A failed
-	// load is unrecoverable at runtime - exiting lets the container
-	// scheduler restart with a clean slate rather than leaving the server
-	// to serve silent 503s indefinitely against a single startup log.
-	let renderFn: ((url: string) => Promise<SsrRenderResult>) | null = null;
-	const SSR_MODULE_LOAD_TIMEOUT_MS = 30_000;
-	const loadTimeout = setTimeout(() => {
-		if (renderFn !== null) return;
-		console.error("ssr.module.load-timeout", {
-			timeoutMs: SSR_MODULE_LOAD_TIMEOUT_MS,
-		});
-		process.exit(1);
-	}, SSR_MODULE_LOAD_TIMEOUT_MS);
-	loadTimeout.unref();
-	import("../entry-server").then(
-		(mod) => {
-			clearTimeout(loadTimeout);
-			renderFn = mod.render;
-		},
-		(err) => {
-			clearTimeout(loadTimeout);
-			console.error("ssr.module.load-failed", {
-				error: err instanceof Error ? err.stack : String(err),
-			});
-			process.exit(1);
-		},
-	);
-
 	app.get(/.*/, async (req, res, next) => {
 		if (req.method !== "GET") return next();
 		if (req.path.startsWith("/api")) return next();
@@ -234,15 +207,8 @@ if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
 				.set("Content-Type", "text/html; charset=utf-8")
 				.set("Cache-Control", "no-store")
 				.send(fallbackShell);
-		if (renderFn === null) {
-			// Module not yet resolved; fall back without logging to avoid startup
-			// noise before the first render is even possible. A terminal load
-			// failure (import reject or 30s timeout) process.exit(1)s from the
-			// loader above, so this branch is only the brief warmup window.
-			return sendFallback();
-		}
 		try {
-			const result = await renderFn(req.url);
+			const result = await renderSsr(req.url);
 			if (result.redirect) {
 				// Redirect thrown from a loader/action surfaces as a Response.
 				// Forward it so the browser actually navigates to the new URL
