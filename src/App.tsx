@@ -41,12 +41,7 @@ const rootElement = (
 // too would double-forward async errors and stack a second overlay.
 const routeTree: RouteObject[] = [
   {
-    element:
-      import.meta.env.MODE === 'development' ? (
-        <AiroErrorBoundary captureGlobalErrors={false}>{rootElement}</AiroErrorBoundary>
-      ) : (
-        rootElement
-      ),
+    element: <AiroErrorBoundary captureGlobalErrors={false}>{rootElement}</AiroErrorBoundary>,
     children: routes,
   },
 ];

@@ -49,11 +49,7 @@ const providers = (
 // handlers (the inner one opts out via captureGlobalErrors={false}).
 const tree = (
   <StrictMode>
-    {import.meta.env.MODE === 'development' ? (
-      <AiroErrorBoundary>{providers}</AiroErrorBoundary>
-    ) : (
-      providers
-    )}
+    <AiroErrorBoundary>{providers}</AiroErrorBoundary>
   </StrictMode>
 );
 
