@@ -11,6 +11,7 @@ import LegalPage from './pages/legal';
 import FaqPage from './pages/faq';
 import BatchPage from './pages/batch';
 import CompletedPage from './pages/completed';
+import ProductsPage from './pages/Products';
 // Eager import so renderToString doesn't hit a Suspense boundary on 404 routes
 // and abort to client rendering. The prod 404 page is tiny; the dev-tools
 // variant stays lazy because it pulls in dev-only code we don't want in
@@ -69,12 +70,29 @@ export const routes: RouteObject[] = [
     element: <CompletedPage />,
   },
   {
+    path: '/products',
+    element: <ProductsPage />,
+  },
+  {
     path: '*',
     element: <NotFoundPage />,
   },
 ];
 
 // Types for type-safe navigation
-export type Path = '/' | '/book' | '/batch/:code' | '/track' | '/join' | '/checkout/success' | '/checkout/cancel' | '/legal' | '/faq' | '/completed';
+export type Path =
+  | '/'
+  | '/book'
+  | '/batch/:code'
+  | '/track'
+  | '/join'
+  | '/checkout/success'
+  | '/checkout/cancel'
+  | '/field'
+  | '/admin'
+  | '/legal'
+  | '/faq'
+  | '/completed'
+  | '/products';
 
 export type Params = Record<string, string | undefined>;

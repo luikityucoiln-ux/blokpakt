@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
-import 'leaflet/dist/leaflet.css';
 import { field } from 'virtual:content';
 import { createAddOnRequest, type AddOnRequest } from '../lib/add-on-workflow';
 import { listBatches, type Batch } from '../lib/batches';
@@ -36,7 +35,6 @@ interface Job {
   beforePhoto: string | null;
   afterPhoto: string | null;
   addOns: AddOn[];
-  pin: { lat: number; lng: number };
 }
 
 interface AddOn {
@@ -46,23 +44,6 @@ interface AddOn {
   approved: boolean;
 }
 
-type DiscoverMapModules = {
-  leaflet: typeof import('leaflet');
-  reactLeaflet: typeof import('react-leaflet');
-};
-
-type BatchMapPin = Batch & {
-  coordinates: [number, number];
-  estimatedHours: number;
-};
-
-const SPRINGFIELD_CENTER: [number, number] = [39.78, -89.65];
-const BATCH_PIN_COORDINATES: [number, number][] = [
-  [39.7818, -89.6521],
-  [39.7811, -89.648],
-  [39.7785, -89.6518],
-  [39.7794, -89.6479],
-];
 const UNAVAILABLE_BATCH_CODES = new Set(['PARK-2026']);
 
 const INITIAL_JOBS: Job[] = [
@@ -87,7 +68,6 @@ const INITIAL_JOBS: Job[] = [
     beforePhoto: 'before',
     afterPhoto: 'after',
     addOns: [{ id: 'a1', label: 'Fertilizer application', price: 35, approved: true }],
-    pin: { lat: 39.7817, lng: -89.6501 },
   },
   {
     id: 'j2',
@@ -110,7 +90,6 @@ const INITIAL_JOBS: Job[] = [
     beforePhoto: 'before',
     afterPhoto: null,
     addOns: [],
-    pin: { lat: 39.7820, lng: -89.6498 },
   },
   {
     id: 'j3',
@@ -133,7 +112,6 @@ const INITIAL_JOBS: Job[] = [
     beforePhoto: null,
     afterPhoto: null,
     addOns: [],
-    pin: { lat: 39.7825, lng: -89.6492 },
   },
   {
     id: 'j4',
@@ -156,7 +134,6 @@ const INITIAL_JOBS: Job[] = [
     beforePhoto: null,
     afterPhoto: null,
     addOns: [],
-    pin: { lat: 39.7830, lng: -89.6485 },
   },
 ];
 
@@ -360,9 +337,7 @@ function JobCard({
     <motion.div
       layout
       className={`rounded-2xl border overflow-hidden transition-all ${
-        job.status === 'complete'
-          ? 'border-primary/30 bg-primary/5'
-          : job.status === 'in_progress'
+        job.status === 'in_progress'
           ? 'border-accent/40 bg-card shadow-md'
           : 'border-border bg-card'
       }`}
@@ -480,8 +455,8 @@ function JobCard({
                 </div>
               )}
 
-              {/* Photo upload — show when arrived or in_progress or complete */}
-              {(job.status === 'arrived' || job.status === 'in_progress' || job.status === 'complete') && (
+              {/* Photo upload — show when arrived or in progress */}
+              {(job.status === 'arrived' || job.status === 'in_progress') && (
                 <div>
                   <p className="text-xs font-semibold text-foreground mb-2">Photo verification</p>
                   <div className="flex gap-3">
@@ -496,7 +471,7 @@ function JobCard({
                       onCapture={() => onPhoto(job.id, 'after')}
                     />
                   </div>
-                  {job.status !== 'complete' && !job.afterPhoto && (
+                  {!job.afterPhoto && (
                     <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
                       <Lock size={10} />
                       After photo required to mark complete
@@ -506,7 +481,7 @@ function JobCard({
               )}
 
               {/* Add-on logger */}
-              {job.status !== 'pending' && job.status !== 'complete' && (
+              {job.status !== 'pending' && (
                 <AddOnLogger
                   addOns={job.addOns}
                   onAdd={(item) => onAddAddOn(job.id, item)}
@@ -558,70 +533,25 @@ function JobCard({
               </div>
 
               {/* Contact buttons */}
-              {job.status !== 'complete' && (
-                <div className="flex gap-2">
-                  <a
-                    href={`tel:${job.customerPhone}`}
-                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
-                  >
-                    <Phone size={13} /> Call
-                  </a>
-                  <a
-                    href={`sms:${job.customerPhone}`}
-                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
-                  >
-                    <MessageSquare size={13} /> Text
-                  </a>
-                </div>
-              )}
+              <div className="flex gap-2">
+                <a
+                  href={`tel:${job.customerPhone}`}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                >
+                  <Phone size={13} /> Call
+                </a>
+                <a
+                  href={`sms:${job.customerPhone}`}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                >
+                  <MessageSquare size={13} /> Text
+                </a>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </motion.div>
-  );
-}
-
-function BatchDiscovery({ batches, claimedCodes, onClaim }: { batches: Batch[]; claimedCodes: Set<string>; onClaim: (code: string) => void }) {
-  const [mapModules, setMapModules] = useState<DiscoverMapModules | null>(null);
-  const [selectedBatch, setSelectedBatch] = useState<BatchMapPin | null>(null);
-  const mapPins = batches.slice(0, BATCH_PIN_COORDINATES.length).map((batch, index) => ({ ...batch, coordinates: BATCH_PIN_COORDINATES[index], estimatedHours: Math.max(0.75, batch.homesBooked * 0.375) }));
-
-  useEffect(() => {
-    let cancelled = false;
-    void Promise.all([import('leaflet'), import('react-leaflet')]).then(([leaflet, reactLeaflet]) => {
-      if (!cancelled) setMapModules({ leaflet, reactLeaflet });
-    });
-    return () => { cancelled = true; };
-  }, []);
-
-  return (
-      <section className="absolute inset-0 bg-muted" aria-label="Available routes map">
-        {mapModules ? <DiscoverMap mapModules={mapModules} pins={mapPins} onSelect={setSelectedBatch} /> : <div className="flex h-full items-center justify-center text-sm font-medium text-muted-foreground">Loading nearby routes...</div>}
-        <AnimatePresence>
-          {selectedBatch && (() => {
-            const payout = selectedBatch.batchPrice * selectedBatch.homesBooked;
-            const claimed = claimedCodes.has(selectedBatch.code);
-            const unavailable = UNAVAILABLE_BATCH_CODES.has(selectedBatch.code);
-            const actionLabel = unavailable ? 'Unavailable' : claimed ? 'View Active Route' : `Claim Route — $${payout}`;
-            return (
-              <motion.aside initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.2 }} className="absolute inset-x-4 top-20 z-30 rounded-xl border border-primary/20 bg-card p-4 shadow-xl sm:inset-x-auto sm:right-5 sm:w-80">
-                <div className="flex items-start justify-between gap-3">
-                  <div><p className="text-xs font-bold uppercase tracking-wider text-primary">Available route</p><h3 className="mt-1 text-lg font-extrabold text-foreground">{selectedBatch.street} Batch</h3></div>
-                  <button type="button" onClick={() => setSelectedBatch(null)} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted" aria-label="Close route details"><X size={18} /></button>
-                </div>
-                <div className="mt-4 grid grid-cols-3 divide-x divide-border rounded-lg border border-border bg-muted/40 py-3 text-center">
-                  <div><p className="text-xs text-muted-foreground">Payout</p><p className="mt-1 font-extrabold text-primary">${payout}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Stops</p><p className="mt-1 font-extrabold text-foreground">{selectedBatch.homesBooked}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Est. time</p><p className="mt-1 font-extrabold text-foreground">{selectedBatch.estimatedHours}h</p></div>
-                </div>
-                <p className="mt-3 text-sm text-muted-foreground">{selectedBatch.service} across {selectedBatch.homesBooked} nearby homes.</p>
-                <button type="button" onClick={() => onClaim(selectedBatch.code)} disabled={unavailable || claimed} className="mt-4 min-h-11 w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground">{actionLabel}</button>
-              </motion.aside>
-            );
-          })()}
-        </AnimatePresence>
-      </section>
   );
 }
 
@@ -648,20 +578,6 @@ function AvailableRoutesPanel({ batches, claimedCodes, onClaim }: { batches: Bat
         })}
       </div>
     </>
-  );
-}
-
-function DiscoverMap({ mapModules, pins, onSelect }: { mapModules: DiscoverMapModules; pins: BatchMapPin[]; onSelect: (pin: BatchMapPin) => void }) {
-  const { MapContainer, Marker, TileLayer } = mapModules.reactLeaflet;
-  return (
-    <MapContainer center={SPRINGFIELD_CENTER} zoom={16} scrollWheelZoom className="h-full w-full" aria-label="Interactive map of nearby routes">
-      <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      {pins.map((pin) => {
-        const payout = pin.batchPrice * pin.homesBooked;
-        const icon = mapModules.leaflet.divIcon({ className: 'discover-price-pin-container', html: `<span class="discover-price-pin">$${payout}<span class="discover-price-pin-density"><span class="discover-price-pin-divider"></span>${pin.homesBooked} stops</span></span>`, iconSize: [164, 38], iconAnchor: [82, 19] });
-        return <Marker key={pin.code} position={pin.coordinates} icon={icon} eventHandlers={{ click: () => onSelect(pin) }} title={`$${payout}, ${pin.homesBooked} stops`} />;
-      })}
-    </MapContainer>
   );
 }
 
@@ -894,11 +810,10 @@ export default function FieldPage() {
         <meta name="robots" content="noindex" />
       </Helmet>
 
-      <main className="relative h-[100dvh] overflow-hidden bg-muted">
+      <main className="min-h-screen bg-muted/30 pb-12">
         <h1 className="sr-only">Provider Field Execution App — Blokpakt</h1>
-        <BatchDiscovery batches={batches} claimedCodes={claimedBatchCodes} onClaim={claimBatch} />
 
-        <header className="absolute inset-x-0 top-0 z-30 border-b border-border/70 bg-card/95 shadow-sm backdrop-blur">
+        <header className="sticky top-0 z-30 border-b border-border bg-card shadow-sm">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2.5">
               <img src="/assets/blokpakt-bp-mark.svg" alt="Blokpakt" className="h-8 w-8" />
@@ -919,17 +834,26 @@ export default function FieldPage() {
           </div>
         </header>
 
-        <motion.aside initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="absolute inset-x-0 bottom-0 z-20 max-h-[72dvh] overflow-y-auto rounded-t-2xl border border-border bg-card p-4 shadow-2xl lg:inset-y-24 lg:left-5 lg:right-auto lg:w-[390px] lg:max-h-none lg:rounded-2xl">
-          {currentJob ? (
-            <div className="space-y-3">
-              <div><p className="text-xs font-bold uppercase tracking-wider text-primary">Active route</p><h2 className="mt-1 text-xl font-extrabold text-foreground">Stop {currentJob.order} of {jobs.length}</h2></div>
-              {completedJobs.map((job) => <JobCard key={job.id} job={job} expanded={false} onToggle={() => undefined} onAction={handleAction} onPhoto={handlePhoto} onAddAddOn={handleAddAddOn} onRemoveAddOn={handleRemoveAddOn} />)}
-              <JobCard key={currentJob.id} job={currentJob} expanded={expandedId === currentJob.id} onToggle={() => toggleExpand(currentJob.id)} onAction={handleAction} onPhoto={handlePhoto} onAddAddOn={handleAddAddOn} onRemoveAddOn={handleRemoveAddOn} />
+        <div className="mx-auto grid max-w-6xl gap-5 px-4 pt-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
+          <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+            <div className="mb-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-primary">Active job</p>
+              <h2 className="mt-1 text-xl font-extrabold text-foreground">{currentJob ? `Stop ${currentJob.order} of ${jobs.length}` : 'No active jobs'}</h2>
             </div>
-          ) : (
+            {currentJob ? (
+              <div className="space-y-3">
+                {completedJobs.map((job) => <JobCard key={job.id} job={job} expanded={false} onToggle={() => undefined} onAction={handleAction} onPhoto={handlePhoto} onAddAddOn={handleAddAddOn} onRemoveAddOn={handleRemoveAddOn} />)}
+                <JobCard key={currentJob.id} job={currentJob} expanded={expandedId === currentJob.id} onToggle={() => toggleExpand(currentJob.id)} onAction={handleAction} onPhoto={handlePhoto} onAddAddOn={handleAddAddOn} onRemoveAddOn={handleRemoveAddOn} />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Claim an available route to start a new job.</p>
+            )}
+          </section>
+
+          <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
             <AvailableRoutesPanel batches={batches} claimedCodes={claimedBatchCodes} onClaim={claimBatch} />
-          )}
-        </motion.aside>
+          </section>
+        </div>
       </main>
     </>
   );

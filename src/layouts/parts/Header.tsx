@@ -17,16 +17,35 @@ export default function Header() {
     { label: 'Join as Provider', href: '/join' },
   ];
 
-  // Demo portal links — all prototype pages
-  const demoLinks = [
-    { label: '🏠 Homepage', href: '/' },
-    { label: '📋 Book a Service', href: '/book' },
-    { label: '✅ Booking Confirmed', href: '/checkout/success?session_id=demo_session_blokpakt' },
-    { label: '📍 Track My Job', href: '/track' },
-    { label: '🔧 Join as Provider', href: '/join' },
-    { label: '📱 Provider Field App', href: '/field' },
-    { label: '⚙️ Admin Dashboard', href: '/admin' },
-    { label: '❓ FAQs', href: '/faq' },
+  const sitemapGroups = [
+    {
+      label: 'Customer flow',
+      links: [
+        { label: 'Homepage', href: '/' },
+        { label: 'Choose a service', href: '/completed' },
+        { label: 'Book a service', href: '/book' },
+        { label: 'Active batch example', href: '/batch/MAPLE-2026' },
+        { label: 'Booking confirmed', href: '/checkout/success?session_id=demo_session_blokpakt' },
+        { label: 'Booking cancelled', href: '/checkout/cancel' },
+        { label: 'Track a job', href: '/track' },
+      ],
+    },
+    {
+      label: 'Provider and operations',
+      links: [
+        { label: 'Join as provider', href: '/join' },
+        { label: 'Provider field app', href: '/field' },
+        { label: 'Admin dashboard', href: '/admin' },
+      ],
+    },
+    {
+      label: 'Reference pages',
+      links: [
+        { label: 'Products', href: '/products' },
+        { label: 'FAQ', href: '/faq' },
+        { label: 'Legal', href: '/legal' },
+      ],
+    },
   ];
 
   return (
@@ -44,23 +63,26 @@ export default function Header() {
                 onClick={() => setDemoOpen(!demoOpen)}
                 className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors py-1"
               >
-                Jump to page <ChevronDown size={12} className={`transition-transform ${demoOpen ? 'rotate-180' : ''}`} />
+                Master sitemap <ChevronDown size={12} className={`transition-transform ${demoOpen ? 'rotate-180' : ''}`} />
               </button>
               {demoOpen && (
-                <div className="absolute right-0 top-full mt-1 w-56 rounded-xl border border-border bg-card shadow-xl z-50 py-1.5 overflow-hidden">
-                  {demoLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      to={link.href}
-                      onClick={() => setDemoOpen(false)}
-                      className={`block px-4 py-2 text-xs font-medium transition-colors ${
-                        location.pathname === link.href.split('?')[0]
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      {link.label}
-                    </Link>
+                <div className="absolute right-0 top-full z-50 mt-1 w-72 overflow-hidden rounded-xl border border-border bg-card py-2 shadow-xl">
+                  {sitemapGroups.map((group) => (
+                    <div key={group.label} className="py-1">
+                      <p className="px-4 pb-1 pt-1 text-xs font-bold uppercase tracking-wider text-muted-foreground">{group.label}</p>
+                      {group.links.map((link) => (
+                        <Link
+                          key={link.href}
+                          to={link.href}
+                          onClick={() => setDemoOpen(false)}
+                          className={`block px-4 py-2 text-xs font-medium transition-colors ${
+                            location.pathname === link.href.split('?')[0] ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                          }`}
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </div>
                   ))}
                 </div>
               )}
@@ -149,16 +171,15 @@ export default function Header() {
             )
           )}
           <div className="pt-2 border-t border-border mt-2 space-y-1">
-            <p className="text-xs font-semibold text-muted-foreground px-0 py-1">Demo pages</p>
-            {demoLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className="block text-xs font-medium text-foreground/60 hover:text-foreground py-1.5"
-                onClick={() => setMobileOpen(false)}
-              >
-                {link.label}
-              </Link>
+            {sitemapGroups.map((group) => (
+              <div key={group.label} className="py-1">
+                <p className="py-1 text-xs font-semibold text-muted-foreground">{group.label}</p>
+                {group.links.map((link) => (
+                  <Link key={link.href} to={link.href} className="block py-1.5 text-xs font-medium text-foreground/60 hover:text-foreground" onClick={() => setMobileOpen(false)}>
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             ))}
           </div>
           <Link
