@@ -19,31 +19,31 @@ export default function Header() {
 
   const sitemapGroups = [
     {
-      label: 'Customer flow',
+      label: '🛍️ Customer Flow',
       links: [
-        { label: 'Homepage', href: '/' },
-        { label: 'Choose a service', href: '/completed' },
-        { label: 'Book a service', href: '/book' },
-        { label: 'Active batch example', href: '/batch/MAPLE-2026' },
-        { label: 'Booking confirmed', href: '/checkout/success?session_id=demo_session_blokpakt' },
-        { label: 'Booking cancelled', href: '/checkout/cancel' },
-        { label: 'Track a job', href: '/track' },
+        { label: '🏠 Homepage', href: '/' },
+        { label: '📋 Services', href: '/completed' },
+        { label: '📅 Book a Service', href: '/book' },
+        { label: '🚚 Active Batch', href: '/batch/MAPLE-2026' },
+        { label: '✅ Booking Confirmed', href: '/checkout/success?session_id=demo_session_blokpakt' },
+        { label: '↩️ Booking Cancelled', href: '/checkout/cancel' },
+        { label: '📍 Track Job', href: '/track' },
       ],
     },
     {
-      label: 'Provider and operations',
+      label: '👷 Provider & Operations',
       links: [
-        { label: 'Join as provider', href: '/join' },
-        { label: 'Provider field app', href: '/field' },
-        { label: 'Admin dashboard', href: '/admin' },
+        { label: '🤝 Join as Provider', href: '/join' },
+        { label: '📱 Field Dispatch', href: '/field' },
+        { label: '⚙️ Admin Dashboard', href: '/admin' },
       ],
     },
     {
-      label: 'Reference pages',
+      label: '📚 Reference Pages',
       links: [
-        { label: 'Products', href: '/products' },
-        { label: 'FAQ', href: '/faq' },
-        { label: 'Legal', href: '/legal' },
+        { label: '📦 Products', href: '/products' },
+        { label: '❓ FAQs', href: '/faq' },
+        { label: '⚖️ Legal', href: '/legal' },
       ],
     },
   ];
