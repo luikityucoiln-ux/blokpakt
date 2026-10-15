@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { Menu, X, ChevronDown, UserRound } from 'lucide-react';
 import { useAuth } from '../../hooks/use-auth';
+import { liveRequestsEnabled } from '../../lib/service-requests';
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
   const location = useLocation();
   const { user } = useAuth();
+  const pilot = liveRequestsEnabled || ['/request-service', '/requests', '/ops'].includes(location.pathname);
 
   if (location.pathname === '/field') return null;
 
@@ -15,8 +17,8 @@ export default function Header() {
     { label: 'How It Works', href: '/#how-it-works' },
     { label: 'Services', href: '/book' },
     { label: 'FAQ', href: '/faq' },
-    { label: 'Track Job', href: '/track' },
-    { label: 'Join as Provider', href: '/join' },
+    { label: pilot ? 'My Requests' : 'Track Job', href: pilot ? '/requests' : '/track' },
+    { label: pilot ? 'Provider Demo' : 'Join as Provider', href: '/join' },
   ];
 
   const sitemapGroups = [
@@ -58,9 +60,9 @@ export default function Header() {
           <div className="flex items-center justify-between h-8">
             <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-              Interactive prototype
+              {pilot ? 'US pilot · manual review' : 'Interactive prototype'}
             </span>
-            <div className="relative">
+            {pilot ? <Link to="/request-service" className="text-xs font-semibold text-primary">Request service</Link> : <div className="relative">
               <button
                 onClick={() => setDemoOpen(!demoOpen)}
                 className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors py-1"
@@ -88,7 +90,7 @@ export default function Header() {
                   ))}
                 </div>
               )}
-            </div>
+            </div>}
           </div>
         </div>
       </div>
@@ -137,7 +139,7 @@ export default function Header() {
               to="/book"
               className="hidden min-h-11 items-center rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-accent/90 transition-colors lg:inline-flex"
             >
-              Book Now
+              {liveRequestsEnabled ? 'Request Service' : 'Book Now'}
             </Link>
           <button
             className="lg:hidden min-h-11 min-w-11 p-2 rounded-xl text-foreground/70 hover:bg-muted hover:text-foreground"
@@ -177,7 +179,7 @@ export default function Header() {
             )
           )}
           <div className="pt-2 border-t border-border mt-2 space-y-1">
-            {sitemapGroups.map((group) => (
+            {!pilot && sitemapGroups.map((group) => (
               <div key={group.label} className="py-1">
                 <p className="py-1 text-xs font-semibold text-muted-foreground">{group.label}</p>
                 {group.links.map((link) => (
@@ -193,7 +195,7 @@ export default function Header() {
             className="block w-full text-center rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white mt-3"
             onClick={() => setMobileOpen(false)}
           >
-            Book Now
+            {liveRequestsEnabled ? 'Request Service' : 'Book Now'}
           </Link>
         </div>
       )}

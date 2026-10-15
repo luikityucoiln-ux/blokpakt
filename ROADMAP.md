@@ -4,14 +4,36 @@
 
 This file is the source of truth for product rules that must survive UI iteration and guide future backend work. Read this file before changing booking, routing, contractor selection, reviews, payments, or database design.
 
-## Current Phase: Demo Marketplace + Email Sign-In + Supabase Foundation
+## Current Phase: Demo Marketplace + Guarded Service-Request Pilot
 
 - Marketplace workflows use local mock data and browser-only interactions. Email
   sign-in is connected to Supabase Auth, subject to redirect and email-delivery
   configuration on the deployed site.
-- The owner approved preparing the Supabase foundation after reviewing the demo. The initial migration is an offline setup artifact, not a live-booking rollout. Keep the UI in demo mode until authentication, validated write APIs, deployment configuration, and cross-device tests are complete. Do not enable payments yet.
+- The owner approved a US pilot and delegated the first launch scope: real
+  requests, private customer records, and operator-led review, with manual quotes
+  and no online payments. The city/coverage and contractors are not established.
+  Do not claim a live deployment before setup and real-account checks pass.
 - The connected booking, tracking, provider and add-on demo uses tab-scoped `sessionStorage`. Saved jobs, route acceptance, photos, and add-on decisions survive reloads in the same tab, but are not shared between devices or browser tabs.
 - The booking, tracking, field, and admin screens exist to validate the user experience, not to process real work.
+
+### Real Service-Request Pilot
+
+- Read [the story](README.md#our-story) and [AI product guidance](AGENTS.md):
+  Blokpakt is a home-services marketplace, never a trading/investment platform.
+- Apply the additive second migration and follow [pilot setup](supabase/PILOT_SETUP.md).
+  New requests start paused; an operator must activate intake and supported services.
+- `/request-service`, `/requests`, and `/ops` use Supabase, not demo stores.
+  A verified customer creates a request; ownership and an explicit admin allowlist
+  govern reads. Browsers cannot write tables or promote themselves directly.
+- An initial request is not a confirmed booking. Review coverage, contractor
+  availability, and customer agreement manually before recording a USD quote/date.
+  All operator updates are customer-visible and audited; conflicting edits fail.
+- Customers can cancel unconfirmed requests. The operator handles confirmed work.
+  No real charges, provider assignment APIs, evidence uploads, or automatic mail
+  notifications are added by this pilot.
+- `VITE_ENABLE_LIVE_REQUESTS=true` switches `/book`, `/track`, and `/admin` to the
+  pilot after deployment checks. Default false preserves the existing demo.
+  Marketing prices/providers and other demo screens are not automatically made live.
 
 ### Email Sign-In
 
@@ -22,7 +44,8 @@ This file is the source of truth for product rules that must survive UI iteratio
   and can sign out, but demo data remains local and is neither migrated nor
   protected by authentication. Never use real customer records in the demo.
 - No client-selected role or sign-in grants provider approval or admin access.
-  The initial SQL browser-write and evidence restrictions stay in place.
+  The initial SQL browser-write and evidence restrictions stay in place. Separate
+  request RPCs add only the guarded pilot operations described above.
 - Verify Supabase Site URL, exact callback allowlist, email delivery, and
   deployment public environment variables before inviting real users.
 

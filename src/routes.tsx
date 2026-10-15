@@ -2,6 +2,7 @@ import { RouteObject } from 'react-router';
 import HomePage from './pages/index';
 import LoginPage from './pages/login';
 import AuthCallbackPage from './pages/auth-callback';
+import { liveRequestsEnabled } from './lib/service-requests';
 // Eager import so renderToString doesn't hit a Suspense boundary on 404 routes
 // and abort to client rendering. The prod 404 page is tiny; the dev-tools
 // variant stays lazy because it pulls in dev-only code we don't want in
@@ -13,13 +14,16 @@ const NotFoundPage = ProdNotFoundPage;
 export const routes: RouteObject[] = [
   { path: '/login', element: <LoginPage /> },
   { path: '/auth/callback', element: <AuthCallbackPage /> },
+  { path: '/request-service', lazy: async () => ({ Component: (await import('./pages/request-service')).default }) },
+  { path: '/requests', lazy: async () => ({ Component: (await import('./pages/requests')).default }) },
+  { path: '/ops', lazy: async () => ({ Component: (await import('./pages/ops')).default }) },
   {
     path: '/',
     element: <HomePage />,
   },
   {
     path: '/book',
-    lazy: async () => ({ Component: (await import('./pages/book')).default }),
+    lazy: async () => ({ Component: liveRequestsEnabled ? (await import('./pages/request-service')).default : (await import('./pages/book')).default }),
   },
   {
     path: '/batch/:code',
@@ -27,7 +31,7 @@ export const routes: RouteObject[] = [
   },
   {
     path: '/track',
-    lazy: async () => ({ Component: (await import('./pages/track')).default }),
+    lazy: async () => ({ Component: liveRequestsEnabled ? (await import('./pages/requests')).default : (await import('./pages/track')).default }),
   },
   {
     path: '/join',
@@ -47,7 +51,7 @@ export const routes: RouteObject[] = [
   },
   {
     path: '/admin',
-    lazy: async () => ({ Component: (await import('./pages/admin')).default }),
+    lazy: async () => ({ Component: liveRequestsEnabled ? (await import('./pages/ops')).default : (await import('./pages/admin')).default }),
   },
   {
     path: '/legal',
@@ -76,6 +80,9 @@ export type Path =
   | '/'
   | '/login'
   | '/auth/callback'
+  | '/request-service'
+  | '/requests'
+  | '/ops'
   | '/book'
   | '/batch/:code'
   | '/track'

@@ -24,7 +24,7 @@ export default function LoginPage() {
             <div className="flex gap-3"><KeyRound size={20} className="shrink-0" /><div><p className="text-sm font-bold">A link, not another password</p><p className="mt-1 text-xs text-primary-foreground/70">Sign in through your email inbox.</p></div></div>
             <div className="flex gap-3"><ShieldCheck size={20} className="shrink-0" /><div><p className="text-sm font-bold">You choose when to sign in</p><p className="mt-1 text-xs text-primary-foreground/70">You can still browse and try a guest booking.</p></div></div>
           </div>
-          <p className="relative mt-10 rounded-xl border border-white/15 bg-white/5 p-3 text-xs leading-relaxed text-primary-foreground/80">Account sign-in is connected to Supabase. Bookings and management remain browser-only demos; signing in does not unlock admin or provider approval.</p>
+          <p className="relative mt-10 rounded-xl border border-white/15 bg-white/5 p-3 text-xs leading-relaxed text-primary-foreground/80">The US service-request pilot uses your verified account. Requests need manual review before confirmation. Separate demo bookings remain in this browser; signing in does not grant admin or provider approval.</p>
         </section>
         <section className="order-1 p-8 sm:p-12 lg:order-2">
           <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary"><UserRound size={24} /></div>
@@ -32,7 +32,9 @@ export default function LoginPage() {
             <h2 className="text-2xl font-extrabold">You're signed in</h2>
             <p className="mt-2 break-all text-sm text-muted-foreground">{auth.user.email}</p>
             <p className="mt-4 text-sm text-muted-foreground">Your account is connected. Existing demo bookings remain in this tab, not in your online account.</p>
-            <Link to="/book" className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-bold text-white">Explore bookings <ArrowRight size={16} /></Link>
+            <Link to="/request-service" className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-bold text-white">Request a home service <ArrowRight size={16} /></Link>
+            <Link to="/requests" className="mt-3 block rounded-xl border border-border px-4 py-3 text-center text-sm font-semibold">My service requests</Link>
+            <Link to="/ops" className="mt-3 block text-center text-sm font-semibold text-primary">Operator dashboard (approved admins only)</Link>
             <Link to="/field" className="mt-3 block rounded-xl border border-border px-4 py-3 text-center text-sm font-semibold">Open provider demo</Link>
             <button type="button" disabled={busy} onClick={async () => {
               setBusy(true); setError('');

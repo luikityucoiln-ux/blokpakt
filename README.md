@@ -1,8 +1,58 @@
-# V8 App Template
+# Blokpakt
+
+## Our story
+
+**Home services, organized around the neighborhood. Not trading. Not investing.**
+
+Everyday home maintenance can be harder to arrange than it should be. A household
+needs its lawn cared for, gutters cleaned, driveway washed, or snow cleared.
+An independent provider needs enough worthwhile work without spending the day
+driving between scattered jobs and negotiating each one from scratch.
+
+Blokpakt starts with a simple question: what if neighbors who need similar work
+could be served together?
+
+We are building an asset-light home-services marketplace, not buying a fleet or
+employing a full-time crew. Our intended role is to bring local demand together,
+work with independent providers, and make the experience clearer for both sides.
+Denser work may reduce travel and improve provider economics. That is a
+hypothesis to test, not a promise of a particular saving or profit.
+
+Our approach is deliberately practical:
+
+1. **Notice the friction.** Start with a real home-service coordination problem,
+   not a fashionable technology or an unrelated business category.
+2. **Build the smallest useful version.** Preserve a welcoming website, let a
+   customer send a clear request, and give an operator a reliable way to act on it.
+3. **Test a small pilot.** Begin in the US, confirm each address, service,
+   contractor, quote, and date manually, and learn where demand actually exists.
+   We have not established nationwide coverage.
+4. **Improve what evidence supports.** Measure requests, fulfillment problems,
+   customer feedback, and provider economics before scaling. Add automation only
+   where it helps; AI is optional.
+
+This is our product direction, not a claim of completed field research, existing
+revenue, or a guaranteed market size. The lesson from a small physical-product
+prototype is the process: observe, make, test, refine. Someone else's founder
+story and sales estimates are not Blokpakt's history.
+
+For AI collaborators, read [AGENTS.md](./AGENTS.md) before proposing changes.
+Gemini CLI can import it through [GEMINI.md](./GEMINI.md); use `/memory show` to
+check loaded context. Other Gemini interfaces may need the story supplied
+manually. Instructions reduce drift; tests and human review still matter.
+
+## Real service-request pilot
+
+The pilot implementation is separate from the demo. See
+[email, database, administrator, and launch setup](./supabase/PILOT_SETUP.md).
+No cloud migration, real email delivery, service coverage, or deployment is
+assumed to be verified merely because the code builds.
 
 ## Blokpakt prototype
 
-The marketplace is a browser-only demo with real Supabase email sign-in, not a live service or payment system. Keep the existing visual design when extending it.
+The default marketplace remains a browser-only demo with real Supabase email
+sign-in. Separate service-request pilot pages use guarded database APIs after
+setup. No payment system is enabled. Keep the existing design when extending it.
 
 - Book at `/book`, follow the tracking link, and switch to `/field` to accept a whole route.
 - Arrive, save before/after photos, request an optional extra, approve it from the customer view, then complete the job.
@@ -36,8 +86,9 @@ See [ROADMAP.md](./ROADMAP.md) for the approved scope and limitations.
   browser. Sessions persist across reloads. On a shared device, sign out after
   use. Demo data remains tab-local and is not imported, protected by login, or
   erased on sign-out: use sample data only.
-- Authentication alone grants no provider/admin role. No custom profile or live
-  booking is created. The SQL foundation and evidence lock remain unchanged.
+- Authentication alone grants no provider/admin role or booking. Real service
+  requests use the separate pilot described above; demo records are not migrated.
+  The initial SQL foundation and evidence lock remain unchanged.
 
 ### Page-loading recovery
 
