@@ -1,5 +1,8 @@
 import { join } from 'virtual:content';
 import { useState, useCallback } from 'react';
+import type * as React from 'react';
+import { Link } from 'react-router';
+import { submitDemoApplication } from '../lib/demo-management';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -709,6 +712,7 @@ export default function JoinPage() {
   const [zipStatuses, setZipStatuses] = useState<ZipStatus[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SubmitResult>(null);
+  const [submitError, setSubmitError] = useState('');
 
   const site = 'https://blokpakt.com';
   const title = join.meta.title;
@@ -716,16 +720,26 @@ export default function JoinPage() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
+    setSubmitError('');
+    try {
+    const applicationId = submitDemoApplication({
+      name: `${form.firstName} ${form.lastName}`.trim(), email: form.email,
+      services: form.services, zips: form.zips,
+    });
     setResult({
       status: form.activationMethod === 'referral' ? 'pending_referral' : 'pending_activation',
       activationMethod: form.activationMethod || 'starter',
-      applicationId: `demo-${Date.now()}`,
+      applicationId,
       isBlockCaptain: zipStatuses.some((zip) => zip.isBlockCaptainAvailable),
       blockCaptainZips: zipStatuses.filter((zip) => zip.isBlockCaptainAvailable).map((zip) => zip.zip),
       coveredZips: form.zips,
       uncoveredZips: [],
     });
-    setSubmitting(false);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Could not save this demo application.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const resetForm = () => {
@@ -823,8 +837,10 @@ export default function JoinPage() {
             {/* Demo banner */}
             <div className="mb-5 flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 px-4 py-2.5 text-sm text-accent font-medium">
               <span className="w-2 h-2 rounded-full bg-accent animate-pulse flex-shrink-0" />
-              Demo mode — fields pre-filled. Click through any step to proceed.
+              Demo only — applications stay in this tab. No payment, verification or provider activation occurs.
             </div>
+            {submitError && <p role="alert" className="mb-4 text-sm text-destructive">{submitError}</p>}
+            {isSuccess && <p className="mb-4 text-sm text-primary">Demo application saved. <Link to="/admin" className="font-bold underline">Review in Management</Link></p>}
             <div className="bg-card border border-border rounded-2xl shadow-sm p-6 md:p-8">
               {isWaitlist ? (
                 <WaitlistScreen

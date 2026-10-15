@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { ArrowRight, ArrowLeft, Lock, Shield, Clock, Camera, CheckCircle, LocateFixed, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { savePendingBooking } from '../lib/pending-booking';
+import { SERVICES, PROVIDERS, type Service, type Provider } from '../lib/marketplace-catalog';
 import { ContractorCard, type ContractorProfile } from '../components/ContractorCard';
 import { InAppChat } from '../components/InAppChat';
 
@@ -42,83 +43,6 @@ declare global {
     google?: GoogleMapsApi;
   }
 }
-
-interface Service {
-  id: string;
-  label: string;
-  description: string;
-  batchPrice: number;
-  soloPrice: number;
-  priceId: string;
-  icon: string;
-  included: string[];
-  excluded: string[];
-}
-
-interface Provider {
-  id: string;
-  name: string;
-  initials: string;
-  publicId: string;
-  services: string[];
-  rating: number;
-  jobs: number;
-  distance: string;
-  blockCaptain?: boolean;
-}
-
-const SERVICES: Service[] = [
-  {
-    id: 'lawn',
-    label: 'Lawn Care',
-    description: 'Mowing, edging, and cleanup',
-    batchPrice: 45,
-    soloPrice: 50,
-    priceId: 'price_1UAu4SEJF8FW6JeNvwIUueOx',
-    icon: '🌿',
-    included: ['Mow and edge accessible lawn areas', 'Blow clippings from walkways and driveways', 'Basic cleanup of the serviced area'],
-    excluded: ['Overgrown-lot restoration over 6 inches', 'Tree trimming or hedge work', 'Bagging and hauling without an add-on'],
-  },
-  {
-    id: 'gutter',
-    label: 'Gutter Cleaning',
-    description: 'Full flush, downspout clear, debris removal',
-    batchPrice: 162,
-    soloPrice: 180,
-    priceId: 'price_1UAu4XEJF8FW6JeNIwausphW',
-    icon: '🏠',
-    included: ['Remove accessible gutter debris', 'Flush gutters and downspouts', 'Clear the ground-level work area'],
-    excluded: ['Structural gutter repairs', 'Unsafe roof access', 'Interior drainage repairs'],
-  },
-  {
-    id: 'pressure',
-    label: 'Pressure Washing',
-    description: 'Driveway, walkway, and exterior surfaces',
-    batchPrice: 198,
-    soloPrice: 220,
-    priceId: 'price_1UAu4dEJF8FW6JeNLy1JKH22',
-    icon: '💧',
-    included: ['Wash driveway and walkway surfaces', 'Apply surface-safe cleaning solution', 'Rinse adjacent work areas'],
-    excluded: ['Paint removal', 'Window cleaning', 'Sealed-stone restoration'],
-  },
-  {
-    id: 'snow',
-    label: 'Snow Removal',
-    description: 'Driveway and walkway clearing with salt',
-    batchPrice: 58,
-    soloPrice: 64,
-    priceId: 'price_1UAu4fEJF8FW6JeNddVHVpel',
-    icon: '❄️',
-    included: ['Clear driveway and front walkway', 'Create a safe path to the entry', 'Stack snow at the curbside edge'],
-    excluded: ['Hauling snow off-site', 'Roof snow removal', 'Clearing private roads'],
-  },
-];
-
-const PROVIDERS: Provider[] = [
-  { id: 'marcus-t', name: 'Marcus T.', initials: 'MT', publicId: 'BP-501231', services: ['lawn', 'gutter', 'pressure', 'snow'], rating: 4.9, jobs: 312, distance: '2.4 mi', blockCaptain: true },
-  { id: 'devon-r', name: 'Devon R.', initials: 'DR', publicId: 'BP-583904', services: ['lawn', 'gutter', 'pressure', 'snow'], rating: 4.7, jobs: 189, distance: '8.1 mi' },
-  { id: 'priya-s', name: 'Priya S.', initials: 'PS', publicId: 'BP-672148', services: ['lawn', 'gutter', 'pressure', 'snow'], rating: 4.8, jobs: 241, distance: '13.5 mi' },
-];
 
 interface BookingForm {
   serviceId: string;
@@ -352,6 +276,7 @@ function ServiceStep({ services, providers, selectedServiceId, selectedProviderI
 }
 
 export default function BookPage() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(getInitialStep);
   const [form, setForm] = useState<BookingForm>(getInitialForm);
     const [isPremiumUser] = useState(() => typeof window !== 'undefined' && new window.URLSearchParams(window.location.search).get('premium') === 'true');
@@ -366,7 +291,9 @@ export default function BookPage() {
 
   const selectedService = SERVICES.find((s) => s.id === form.serviceId) ?? SERVICES[0];
   const selectedProvider = PROVIDERS.find((provider) => provider.id === form.providerId);
-  const orderTotalCents = Math.round(selectedService.batchPrice * 100);
+  const baseTotalCents = Math.round(selectedService.batchPrice * 100);
+  const neighborDiscountCents = form.referralCode.trim().toUpperCase() === 'NEIGHBOR10' ? 1000 : 0;
+  const orderTotalCents = Math.max(0, baseTotalCents - neighborDiscountCents);
   const minimumBookingDate = addDays(new Date(), 7);
   const maximumBookingDate = addDays(new Date(), 90);
   const bookingDates = availableBookingDates(weekOffset);
@@ -463,7 +390,8 @@ export default function BookPage() {
 
     // Stash the booking details so the confirmation screen can create a local demo job.
     const jobCode = `BLK-${Date.now().toString(36).toUpperCase()}`;
-    savePendingBooking({
+    try {
+      savePendingBooking({
       jobCode,
       service: selectedService.label,
       serviceIcon: selectedService.icon,
@@ -473,14 +401,18 @@ export default function BookPage() {
       gateCode: form.gateCode,
       propertyNotes: form.propertyNotes,
       scheduledWindow: form.preferredSlot,
+      serviceDate: dateKey(selectedBookingDate),
       customerName: `${form.firstName} ${form.lastName}`.trim(),
       customerEmail: form.email,
       customerPhone: form.phone,
-      batchCode: form.referralCode ? form.referralCode.toUpperCase() : null,
-      providerName: selectedProvider?.name ?? 'Provider pending confirmation',
+      batchCode: neighborDiscountCents > 0 || !form.referralCode ? null : form.referralCode.toUpperCase(),
+      providerName: isPremiumUser ? selectedProvider?.name ?? 'Provider pending confirmation' : 'Provider pending confirmation',
     });
-
-    window.location.assign('/checkout/success');
+      navigate('/checkout/success');
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : 'Could not save this demo booking.');
+      setLoading(false);
+    }
   }
 
   const stepLabels = ['Service', 'Property', 'Contact & Schedule'];
@@ -491,7 +423,7 @@ export default function BookPage() {
         <title>Book a Service — Blokpakt</title>
         <meta
           name="description"
-          content="Book lawn care, gutter cleaning, pressure washing, or snow removal on Blokpakt. Your card is held on authorization — never charged until the job is done."
+          content="Try the Blokpakt booking demo for lawn care, gutter cleaning, pressure washing, or snow removal. No payment is collected."
         />
         <link rel="canonical" href="https://blokpakt.com/book" />
         <meta property="og:title" content="Book a Service — Blokpakt" />
@@ -535,7 +467,7 @@ export default function BookPage() {
               Book your service
             </h1>
             <p className="text-muted-foreground text-base max-w-md mx-auto">
-              Card held on authorization — only charged after photo-verified completion.
+              Try the customer and provider flow. No card authorization or payment.
             </p>
           </div>
 
@@ -838,14 +770,14 @@ export default function BookPage() {
 
                     <div className="sm:col-span-2">
                       <label className="block text-sm font-semibold text-foreground mb-1.5">
-                        Referral / neighbor code
+                        Promo or referral code
                         <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>
                       </label>
                       <input
                         type="text"
                         value={form.referralCode}
                         onChange={(e) => update('referralCode', e.target.value)}
-                        placeholder="e.g. OAK-2024"
+                        placeholder="e.g. NEIGHBOR10"
                         className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
                     </div>
@@ -856,19 +788,25 @@ export default function BookPage() {
                     <p className="text-sm font-semibold text-foreground mb-2">Order summary</p>
                     <div className="flex items-center justify-between text-sm mb-1.5">
                       <span className="text-muted-foreground">{selectedService.label} — Street Batch</span>
-                      <span className="font-bold text-foreground">${selectedService.batchPrice}.00</span>
+                      <span className="font-bold text-foreground">${(baseTotalCents / 100).toFixed(2)}</span>
                     </div>
+                    {neighborDiscountCents > 0 && (
+                      <div className="flex items-center justify-between text-sm mb-1.5 text-primary">
+                        <span className="font-semibold">NEIGHBOR10 discount</span>
+                        <span className="font-bold">-${(neighborDiscountCents / 100).toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between border-t border-border pt-1.5 text-sm mb-1.5">
                       <span className="font-semibold text-foreground">Total</span>
                       <span className="font-extrabold text-foreground">${(orderTotalCents / 100).toFixed(2)}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                      <span>{form.address ? `${form.address}, ${form.city}` : '247 Oak Street, Springfield'}</span>
+                      <span>{form.address ? `${form.address}, ${form.zip}` : 'Enter your property address'}</span>
                       <span className="text-accent font-semibold">Save ${selectedService.soloPrice - selectedService.batchPrice} vs solo</span>
                     </div>
                     <div className="pt-2 border-t border-border flex items-center gap-2 text-xs text-muted-foreground">
                       <Shield size={12} className="text-primary flex-shrink-0" />
-                      Card authorized now — captured only after photo-verified completion
+                      Demo only — no card authorization or payment
                     </div>
                   </div>
 
@@ -891,7 +829,7 @@ export default function BookPage() {
                           Redirecting…
                         </>
                       ) : (
-                        <>Authorize & book <ArrowRight size={16} /></>
+                        <>Save demo booking <ArrowRight size={16} /></>
                       )}
                     </button>
                   </div>

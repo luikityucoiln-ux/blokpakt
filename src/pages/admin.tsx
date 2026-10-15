@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle, XCircle, Clock, AlertTriangle, Star, ChevronDown, ChevronUp, DollarSign, Users, Shield, Camera, BarChart2, Zap, Search, RefreshCw, Eye, Flag, ThumbsUp, ThumbsDown, Package } from 'lucide-react';
 import { listBatches, type Batch } from '../lib/batches';
 import { listActiveJobs, subscribeToJobs, type Job } from '../lib/jobs';
+import ManagementPanel from '../components/ManagementPanel';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -668,10 +669,6 @@ function BatchesPanel() {
         </div>
       )}
 
-      {loadState === 'unconfigured' && (
-        <p className="px-5 py-8 text-center text-sm text-muted-foreground">Connect Supabase to load live batch data (see supabase/*.sql).</p>
-      )}
-
       {loadState === 'unavailable' && (
         <p className="px-5 py-8 text-center text-sm text-muted-foreground">We couldn't reach the database. Please try again shortly.</p>
       )}
@@ -717,7 +714,7 @@ function BatchesPanel() {
 
 export default function AdminPage() {
   const [jobs, setJobs] = useState<TimelineJob[]>(TIMELINE_JOBS);
-  const [activeTab, setActiveTab] = useState<'timeline' | 'payouts' | 'ratings' | 'batches'>('timeline');
+  const [activeTab, setActiveTab] = useState<'management' | 'timeline' | 'payouts' | 'ratings' | 'batches'>('management');
 
   function handleApprove(jobId: string) {
     setJobs((prev) =>
@@ -756,16 +753,17 @@ export default function AdminPage() {
               <p className="text-sm font-bold text-foreground">{admin.pageTitle}</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">{admin.dateLabel}</span>
+              <span className="text-xs text-muted-foreground">{activeTab === 'management' ? 'This browser tab' : admin.dateLabel}</span>
               <span className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                {admin.liveLabel}
+                Demo only
               </span>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="max-w-7xl mx-auto px-4 pb-3 flex gap-2">
+          <div className="max-w-7xl mx-auto px-4 pb-3 flex flex-wrap gap-2">
+            <button type="button" onClick={() => setActiveTab('management')} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'management' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>Management</button>
             {admin.tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -776,7 +774,7 @@ export default function AdminPage() {
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
-                {tab.label}
+                {tab.label} (sample)
               </button>
             ))}
           </div>
@@ -790,9 +788,10 @@ export default function AdminPage() {
           </div>
 
           {/* KPI strip — always visible */}
-          <KpiStrip jobs={jobs} providers={PROVIDERS} />
+          {activeTab !== 'management' && <KpiStrip jobs={jobs} providers={PROVIDERS} />}
 
           <AnimatePresence mode="wait">
+            {activeTab === 'management' && <motion.div key="management" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><ManagementPanel /></motion.div>}
             {activeTab === 'timeline' && (
               <motion.div key="timeline" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
                 <GanttTimeline jobs={jobs} />

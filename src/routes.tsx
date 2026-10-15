@@ -1,17 +1,7 @@
 import { RouteObject } from 'react-router';
 import HomePage from './pages/index';
-import BookPage from './pages/book';
-import TrackPage from './pages/track';
-import JoinPage from './pages/join';
-import CheckoutSuccess from './pages/checkout/success';
-import CheckoutCancel from './pages/checkout/cancel';
-import FieldPage from './pages/field';
-import AdminPage from './pages/admin';
-import LegalPage from './pages/legal';
-import FaqPage from './pages/faq';
-import BatchPage from './pages/batch';
-import CompletedPage from './pages/completed';
-import ProductsPage from './pages/Products';
+import LoginPage from './pages/login';
+import AuthCallbackPage from './pages/auth-callback';
 // Eager import so renderToString doesn't hit a Suspense boundary on 404 routes
 // and abort to client rendering. The prod 404 page is tiny; the dev-tools
 // variant stays lazy because it pulls in dev-only code we don't want in
@@ -21,57 +11,59 @@ import ProdNotFoundPage from './pages/_404';
 const NotFoundPage = ProdNotFoundPage;
 
 export const routes: RouteObject[] = [
+  { path: '/login', element: <LoginPage /> },
+  { path: '/auth/callback', element: <AuthCallbackPage /> },
   {
     path: '/',
     element: <HomePage />,
   },
   {
     path: '/book',
-    element: <BookPage />,
+    lazy: async () => ({ Component: (await import('./pages/book')).default }),
   },
   {
     path: '/batch/:code',
-    element: <BatchPage />,
+    lazy: async () => ({ Component: (await import('./pages/batch')).default }),
   },
   {
     path: '/track',
-    element: <TrackPage />,
+    lazy: async () => ({ Component: (await import('./pages/track')).default }),
   },
   {
     path: '/join',
-    element: <JoinPage />,
+    lazy: async () => ({ Component: (await import('./pages/join')).default }),
   },
   {
     path: '/checkout/success',
-    element: <CheckoutSuccess />,
+    lazy: async () => ({ Component: (await import('./pages/checkout/success')).default }),
   },
   {
     path: '/checkout/cancel',
-    element: <CheckoutCancel />,
+    lazy: async () => ({ Component: (await import('./pages/checkout/cancel')).default }),
   },
   {
     path: '/field',
-    element: <FieldPage />,
+    lazy: async () => ({ Component: (await import('./pages/field')).default }),
   },
   {
     path: '/admin',
-    element: <AdminPage />,
+    lazy: async () => ({ Component: (await import('./pages/admin')).default }),
   },
   {
     path: '/legal',
-    element: <LegalPage />,
+    lazy: async () => ({ Component: (await import('./pages/legal')).default }),
   },
   {
     path: '/faq',
-    element: <FaqPage />,
+    lazy: async () => ({ Component: (await import('./pages/faq')).default }),
   },
   {
     path: '/completed',
-    element: <CompletedPage />,
+    lazy: async () => ({ Component: (await import('./pages/completed')).default }),
   },
   {
     path: '/products',
-    element: <ProductsPage />,
+    lazy: async () => ({ Component: (await import('./pages/Products')).default }),
   },
   {
     path: '*',
@@ -82,6 +74,8 @@ export const routes: RouteObject[] = [
 // Types for type-safe navigation
 export type Path =
   | '/'
+  | '/login'
+  | '/auth/callback'
   | '/book'
   | '/batch/:code'
   | '/track'

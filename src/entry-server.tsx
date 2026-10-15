@@ -15,6 +15,8 @@ import {
 import RootLayout from './layouts/RootLayout';
 import Spinner from './components/Spinner';
 import { routes } from './routes';
+import AuthProvider from './components/AuthProvider';
+import RouteErrorPage from './components/RouteErrorPage';
 
 export interface RenderResult {
   html: string;
@@ -29,12 +31,13 @@ const SpinnerFallback = () => (
   </div>
 );
 
-// Mirrors the layout wrapping in App.tsx so client and server render the same
-// tree. Kept separate from the client `router` in App.tsx because
+// Mirrors the layout wrapping in app-router.tsx so client and server render the same
+// tree. Kept separate from the client router because
 // createBrowserRouter touches `window` at module load and must never be
 // evaluated in the SSR bundle.
 const routeTree: RouteObject[] = [
   {
+    errorElement: <RouteErrorPage />,
     element: (
       <Suspense fallback={<SpinnerFallback />}>
         <RootLayout>
@@ -52,11 +55,11 @@ export async function render(url: string): Promise<RenderResult> {
   // createStaticHandler works off a WHATWG Request. We only need the pathname +
   // search; scheme/host don't affect routing. Using a stable sentinel host
   // avoids env-dependent URL parsing.
-  const context = await handler.query(new Request(`http://ssr${url}`));
+  const context = await handler.query(new globalThis.Request(`http://ssr${url}`));
 
   // A loader/action that throws a Response (or calls redirect()) surfaces here
   // as a Response instead of a StaticHandlerContext. Forward the redirect.
-  if (context instanceof Response) {
+  if (context instanceof globalThis.Response) {
     return {
       html: '',
       head: '',
@@ -65,7 +68,7 @@ export async function render(url: string): Promise<RenderResult> {
     };
   }
 
-  const router = createStaticRouter(routeTree, context);
+  const router = createStaticRouter(handler.dataRoutes, context);
   const helmetContext: { helmet?: HelmetServerState } = {};
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -83,7 +86,7 @@ export async function render(url: string): Promise<RenderResult> {
     <StrictMode>
       <HelmetProvider context={helmetContext}>
         <QueryClientProvider client={queryClient}>
-          <StaticRouterProvider router={router} context={context} />
+          <AuthProvider><StaticRouterProvider router={router} context={context} /></AuthProvider>
         </QueryClientProvider>
       </HelmetProvider>
     </StrictMode>

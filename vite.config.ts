@@ -45,49 +45,6 @@ function apiDevPlugin(): Plugin {
 }
 
 /**
- * Rewrites named imports from CJS-only packages to default-import +
- * destructure during Vite SSR dev (ssrLoadModule). In dev, Vite externalizes
- * deps to Node's require() which returns a CJS namespace where named exports
- * are unavailable. The production build (noExternal:true) bundles via Rollup
- * which handles interop natively, so this transform is dev-only.
- */
-function ssrCjsCompatPlugin(): Plugin {
-  const CJS_PACKAGES: string[] = ["react-router", "react-router"];
-
-  function rewriteNames(raw: string): string {
-    return raw.
-    split(",").
-    map((s: string) => s.trim()).
-    filter((s: string) => s && !s.startsWith("type ")).
-    map((s: string) => s.replace(/^(\S+)\s+as\s+(\S+)$/, "$1: $2")).
-    join(", ");
-  }
-
-  return {
-    name: "ssr-cjs-compat",
-    apply: "serve",
-    transform(code: string, id: string, options?: {ssr?: boolean;}) {
-      if (!options?.ssr) return;
-      let transformed: string = code;
-      for (const pkg of CJS_PACKAGES) {
-        const re = new RegExp(
-          `import\\s*\\{([^}]+)\\}\\s*from\\s*['"]${pkg}['"]`,
-          "g"
-        );
-        transformed = transformed.replace(re, (_match: string, names: string) => {
-          const alias: string = pkg.replace(/[^a-zA-Z]/g, "_");
-          const destructured: string = rewriteNames(names);
-          if (!destructured) return `import ${alias} from '${pkg}'`;
-          return `import ${alias} from '${pkg}';\nconst {${destructured}} = ${alias}`;
-        });
-      }
-      if (transformed === code) return;
-      return { code: transformed, map: null };
-    }
-  };
-}
-
-/**
  * Serves the pre-built output of an automation worktree when the
  * X-Worktree-Root header is present. Enables automation scan tools to
  * verify rendered HTML without affecting the user's live preview.
@@ -383,7 +340,6 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       plugins: []
     }
   }),
-  ssrCjsCompatPlugin(),
   ssrDevPlugin(),
   worktreePreviewPlugin(),
   apiDevPlugin(), mediaAssetsPlugin(),

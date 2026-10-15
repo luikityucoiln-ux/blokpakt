@@ -13,6 +13,7 @@ export interface PendingBooking {
   gateCode: string;
   propertyNotes: string;
   scheduledWindow: string;
+  serviceDate: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;

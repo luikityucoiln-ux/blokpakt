@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, UserRound } from 'lucide-react';
+import { useAuth } from '../../hooks/use-auth';
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
   const location = useLocation();
+  const { user } = useAuth();
 
   if (location.pathname === '/field') return null;
 
@@ -103,7 +105,7 @@ export default function Header() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav aria-label="Main navigation" className="hidden md:flex items-center gap-8">
+          <nav aria-label="Main navigation" className="hidden lg:flex items-center gap-4 xl:gap-7">
             {navLinks.map((link) =>
               link.href.startsWith('/') && !link.href.startsWith('/#') ? (
                 <Link
@@ -126,29 +128,33 @@ export default function Header() {
           </nav>
 
           {/* CTA */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link to="/login" onClick={() => { setMobileOpen(false); setDemoOpen(false); }}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-2 text-sm font-semibold text-primary transition-colors hover:border-primary/30 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:px-4">
+              <UserRound size={16} aria-hidden="true" />{user ? 'My account' : 'Log in'}
+            </Link>
             <Link
               to="/book"
-              className="inline-flex items-center rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-accent/90 transition-colors"
+              className="hidden min-h-11 items-center rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-accent/90 transition-colors lg:inline-flex"
             >
               Book Now
             </Link>
-          </div>
-
-          {/* Mobile toggle */}
           <button
-            className="md:hidden p-2 rounded-md text-foreground/70 hover:text-foreground"
+            className="lg:hidden min-h-11 min-w-11 p-2 rounded-xl text-foreground/70 hover:bg-muted hover:text-foreground"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-navigation"
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
+          </div>
         </div>
       </div>
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-border bg-background px-4 py-4 space-y-1">
+        <div id="mobile-navigation" className="lg:hidden border-t border-border bg-background px-4 py-4 space-y-1">
           {navLinks.map((link) =>
             link.href.startsWith('/') && !link.href.startsWith('/#') ? (
               <Link

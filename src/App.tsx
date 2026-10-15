@@ -1,12 +1,8 @@
-import { lazy, Suspense } from 'react';
-import { Outlet, createBrowserRouter, type RouteObject } from 'react-router';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { RouterProvider } from 'react-router/dom';
 
-import AiroErrorBoundary from '../export-plugins/AiroErrorBoundary';
 import CookieBannerErrorBoundary from '@/components/CookieBannerErrorBoundary';
-import RootLayout from './layouts/RootLayout';
-import Spinner from './components/Spinner';
-import { routes } from './routes';
+import { router } from './app-router';
 
 const CookieBanner = lazy(() =>
   import('@/components/CookieBanner').catch((error) => {
@@ -15,53 +11,18 @@ const CookieBanner = lazy(() =>
   })
 );
 
-const SpinnerFallback = () => (
-  <div className="flex justify-center py-8 h-screen items-center">
-    <Spinner />
-  </div>
-);
-
-const rootElement = (
-  <Suspense fallback={<SpinnerFallback />}>
-    <RootLayout>
-      <Outlet />
-    </RootLayout>
-  </Suspense>
-);
-
-// Wrap the agent-editable flat `routes` array in a layout route so ScrollRestoration
-// + shared chrome live once above every page. Keeping the wrap here (instead of
-// in routes.tsx) preserves the agent's simple flat-route contract. The dev
-// boundary must live inside the route element so React Router doesn't replace it
-// with its default route error UI before our boundary can catch render errors.
-//
-// `captureGlobalErrors={false}`: the ROOT boundary in main.tsx owns the global
-// window.onerror/unhandledrejection handlers. This inner boundary only catches
-// route render errors via componentDidCatch — installing window handlers here
-// too would double-forward async errors and stack a second overlay.
-const routeTree: RouteObject[] = [
-  {
-    element: <AiroErrorBoundary captureGlobalErrors={false}>{rootElement}</AiroErrorBoundary>,
-    children: routes,
-  },
-];
-
-const router = createBrowserRouter(routeTree);
-
 export default function App() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   return (
     <>
       <RouterProvider router={router} />
-      {/*
-        CookieBanner reads document.cookie and subscribes to browser events.
-        App.tsx is client-only (entry-server.tsx renders the route tree
-        directly without importing App), so no SSR gate is needed here.
-      */}
-      <CookieBannerErrorBoundary>
+      {/* Match the server tree on the first render, before adding browser-only UI. */}
+      {mounted && <CookieBannerErrorBoundary>
         <Suspense fallback={null}>
           <CookieBanner />
         </Suspense>
-      </CookieBannerErrorBoundary>
+      </CookieBannerErrorBoundary>}
     </>
   );
 }

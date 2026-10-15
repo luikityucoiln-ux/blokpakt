@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { Link, useNavigate } from 'react-router';
 import { Shield, Camera, Clock, ChevronRight, ArrowRight, LocateFixed } from 'lucide-react';
 import { home } from 'virtual:content';
+import FeatureInterestPanel from '../components/FeatureInterestPanel';
 
 
 const fadeUp = {
@@ -56,9 +57,9 @@ export default function HomePage() {
   const site = 'https://blokpakt.com';
   const logoUrl = `${site}/assets/blokpakt-bp-mark.svg`;
   const socialImageUrl = `${site}/assets/og-image.png`;
-  const title = 'Blokpakt — Your Whole Block Saves Together';
+  const title = 'Blokpakt | Neighbors save when they book together';
   const description =
-    'Blokpakt batches home services by street. More neighbors booking = lower prices for everyone and higher earnings for contractors. Lawn care, gutters, pressure washing & snow removal.';
+    'Book home services with nearby neighbors to create more efficient routes and better local pricing.';
 
   function handleStreetCheck() {
     const address = streetAddress.trim();
@@ -552,6 +553,7 @@ export default function HomePage() {
           </div>
         </section>
 
+        <FeatureInterestPanel />
       </main>
     </>
   );

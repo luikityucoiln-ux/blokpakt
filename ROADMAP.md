@@ -4,12 +4,68 @@
 
 This file is the source of truth for product rules that must survive UI iteration and guide future backend work. Read this file before changing booking, routing, contractor selection, reviews, payments, or database design.
 
-## Current Phase: UI-Only Prototype
+## Current Phase: Demo Marketplace + Email Sign-In + Supabase Foundation
 
-- The application currently uses local mock data and browser-only interactions.
-- Do not add a database, payment provider, business API, or server-side booking logic until the UI is approved.
-- Mock data may reset when the browser refreshes.
+- Marketplace workflows use local mock data and browser-only interactions. Email
+  sign-in is connected to Supabase Auth, subject to redirect and email-delivery
+  configuration on the deployed site.
+- The owner approved preparing the Supabase foundation after reviewing the demo. The initial migration is an offline setup artifact, not a live-booking rollout. Keep the UI in demo mode until authentication, validated write APIs, deployment configuration, and cross-device tests are complete. Do not enable payments yet.
+- The connected booking, tracking, provider and add-on demo uses tab-scoped `sessionStorage`. Saved jobs, route acceptance, photos, and add-on decisions survive reloads in the same tab, but are not shared between devices or browser tabs.
 - The booking, tracking, field, and admin screens exist to validate the user experience, not to process real work.
+
+### Email Sign-In
+
+- `/login` sends real email links; `/auth/callback` exchanges a PKCE code once
+  per mounted callback and returns to the account screen. Use the same browser
+  to request and open the link. Errors must not be presented as success.
+- Keep login optional for the marketplace demo. Signed-in users see their email
+  and can sign out, but demo data remains local and is neither migrated nor
+  protected by authentication. Never use real customer records in the demo.
+- No client-selected role or sign-in grants provider approval or admin access.
+  The initial SQL browser-write and evidence restrictions stay in place.
+- Verify Supabase Site URL, exact callback allowlist, email delivery, and
+  deployment public environment variables before inviting real users.
+
+### Supabase Foundation
+
+- Apply `supabase/migrations/202610150001_marketplace_foundation.sql` once to the new project using the SQL Editor. It creates seven RLS-protected tables and a locked private evidence bucket. It does not import browser demo records.
+- Customer-facing booking will not require a password or a separate registration form. Email magic-link verification will establish an internal Supabase Auth identity before allowing private order access. "Guest booking" does not mean anonymous access to addresses or photos.
+- Providers must authenticate and receive operator approval. No client can grant approval, set prices, claim work, change status, or create bookings directly in this foundation.
+- Customers can read only their own bookings. Approved providers can read exact addresses only after their assigned route is accepted. Customer contact details are separate and unavailable to providers.
+- Service IDs match the prototype, but live services start inactive. Prices, currency, geography, service coverage and scheduling rules must be configured for the pilot; current demo prices are not imported.
+- Direct browser writes and evidence uploads/downloads are intentionally locked until a later migration adds verified operations. Route acceptance, street/zone validation, transition guards, mandatory photo completion, Premium checks, add-ons and reviews are not live APIs yet.
+- The service capability, route/service/date, six-stop, nonnegative-money and ownership constraints are a starting foundation, not a substitute for the remaining business-rule APIs.
+- Initial rollout: passwordless customer access, approved provider access, operator-assisted dispatch, and then cross-device booking tests. No AI or real payments in this phase.
+
+### Connected Customer / Provider Demo
+
+1. Create a booking at `/book`, open its tracking link, then switch to `/field`.
+2. New jobs are grouped by normalized street, ZIP, service, requested date/window, and preferred provider. Each block holds at most six stops. Smaller blocks remain acceptable for testing a low-volume marketplace; this is not geofencing, drive-time optimization, or AI.
+3. Accepting a block claims every stop together. Accepted blocks are closed to additional bookings. Work advances in booking order, not an optimized navigation order.
+4. Mark arrival, save before and after photos, and complete each stop. Both photos are required. JPEG, PNG and WebP files under 1 MB each are supported; browser storage errors are shown rather than treating a failed save as success.
+5. Fixed-price extras remain pending until approved from the matching customer's tracking page. Only approved extras count toward demo earnings.
+6. Use the customer-view link to inspect the same booking, progress, and photos. Unknown booking codes show an error, never another customer's sample booking.
+7. Prices and provider earnings are illustrative, not negotiated wholesale rates. Cashout is a preview, available only after all accepted jobs are completed; no money moves. Issue reporting remains a page-local preview, not an actual support submission.
+
+### Management and Feature-Demand Demo
+
+- `/admin` defaults to Management, with connected demo record counts, searchable
+  lists, internal notes and follow-up flags. Existing operations mockups remain
+  separate sample tabs; do not mix their fixture KPIs with connected records.
+- Provider applications submitted through `/join` enter a local review queue.
+  "Reviewed" is an administrative demo label, not approval or authorization.
+- Homepage feature tests must state that their functionality is unavailable.
+  They may record locally opted-in interest but must not imply successful booking,
+  enrollment, payment, or a launch commitment.
+- Count visible views separately from clicks. Deduplicate impressions and clicked
+  views per mounted button, keep raw repeat clicks separately, show no CTR for zero
+  views, and never present a small demo sample as proven demand or guaranteed CTR.
+- Management and feature metrics remain tab-local. Do not expose Supabase records
+  through this unauthenticated demo or change database policies to make it live.
+  Production requires verified admin access, scoped data APIs, appropriate
+  analytics consent, and server-side aggregation before rollout.
+
+The asset-light model does not require owned vehicles or AI. A 20% cost reduction is a business target to validate in a pilot, not a measured result or a product guarantee. Live scheduling, provider identity/eligibility, secure photo storage, payments, and customer notifications remain backend work.
 
 ## Marketplace Rules
 

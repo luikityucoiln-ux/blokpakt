@@ -1,0 +1,31 @@
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
+import { expect, it } from 'vitest';
+import ManagementPanel from '../ManagementPanel';
+import { readDemoManagement, submitDemoApplication } from '../../lib/demo-management';
+
+it('shows real demo counts, reviews intake, searches records and saves follow-up notes', async () => {
+  submitDemoApplication({ name: 'Test Applicant', email: 'test@example.com', services: ['lawn'], zips: [] });
+  const user = userEvent.setup();
+  const { unmount } = render(<MemoryRouter><ManagementPanel /></MemoryRouter>);
+  await screen.findByRole('heading', { name: 'Management overview' });
+  expect(screen.getByText('16 managed records across 4 lists.', { exact: false })).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: '1 applications to review' }));
+  expect(screen.getByText('Test Applicant')).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Mark reviewed' }));
+  expect(screen.getByRole('button', { name: '0 applications to review' })).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: /Service listings/ }));
+  await user.type(screen.getByRole('textbox', { name: 'Search managed records' }), 'Lawn');
+  expect(screen.getByText('1 matching records')).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Manage note' }));
+  await user.type(within(screen.getByRole('dialog')).getByRole('textbox', { name: 'Internal note' }), 'Confirm service scope');
+  await user.click(within(screen.getByRole('dialog')).getByRole('checkbox', { name: 'Needs follow-up' }));
+  await user.click(screen.getByRole('button', { name: 'Save record note' }));
+  expect(screen.getByText('1 records marked for follow-up')).toBeInTheDocument();
+  expect(readDemoManagement().notes['service:lawn']).toEqual({ text: 'Confirm service scope', followUp: true });
+  unmount();
+  render(<MemoryRouter><ManagementPanel /></MemoryRouter>);
+  await screen.findByRole('heading', { name: 'Management overview' });
+  expect(screen.getByText('1 records marked for follow-up')).toBeInTheDocument();
+});

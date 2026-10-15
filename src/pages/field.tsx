@@ -1,21 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
-import { field } from 'virtual:content';
-import { createAddOnRequest, type AddOnRequest } from '../lib/add-on-workflow';
-import { listBatches, type Batch } from '../lib/batches';
+import { Link } from 'react-router';
+import { acceptRouteBlock, listActiveJobs, routeBlocks, subscribeToJobs, updateJob, type RouteBlock, type Job as StoredJob } from '../lib/jobs';
+import { createAddOnRequest, readAddOnRequests, subscribeToAddOnRequests, updateAddOnStatus } from '../lib/add-on-workflow';
+import { readDemoPhoto } from '../lib/demo-photo';
 import {
   MapPin, Clock, Camera, CheckCircle,
   Zap, Plus, X, AlertCircle,
-  Navigation, Phone, MessageSquare, TrendingUp, Banknote,
-  ChevronDown, ChevronUp, Lock, Unlock
+  Navigation, TrendingUp, Banknote,
+  ChevronDown, ChevronUp, Unlock
 } from 'lucide-react';
 
 // ── Demo data ─────────────────────────────────────────────────────────────────
-const TODAY = 'Wed, Sep 2';
+const TODAY = 'Demo session';
 
 interface Job {
   id: string;
+  code: string;
   order: number;
   status: 'pending' | 'en_route' | 'arrived' | 'in_progress' | 'complete';
   service: string;
@@ -44,97 +46,10 @@ interface AddOn {
   approved: boolean;
 }
 
-const UNAVAILABLE_BATCH_CODES = new Set(['PARK-2026']);
-
-const INITIAL_JOBS: Job[] = [
-  {
-    id: 'j1',
-    order: 1,
-    status: 'complete',
-    service: 'Lawn Care',
-    serviceIcon: '🌿',
-    address: '112 Maple Ave',
-    city: 'Springfield, IL',
-    zip: '62701',
-    gateCode: null,
-    propertyNotes: 'Side gate unlocked. Avoid flower bed on left.',
-    customerName: 'Sarah Chen',
-    customerPhone: '(312) 555-0141',
-    batchSize: 4,
-    payout: 36,
-    estimatedDuration: '45 min',
-    arrivedAt: '8:02 AM',
-    completedAt: '8:51 AM',
-    beforePhoto: 'before',
-    afterPhoto: 'after',
-    addOns: [{ id: 'a1', label: 'Fertilizer application', price: 35, approved: true }],
-  },
-  {
-    id: 'j2',
-    order: 2,
-    status: 'in_progress',
-    service: 'Lawn Care',
-    serviceIcon: '🌿',
-    address: '247 Oak Street',
-    city: 'Springfield, IL',
-    zip: '62701',
-    gateCode: '#4821',
-    propertyNotes: 'Dog in backyard — keep gate closed.',
-    customerName: 'Alex Johnson',
-    customerPhone: '(312) 555-0100',
-    batchSize: 4,
-    payout: 36,
-    estimatedDuration: '40 min',
-    arrivedAt: '9:05 AM',
-    completedAt: null,
-    beforePhoto: 'before',
-    afterPhoto: null,
-    addOns: [],
-  },
-  {
-    id: 'j3',
-    order: 3,
-    status: 'pending',
-    service: 'Lawn Care',
-    serviceIcon: '🌿',
-    address: '389 Elm Drive',
-    city: 'Springfield, IL',
-    zip: '62701',
-    gateCode: null,
-    propertyNotes: '',
-    customerName: 'Marcus Brown',
-    customerPhone: '(312) 555-0188',
-    batchSize: 4,
-    payout: 36,
-    estimatedDuration: '35 min',
-    arrivedAt: null,
-    completedAt: null,
-    beforePhoto: null,
-    afterPhoto: null,
-    addOns: [],
-  },
-  {
-    id: 'j4',
-    order: 4,
-    status: 'pending',
-    service: 'Gutter Cleaning',
-    serviceIcon: '🏠',
-    address: '501 Pine Court',
-    city: 'Springfield, IL',
-    zip: '62701',
-    gateCode: '#0099',
-    propertyNotes: '2-story home. Bring tall ladder.',
-    customerName: 'Linda Park',
-    customerPhone: '(312) 555-0155',
-    batchSize: 3,
-    payout: 130,
-    estimatedDuration: '60 min',
-    arrivedAt: null,
-    completedAt: null,
-    beforePhoto: null,
-    afterPhoto: null,
-    addOns: [],
-  },
+const FIXED_EXTRAS = [
+  { label: 'Add Walkway Wash', price: 40 },
+  { label: 'Add Premium Edge Trim', price: 15 },
+  { label: 'Add Gutter Debris Haul', price: 25 },
 ];
 
 const STATUS_CONFIG = {
@@ -145,45 +60,7 @@ const STATUS_CONFIG = {
   complete: { label: 'Complete', color: 'text-primary', bg: 'bg-primary/10', dot: 'bg-primary' },
 };
 
-function now() {
-  return new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-}
-
 // ── Sub-components ────────────────────────────────────────────────────────────
-
-function PhotoSlot({
-  label,
-  hasPhoto,
-  onCapture,
-}: {
-  label: string;
-  hasPhoto: boolean;
-  onCapture: () => void;
-}) {
-  return (
-    <button
-      onClick={onCapture}
-      className={`flex-1 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 py-5 transition-all ${
-        hasPhoto
-          ? 'border-primary bg-primary/5 text-primary'
-          : 'border-border bg-muted/30 text-muted-foreground hover:border-primary/40'
-      }`}
-    >
-      {hasPhoto ? (
-        <>
-          <CheckCircle size={22} className="text-primary" />
-          <span className="text-xs font-semibold text-primary">{label} ✓</span>
-        </>
-      ) : (
-        <>
-          <Camera size={22} />
-          <span className="text-xs font-semibold">{label}</span>
-          <span className="text-xs text-muted-foreground">Tap to capture</span>
-        </>
-      )}
-    </button>
-  );
-}
 
 function AddOnLogger({
   addOns,
@@ -191,24 +68,10 @@ function AddOnLogger({
   onRemove,
 }: {
   addOns: AddOn[];
-  onAdd: (item: { label: string; description: string; price: number; photo: string | null }) => void;
+  onAdd: (item: { label: string; price: number }) => void;
   onRemove: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [photo, setPhoto] = useState<string | null>(null);
-
-  function submitPitch() {
-    const amount = Number(price);
-    if (!title.trim() || !Number.isFinite(amount) || amount <= 0) return;
-    onAdd({ label: title.trim(), description: description.trim(), price: amount, photo });
-    setTitle('');
-    setDescription('');
-    setPrice('');
-    setPhoto(null);
-  }
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -250,7 +113,7 @@ function AddOnLogger({
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${a.approved ? 'bg-primary/10 text-primary' : 'bg-amber-100 text-amber-700'}`}>
                           {a.approved ? 'Approved' : 'Pending'}
                         </span>
-                        <button onClick={() => onRemove(a.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                        <button disabled={a.approved} aria-label={`Withdraw ${a.label}`} onClick={() => onRemove(a.id)} className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40">
                           <X size={14} />
                         </button>
                       </div>
@@ -258,36 +121,20 @@ function AddOnLogger({
                   ))}
                 </div>
               )}
-              <p className="text-xs text-muted-foreground mb-2 font-medium">On-site pitch: you set the price</p>
-              <div className="grid grid-cols-2 gap-2">
-                {field.ADDON_CATALOG.map((item) => (
+              <p className="mb-2 text-xs font-medium text-muted-foreground">Fixed-price extras</p>
+              <div className="space-y-2">
+                {FIXED_EXTRAS.map((item) => (
                   <button
                     key={item.label}
-                    onClick={() => setTitle(item.label)}
-                    className="text-left rounded-lg border border-border bg-background px-3 py-2 hover:border-accent/50 hover:bg-accent/5 transition-all"
+                    type="button"
+                    disabled={addOns.some((addOn) => addOn.label === item.label)}
+                    onClick={() => onAdd(item)}
+                    className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-left transition-all hover:border-accent/50 hover:bg-accent/5 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <p className="text-xs font-semibold text-foreground leading-tight">{item.label}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Use label</p>
+                    <span className="text-xs font-semibold text-foreground">{item.label}</span>
+                    <span className="text-xs font-bold text-primary">+${item.price}</span>
                   </button>
                 ))}
-              </div>
-              <div className="mt-3 space-y-2">
-                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Custom service title" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-                <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What did you find on-site?" rows={2} className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-                <div className="flex gap-2">
-                  <label className="flex-1 cursor-pointer rounded-lg border border-dashed border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:border-accent/50">
-                    <Camera size={14} className="mr-1 inline" /> {photo ? 'Photo attached' : 'Attach site photo'}
-                    <input type="file" accept="image/*" className="sr-only" onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new globalThis.FileReader();
-                      reader.onload = () => setPhoto(typeof reader.result === 'string' ? reader.result : null);
-                      reader.readAsDataURL(file);
-                    }} />
-                  </label>
-                  <input required type="number" min="0.01" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Your price ($)" className="w-36 rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-                </div>
-                <button type="button" onClick={submitPitch} disabled={!title.trim() || !price || Number(price) <= 0} className="w-full rounded-lg bg-accent px-3 py-2.5 text-sm font-bold text-white disabled:opacity-40">Send pitch to customer</button>
               </div>
             </div>
           </motion.div>
@@ -311,14 +158,18 @@ function JobCard({
   job: Job;
   expanded: boolean;
   onToggle: () => void;
-  onAction: (jobId: string, action: 'arrive' | 'start' | 'complete') => void;
-  onPhoto: (jobId: string, type: 'before' | 'after') => void;
-  onAddAddOn: (jobId: string, item: { label: string; description: string; price: number; photo: string | null }) => void;
+  onAction: (jobId: string, action: 'arrive' | 'complete') => void;
+  onPhoto: (jobId: string, kind: 'beforePhoto' | 'afterPhoto', file: globalThis.File) => void;
+  onAddAddOn: (jobId: string, item: { label: string; price: number }) => void;
   onRemoveAddOn: (jobId: string, addOnId: string) => void;
 }) {
   const cfg = STATUS_CONFIG[job.status];
   const addOnTotal = job.addOns.filter((a) => a.approved).reduce((s, a) => s + a.price, 0);
   const totalPayout = job.payout + addOnTotal;
+  const completionPhotoInputRef = useRef<HTMLInputElement>(null);
+  const beforePhotoInputRef = useRef<HTMLInputElement>(null);
+  const [issueReported, setIssueReported] = useState(false);
+  const hasArrived = job.status === 'arrived' || job.status === 'in_progress';
 
   if (job.status === 'complete') {
     return (
@@ -328,7 +179,7 @@ function JobCard({
           <p className="truncate text-sm font-bold text-foreground">{job.service} · {job.address}</p>
           <p className="text-xs text-muted-foreground">Completed {job.completedAt}</p>
         </div>
-        <span className="shrink-0 text-sm font-extrabold text-primary">✓ ${totalPayout} Paid</span>
+        <Link to={`/track?code=${encodeURIComponent(job.code)}`} className="shrink-0 text-sm font-extrabold text-primary">${totalPayout} demo earnings · View proof</Link>
       </div>
     );
   }
@@ -394,15 +245,17 @@ function JobCard({
                   <p className="text-sm font-semibold text-foreground">{job.address}</p>
                   <p className="text-xs text-muted-foreground">{job.city} {job.zip}</p>
                 </div>
-                <div className="rounded-xl bg-muted/40 p-3">
-                  <p className="text-xs text-muted-foreground font-medium mb-1">Customer</p>
-                  <p className="text-sm font-semibold text-foreground">{job.customerName}</p>
-                  <p className="text-xs text-muted-foreground">{job.customerPhone}</p>
-                </div>
+                {hasArrived && (
+                  <div className="rounded-xl bg-muted/40 p-3">
+                    <p className="text-xs text-muted-foreground font-medium mb-1">Customer</p>
+                    <p className="text-sm font-semibold text-foreground">{job.customerName}</p>
+                    <p className="text-xs text-muted-foreground">Demo customer</p>
+                  </div>
+                )}
               </div>
 
               {/* Gate code + notes */}
-              {(job.gateCode || job.propertyNotes) && (
+              {hasArrived && (job.gateCode || job.propertyNotes) && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-1.5">
                   {job.gateCode && (
                     <div className="flex items-center gap-2">
@@ -455,28 +308,42 @@ function JobCard({
                 </div>
               )}
 
-              {/* Photo upload — show when arrived or in progress */}
-              {(job.status === 'arrived' || job.status === 'in_progress') && (
+              {/* Completion photo */}
+              {hasArrived && (
                 <div>
-                  <p className="text-xs font-semibold text-foreground mb-2">Photo verification</p>
-                  <div className="flex gap-3">
-                    <PhotoSlot
-                      label="Before"
-                      hasPhoto={!!job.beforePhoto}
-                      onCapture={() => onPhoto(job.id, 'before')}
-                    />
-                    <PhotoSlot
-                      label="After"
-                      hasPhoto={!!job.afterPhoto}
-                      onCapture={() => onPhoto(job.id, 'after')}
-                    />
+                  <input ref={beforePhotoInputRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="sr-only" aria-label="Before photo"
+                    onChange={(event) => { const file = event.target.files?.[0]; if (file) onPhoto(job.id, 'beforePhoto', file); event.target.value = ''; }} />
+                  <button type="button" onClick={() => beforePhotoInputRef.current?.click()} className="mb-2 w-full rounded-xl border border-primary/30 px-4 py-3 text-sm font-bold text-primary">
+                    {job.beforePhoto ? 'Before photo saved' : 'Add before photo'}
+                  </button>
+                  <input
+                    ref={completionPhotoInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    aria-label="After photo"
+                    capture="environment"
+                    className="sr-only"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) onPhoto(job.id, 'afterPhoto', file);
+                      event.target.value = '';
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => completionPhotoInputRef.current?.click()}
+                    className={`flex min-h-16 w-full items-center justify-center gap-2 rounded-xl border-2 px-4 py-4 text-base font-extrabold transition-colors ${
+                      job.afterPhoto ? 'border-primary bg-primary/10 text-primary' : 'border-primary/30 bg-primary/5 text-primary hover:bg-primary/10'
+                    }`}
+                  >
+                    {job.afterPhoto ? <CheckCircle size={22} /> : <Camera size={22} />}
+                    {job.afterPhoto ? 'Completion Photo Captured' : '📸 Take Photo to Complete'}
+                  </button>
+                  <p className="mt-2 text-xs text-muted-foreground">JPEG, PNG or WebP, under 1 MB each. Demo photos stay in this tab.</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {job.beforePhoto && <img src={job.beforePhoto} alt="Before service" className="h-24 w-full rounded-lg object-cover" />}
+                    {job.afterPhoto && <img src={job.afterPhoto} alt="After service" className="h-24 w-full rounded-lg object-cover" />}
                   </div>
-                  {!job.afterPhoto && (
-                    <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
-                      <Lock size={10} />
-                      After photo required to mark complete
-                    </p>
-                  )}
                 </div>
               )}
 
@@ -500,53 +367,36 @@ function JobCard({
                   <MapPin size={16} />
                   Get Directions
                 </a>
-                {job.status === 'pending' && (
+                {(job.status === 'pending' || job.status === 'en_route') && (
                   <button
                     onClick={() => onAction(job.id, 'arrive')}
                     className="w-full rounded-xl border border-amber-300 bg-amber-50 py-3 text-sm font-bold text-amber-800 transition-colors hover:bg-amber-100"
                   >
                     <Navigation size={16} />
-                    Mark Arrived — {now()}
+                    I have arrived
                   </button>
                 )}
-                {job.status === 'arrived' && (
-                  <button
-                    onClick={() => onAction(job.id, 'start')}
-                    className="w-full rounded-xl bg-accent py-3 text-sm font-bold text-white transition-colors hover:bg-accent/90"
-                  >
-                    <Zap size={16} />
-                    Start Job
-                  </button>
-                )}
-                {job.status === 'in_progress' && (
+                {hasArrived && (
                   <button
                     onClick={() => onAction(job.id, 'complete')}
                     disabled={!job.beforePhoto || !job.afterPhoto}
-                    className="w-full rounded-xl border border-primary/30 bg-primary/10 py-3 text-sm font-bold text-primary transition-colors hover:bg-primary/20 disabled:opacity-40"
+                    className="w-full rounded-xl bg-primary py-4 text-base font-extrabold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <CheckCircle size={16} />
-                    {!job.beforePhoto || !job.afterPhoto
-                      ? 'Upload both photos to complete'
-                      : `Mark Complete — ${now()}`}
+                    Complete demo job
                   </button>
                 )}
               </div>
 
               {/* Contact buttons */}
-              <div className="flex gap-2">
-                <a
-                  href={`tel:${job.customerPhone}`}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
-                >
-                  <Phone size={13} /> Call
-                </a>
-                <a
-                  href={`sms:${job.customerPhone}`}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
-                >
-                  <MessageSquare size={13} /> Text
-                </a>
-              </div>
+              {hasArrived && (
+                <div className="space-y-2 text-center">
+                  <button type="button" onClick={() => setIssueReported(true)} className="text-xs font-semibold text-muted-foreground hover:text-foreground">
+                    {issueReported ? 'Issue noted for this demo' : 'Report Issue / Cannot Access'}
+                  </button>
+                  <Link to={`/track?code=${encodeURIComponent(job.code)}`} className="block rounded-lg border border-border py-2 text-xs font-semibold text-primary">Switch to customer view</Link>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -555,24 +405,24 @@ function JobCard({
   );
 }
 
-function AvailableRoutesPanel({ batches, claimedCodes, onClaim }: { batches: Batch[]; claimedCodes: Set<string>; onClaim: (code: string) => void }) {
+function AvailableRoutesPanel({ batches, claimedCodes, onClaim }: { batches: RouteBlock[]; claimedCodes: Set<string>; onClaim: (code: string) => void }) {
   return (
     <>
       <div>
         <p className="text-xs font-bold uppercase tracking-wider text-primary">Available routes</p>
         <h2 className="mt-1 text-xl font-extrabold text-foreground">Nearby work, less driving</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Grouped stops to minimize driving time.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Same street, service and date. Accept every stop together; no AI or live routing.</p>
       </div>
       <div className="mt-4 space-y-3">
         {batches.map((batch) => {
-          const payout = batch.batchPrice * batch.homesBooked;
+          const payout = batch.payout;
           const claimed = claimedCodes.has(batch.code);
-          const unavailable = UNAVAILABLE_BATCH_CODES.has(batch.code);
-          const actionLabel = unavailable ? 'Unavailable' : claimed ? 'View Active Route' : `Claim Route — $${payout}`;
+          const actionLabel = claimed ? 'Route accepted' : `Accept all ${batch.homesBooked} stops — $${payout}`;
           return (
             <article key={batch.code} className="rounded-xl border border-border bg-background p-4">
               <div className="flex items-start justify-between gap-3"><div><p className="font-bold text-foreground">{batch.street} Batch</p><p className="mt-1 text-sm text-muted-foreground">{batch.service} · {batch.homesBooked} stops</p></div><p className="text-lg font-extrabold text-primary">${payout}</p></div>
-              <button type="button" onClick={() => !unavailable && onClaim(batch.code)} disabled={unavailable || claimed} className="mt-3 min-h-11 w-full rounded-lg bg-accent px-3 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground">{actionLabel}</button>
+              <p className="mt-1 text-xs text-muted-foreground">{batch.scheduledWindow}</p>
+              <button type="button" onClick={() => onClaim(batch.code)} disabled={claimed} className="mt-3 min-h-11 w-full rounded-lg bg-accent px-3 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground">{actionLabel}</button>
             </article>
           );
         })}
@@ -653,9 +503,9 @@ export function EarningsPanel({ jobs }: { jobs: Job[] }) {
           <div className="rounded-xl bg-primary/10 border border-primary/20 p-4 flex items-center gap-3">
             <CheckCircle size={20} className="text-primary flex-shrink-0" />
             <div>
-              <p className="text-sm font-bold text-primary">Cashout initiated!</p>
+              <p className="text-sm font-bold text-primary">Demo cashout preview</p>
               <p className="text-xs text-muted-foreground">
-                ${totalEarnings} sent to your bank via Stripe Connect. Arrives in 1–2 business days.
+                ${totalEarnings} simulated earnings. No money was transferred.
               </p>
             </div>
           </div>
@@ -665,19 +515,19 @@ export function EarningsPanel({ jobs }: { jobs: Job[] }) {
               <div>
                 <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
                   <Banknote size={15} className="text-primary" />
-                  Instant cashout
+                  Preview cashout
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Available: <span className="font-bold text-foreground">${totalEarnings}</span>
                   {pendingJobs > 0 && ` · ${pendingJobs} job${pendingJobs > 1 ? 's' : ''} remaining`}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Stripe Connect · 1% fee · arrives in minutes
+                  Demo only · no bank account connected
                 </p>
               </div>
               <button
                 onClick={handleCashout}
-                disabled={totalEarnings === 0 || cashoutLoading}
+                disabled={totalEarnings === 0 || pendingJobs > 0 || cashoutLoading}
                 className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground disabled:opacity-40 hover:bg-primary/90 transition-colors"
               >
                 {cashoutLoading ? (
@@ -685,7 +535,7 @@ export function EarningsPanel({ jobs }: { jobs: Job[] }) {
                 ) : (
                   <Zap size={13} />
                 )}
-                Cash out
+                Preview payout
               </button>
             </div>
           </div>
@@ -719,81 +569,79 @@ export function EarningsPanel({ jobs }: { jobs: Job[] }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function FieldPage() {
-  const [jobs, setJobs] = useState<Job[]>(INITIAL_JOBS);
-  const [expandedId, setExpandedId] = useState<string | null>('j2');
-  const [batches, setBatches] = useState<Batch[]>([]);
-  const [claimedBatchCodes, setClaimedBatchCodes] = useState<Set<string>>(() => new Set());
-  const addOnCounter = useRef(100);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [batches, setBatches] = useState<RouteBlock[]>([]);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const claimedBatchCodes = new Set(batches.filter((batch) => batch.accepted).map((batch) => batch.code));
 
   useEffect(() => {
-    void listBatches().then(setBatches).catch(() => setBatches([]));
+    let active = true;
+    async function refresh() {
+      try {
+        const [stored, extras] = await Promise.all([listActiveJobs(), readAddOnRequests()]);
+        if (!active) return;
+        setBatches(routeBlocks(stored));
+        const accepted: Job[] = stored.filter((job): job is StoredJob & { status: Job['status'] } =>
+          Boolean(job.acceptedAt) && job.status !== 'cancelled' && job.status !== 'disputed'
+        ).map((job) => ({
+          ...job, order: job.position, city: '', customerPhone: '',
+          batchSize: stored.filter((other) => other.batchCode === job.batchCode).length,
+          addOns: extras.filter((extra) => extra.jobId === job.id && extra.status !== 'declined')
+            .map((extra) => ({ id: extra.id, label: extra.service, price: extra.price, approved: extra.status === 'approved' })),
+        }));
+        setJobs(accepted);
+        setExpandedId((current) => accepted.some((job) => job.id === current && job.status !== 'complete')
+          ? current : accepted.find((job) => job.status !== 'complete')?.id ?? null);
+      } catch (error) {
+        if (active) setError(error instanceof Error ? error.message : 'Could not load demo jobs.');
+      }
+    }
+    void refresh();
+    const unsubscribeJobs = subscribeToJobs(() => { void refresh(); });
+    const unsubscribeExtras = subscribeToAddOnRequests(() => { void refresh(); });
+    return () => { active = false; unsubscribeJobs(); unsubscribeExtras(); };
   }, []);
 
   function toggleExpand(id: string) {
     setExpandedId((prev) => (prev === id ? null : id));
   }
 
-  function handleAction(jobId: string, action: 'arrive' | 'start' | 'complete') {
-    setJobs((prev) =>
-      prev.map((j) => {
-        if (j.id !== jobId) return j;
-        if (action === 'arrive') return { ...j, status: 'arrived', arrivedAt: now() };
-        if (action === 'start') return { ...j, status: 'in_progress' };
-        if (action === 'complete') return { ...j, status: 'complete', completedAt: now() };
-        return j;
-      }),
-    );
+  async function runAction(action: () => Promise<unknown>) {
+    if (busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      await action();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Could not save this demo action.');
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function handlePhoto(jobId: string, type: 'before' | 'after') {
-    setJobs((prev) =>
-      prev.map((j) => {
-        if (j.id !== jobId) return j;
-        return { ...j, [type === 'before' ? 'beforePhoto' : 'afterPhoto']: 'captured' };
-      }),
-    );
+  function handleAction(jobId: string, action: 'arrive' | 'complete') {
+    void runAction(() => updateJob(jobId, { status: action === 'arrive' ? 'arrived' : 'complete' }));
   }
 
-  async function handleAddAddOn(jobId: string, item: { label: string; description: string; price: number; photo: string | null }) {
-    addOnCounter.current += 1;
-    const request: AddOnRequest = {
-      id: `pitch-${addOnCounter.current}`,
-      jobId,
-      service: item.label,
-      description: item.description,
-      price: item.price,
-      photo: item.photo,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-    await createAddOnRequest(request);
-    setJobs((prev) =>
-      prev.map((j) => {
-        if (j.id !== jobId) return j;
-        if (j.addOns.some((a) => a.label === item.label)) return j;
-        return {
-          ...j,
-          addOns: [
-            ...j.addOns,
-            { id: request.id, label: item.label, price: item.price, approved: false },
-          ],
-        };
-      }),
-    );
+  function handlePhoto(jobId: string, kind: 'beforePhoto' | 'afterPhoto', file: globalThis.File) {
+    void runAction(async () => updateJob(jobId, { [kind]: await readDemoPhoto(file) }));
   }
 
-  function handleRemoveAddOn(jobId: string, addOnId: string) {
-    setJobs((prev) =>
-      prev.map((j) => {
-        if (j.id !== jobId) return j;
-        return { ...j, addOns: j.addOns.filter((a) => a.id !== addOnId) };
-      }),
-    );
+  function handleAddAddOn(jobId: string, item: { label: string; price: number }) {
+    void runAction(() => createAddOnRequest({
+      id: window.crypto.randomUUID(), jobId, service: item.label, description: 'Optional fixed-price extra requested by your provider.',
+      price: item.price, photo: null, status: 'pending', createdAt: new Date().toISOString(),
+    }));
+  }
+
+  function handleRemoveAddOn(_jobId: string, addOnId: string) {
+    void runAction(() => updateAddOnStatus(addOnId, 'declined'));
   }
 
   function claimBatch(code: string) {
-    if (UNAVAILABLE_BATCH_CODES.has(code)) return;
-    setClaimedBatchCodes((current) => new Set(current).add(code));
+    void runAction(() => acceptRouteBlock(code));
   }
 
   const completedCount = jobs.filter((j) => j.status === 'complete').length;
@@ -820,7 +668,7 @@ export default function FieldPage() {
               <p className="text-sm font-extrabold text-foreground">Field Dispatch</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-muted-foreground">Marcus T.</span>
+              <span className="text-xs font-semibold text-muted-foreground">Provider demo</span>
               <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
                 {completedCount}/{jobs.length} done
               </div>
@@ -834,15 +682,21 @@ export default function FieldPage() {
           </div>
         </header>
 
-        <div className="mx-auto grid max-w-6xl gap-5 px-4 pt-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
+        <div className="mx-auto max-w-6xl px-4 pt-4">
+          <p className="text-sm text-muted-foreground">Browser-only demo. Bookings, photos and progress survive reloads in this tab. No live dispatch or payments.</p>
+          <Link to="/book" className="text-sm font-bold text-primary">Create a customer booking</Link>
+          {error && <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}
+          {busy && <p role="status" className="mt-2 text-sm text-muted-foreground">Saving...</p>}
+        </div>
+        <div aria-busy={busy} className="mx-auto grid max-w-6xl gap-5 px-4 pt-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
           <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
             <div className="mb-4">
               <p className="text-xs font-bold uppercase tracking-wider text-primary">Active job</p>
               <h2 className="mt-1 text-xl font-extrabold text-foreground">{currentJob ? `Stop ${currentJob.order} of ${jobs.length}` : 'No active jobs'}</h2>
             </div>
+            {completedJobs.map((job) => <JobCard key={job.id} job={job} expanded={false} onToggle={() => undefined} onAction={handleAction} onPhoto={handlePhoto} onAddAddOn={handleAddAddOn} onRemoveAddOn={handleRemoveAddOn} />)}
             {currentJob ? (
               <div className="space-y-3">
-                {completedJobs.map((job) => <JobCard key={job.id} job={job} expanded={false} onToggle={() => undefined} onAction={handleAction} onPhoto={handlePhoto} onAddAddOn={handleAddAddOn} onRemoveAddOn={handleRemoveAddOn} />)}
                 <JobCard key={currentJob.id} job={currentJob} expanded={expandedId === currentJob.id} onToggle={() => toggleExpand(currentJob.id)} onAction={handleAction} onPhoto={handlePhoto} onAddAddOn={handleAddAddOn} onRemoveAddOn={handleRemoveAddOn} />
               </div>
             ) : (
@@ -853,6 +707,7 @@ export default function FieldPage() {
           <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
             <AvailableRoutesPanel batches={batches} claimedCodes={claimedBatchCodes} onClaim={claimBatch} />
           </section>
+          <section className="lg:col-span-2"><EarningsPanel jobs={jobs} /></section>
         </div>
       </main>
     </>

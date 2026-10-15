@@ -5,6 +5,8 @@ import { HelmetProvider } from '@dr.pogodin/react-helmet';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AiroErrorBoundary from '../export-plugins/AiroErrorBoundary';
 import App from './App';
+import { router } from './app-router';
+import AuthProvider from './components/AuthProvider';
 import './styles/globals.css';
 
 if (import.meta.env.MODE === 'development') {
@@ -32,7 +34,7 @@ if (!rootElement) throw new Error('Root element not found');
 const providers = (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
-      <App />
+      <AuthProvider><App /></AuthProvider>
     </QueryClientProvider>
   </HelmetProvider>
 );
@@ -56,8 +58,23 @@ const tree = (
 // SSR markup is detected via a child element inside the #app root. hydrateRoot
 // reattaches to the server-rendered tree; createRoot mounts fresh for dev/
 // pre-SSR fallback.
-if (rootElement.firstElementChild) {
-  hydrateRoot(rootElement, tree);
+function mount(element: HTMLElement) {
+  if (element.firstElementChild && !router.state.errors) {
+    hydrateRoot(element, tree);
+  } else {
+    element.replaceChildren();
+    createRoot(element).render(tree);
+  }
+}
+
+// Resolve the matched page module before hydrating its server-rendered markup.
+if (router.state.initialized) {
+  mount(rootElement);
 } else {
-  createRoot(rootElement).render(tree);
+  const unsubscribe = router.subscribe((state) => {
+    if (state.initialized) {
+      unsubscribe();
+      mount(rootElement);
+    }
+  });
 }

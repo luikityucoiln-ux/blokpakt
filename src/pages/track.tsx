@@ -1,4 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
+import { Link, useSearchParams } from 'react-router';
+import { getJobByCode, listJobsByBatchCode, subscribeToJobs, type Job } from '../lib/jobs';
+import { readDemoPhoto } from '../lib/demo-photo';
 import { track } from 'virtual:content';
 import { readAddOnRequests, subscribeToAddOnRequests, updateAddOnStatus, type AddOnRequest } from '../lib/add-on-workflow';
 import { Helmet } from '@dr.pogodin/react-helmet';
@@ -19,25 +22,9 @@ import {
 } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type JobStatus = 'scheduled' | 'en_route' | 'arrived' | 'in_progress' | 'completed' | 'disputed';
+type JobStatus = 'scheduled' | 'en_route' | 'arrived' | 'in_progress' | 'completed' | 'disputed' | 'cancelled';
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
-const MOCK_JOB = {
-  id: 'BLK-20240912-0042',
-  service: 'Lawn Care — Street Batch',
-  address: '247 Oak Street, Springfield, IL',
-  scheduledWindow: 'Thursday 8am–12pm',
-  contractorName: 'Marcus T.',
-  batchCount: 4,
-  batchStreet: 'Oak Street',
-  status: 'en_route' as JobStatus,
-  estimatedArrival: '9:15 AM',
-  referralCode: 'OAK-2024',
-  referralSavings: 18,
-  neighborsSaved: 3,
-  paymentIntentId: null as string | null,
-};
-
 const STATUS_STEPS: { key: JobStatus; label: string }[] = [
   { key: 'scheduled', label: 'Scheduled' },
   { key: 'en_route', label: 'Contractor en route' },
@@ -46,38 +33,39 @@ const STATUS_STEPS: { key: JobStatus; label: string }[] = [
   { key: 'completed', label: 'Completed' },
 ];
 
-const MOCK_ADDONS: AddOnRequest[] = [
-  { id: 'ao1', jobId: MOCK_JOB.id, service: 'Edge trimming — driveway border', description: 'Contractor noticed overgrowth along your driveway edge.', price: 25, photo: null, status: 'pending', createdAt: new Date().toISOString() },
-  { id: 'ao2', jobId: MOCK_JOB.id, service: 'Bag & haul clippings', description: 'Clippings are heavy today — bagging recommended.', price: 15, photo: null, status: 'pending', createdAt: new Date().toISOString() },
-];
-
 // ── Share hub component ───────────────────────────────────────────────────────
-function ShareHub({ referralCode, batchStreet, savings }: { referralCode: string; batchStreet: string; savings: number }) {
+function ShareHub({ referralCode, batchStreet }: { referralCode: string; batchStreet: string }) {
   const [copied, setCopied] = useState(false);
-  const batchUrl = `https://blokpakt.com/batch/${encodeURIComponent(referralCode)}`;
-  const shareText = `I just booked a yard crew for ${batchStreet} today. If anyone else needs a cut, we can batch it for a discount and save $${savings}.\n\nBook here: ${batchUrl}\nOr Google "Blokpakt" and enter code: ${referralCode}`;
+  const [copyError, setCopyError] = useState('');
+  const batchUrl = `https://blokpakt.com/book?batch=${encodeURIComponent(referralCode)}`;
+  const shareText = `Try the Blokpakt neighborhood booking demo for ${batchStreet}.\n\n${batchUrl}\nThis is a prototype, not a confirmed service invitation.`;
 
   function copyCode() {
+    if (!navigator.clipboard) {
+      setCopyError('Clipboard unavailable. Select and copy the code below.');
+      return;
+    }
     navigator.clipboard.writeText(referralCode).then(() => {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
-    });
+    }).catch(() => setCopyError('Could not copy. Select and copy the code below.'));
   }
 
   return (
     <div className="rounded-xl border border-border bg-card p-5">
       <div className="flex items-center gap-2 mb-1">
         <Share2 size={16} className="text-accent" />
-        <p className="text-sm font-bold text-foreground">Invite neighbors — you both save</p>
+        <p className="text-sm font-bold text-foreground">Preview a neighbor invitation</p>
       </div>
       <p className="text-xs text-muted-foreground mb-4">
-        Every neighbor who books with your code locks in the batch rate for the whole street.
+        Demo data is private to this tab. Shared links open the booking form, not your saved jobs.
       </p>
       <div className="flex items-center gap-2 mb-4">
         <div className="flex-1 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 py-2.5 text-center">
           <p className="text-xs text-muted-foreground mb-0.5">Your referral code</p>
           <p className="text-lg font-extrabold tracking-widest text-primary">{referralCode}</p>
         </div>
+        {copyError && <p role="alert" className="mb-2 text-xs text-destructive">{copyError}</p>}
         <button
           onClick={copyCode}
           className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
@@ -115,7 +103,7 @@ function ShareHub({ referralCode, batchStreet, savings }: { referralCode: string
       <div className="mt-3 flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2">
         <Users size={12} className="text-accent flex-shrink-0" />
         <p className="text-xs text-accent font-medium">
-          3 neighbors already saved using your code this month
+          Matching uses street, service and date, not the referral code alone.
         </p>
       </div>
     </div>
@@ -166,7 +154,7 @@ function AddOnModal({
           </div>
         </div>
         <p className="text-xs text-muted-foreground mb-4">
-          Your contractor is on-site and requesting approval. Approving adds this to your Stripe authorization hold.
+          Your contractor is requesting approval. This demo records your choice only; no payment or authorization is made.
         </p>
         <div className="grid grid-cols-2 gap-3">
           <button
@@ -190,12 +178,13 @@ function AddOnModal({
 // ── Status banner ─────────────────────────────────────────────────────────────
 function StatusBanner({ status, eta }: { status: JobStatus; eta: string }) {
   const config: Record<JobStatus, { color: string; bg: string; icon: ReactNode; label: string; sub: string }> = {
-    scheduled: { color: 'text-primary', bg: 'bg-primary/10 border-primary/20', icon: <Clock size={18} />, label: 'Job scheduled', sub: 'Your contractor has confirmed the booking.' },
-    en_route: { color: 'text-accent', bg: 'bg-accent/10 border-accent/20', icon: <MapPin size={18} />, label: `Contractor en route — ETA ${eta}`, sub: 'Marcus T. is on the way to your property.' },
+    scheduled: { color: 'text-primary', bg: 'bg-primary/10 border-primary/20', icon: <Clock size={18} />, label: 'Demo booking scheduled', sub: 'See provider acceptance and your requested date below.' },
+    en_route: { color: 'text-accent', bg: 'bg-accent/10 border-accent/20', icon: <MapPin size={18} />, label: `Contractor en route — ${eta}`, sub: 'Status updated from the provider demo.' },
     arrived: { color: 'text-primary', bg: 'bg-primary/10 border-primary/20', icon: <CheckCircle size={18} />, label: 'Contractor has arrived', sub: 'Work is about to begin.' },
     in_progress: { color: 'text-accent', bg: 'bg-accent/10 border-accent/20', icon: <Zap size={18} />, label: 'Job in progress', sub: 'Your contractor is working on your property now.' },
-    completed: { color: 'text-primary', bg: 'bg-primary/10 border-primary/20', icon: <CheckCircle size={18} />, label: 'Job completed', sub: 'Before & after photos uploaded. Payment will be captured shortly.' },
-    disputed: { color: 'text-destructive', bg: 'bg-destructive/10 border-destructive/20', icon: <AlertTriangle size={18} />, label: 'Dispute under review', sub: 'Payment capture is frozen. Our team is reviewing your case.' },
+    completed: { color: 'text-primary', bg: 'bg-primary/10 border-primary/20', icon: <CheckCircle size={18} />, label: 'Demo job completed', sub: 'Before and after photos saved. No payment was captured.' },
+    disputed: { color: 'text-destructive', bg: 'bg-destructive/10 border-destructive/20', icon: <AlertTriangle size={18} />, label: 'Demo issue preview', sub: 'No report has been sent and no payment is affected.' },
+    cancelled: { color: 'text-muted-foreground', bg: 'bg-muted border-border', icon: <AlertTriangle size={18} />, label: 'Booking cancelled', sub: 'This demo booking is no longer active.' },
   };
   const c = config[status];
   return (
@@ -211,8 +200,12 @@ function StatusBanner({ status, eta }: { status: JobStatus; eta: string }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function TrackPage() {
-  const job = MOCK_JOB;
-  const [currentStatus, setCurrentStatus] = useState<JobStatus>(job.status);
+  const [searchParams] = useSearchParams();
+  const code = searchParams.get('code') ?? 'BLK-DEMO1';
+  const [storedJob, setStoredJob] = useState<Job | null>(null);
+  const [batchCount, setBatchCount] = useState(0);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
   const [pendingAddons, setPendingAddons] = useState<AddOnRequest[]>([]);
   const [activeAddon, setActiveAddon] = useState<AddOnRequest | null>(null);
   const [approvedAddons, setApprovedAddons] = useState<string[]>([]);
@@ -222,60 +215,90 @@ export default function TrackPage() {
   const [disputeReason, setDisputeReason] = useState('');
   const [disputeDetails, setDisputeDetails] = useState('');
   const [disputeSubmitted, setDisputeSubmitted] = useState(false);
+  const [disputePhoto, setDisputePhoto] = useState<string | null>(null);
 
   useEffect(() => {
-    const showPending = (requests: AddOnRequest[]) => {
-      const pending = requests.filter((addon) => addon.status === 'pending');
-      setPendingAddons(pending);
-      setActiveAddon((current) => current ?? pending[0] ?? null);
-    };
-    void readAddOnRequests().then(showPending).catch(() => setPendingAddons([]));
-    const unsubscribe = subscribeToAddOnRequests((request) => {
-      if (request.status === 'pending') {
-        setPendingAddons((current) => current.some((item) => item.id === request.id) ? current : [...current, request]);
-        setActiveAddon((current) => current ?? request);
+    let active = true;
+    setLoading(true);
+    setError('');
+    setStoredJob(null);
+    setActiveAddon(null);
+    setDisputeFiled(false);
+    setShowDispute(false);
+    async function refresh() {
+      try {
+        const found = await getJobByCode(code);
+        if (!found) throw new Error('Booking not found in this tab. Check the code or create a demo booking.');
+        const [members, requests] = await Promise.all([
+          found.batchCode ? listJobsByBatchCode(found.batchCode) : Promise.resolve([found]),
+          readAddOnRequests(),
+        ]);
+        if (!active) return;
+        setStoredJob(found);
+        setBatchCount(members.length);
+        setPendingAddons(requests.filter((addon) => addon.jobId === found.id && addon.status === 'pending'));
+        const approved = requests.filter((addon) => addon.jobId === found.id && addon.status === 'approved');
+        setApprovedRequests(approved);
+        setApprovedAddons(approved.map((addon) => addon.id));
+      } catch (error) {
+        if (active) setError(error instanceof Error ? error.message : 'Could not load your demo booking.');
+      } finally {
+        if (active) setLoading(false);
       }
-    });
-    return () => {
-      unsubscribe();
-    };
-  }, [job.id]);
+    }
+    void refresh();
+    const unsubscribeJobs = subscribeToJobs(() => { void refresh(); });
+    const unsubscribeAddons = subscribeToAddOnRequests(() => { void refresh(); });
+    return () => { active = false; unsubscribeJobs(); unsubscribeAddons(); };
+  }, [code]);
 
   async function handleApproveAddon(id: string) {
     const addon = pendingAddons.find((item) => item.id === id);
     if (!addon) return;
-    await updateAddOnStatus(id, 'approved');
-    setApprovedAddons((prev) => [...prev, id]);
-    setApprovedRequests((prev) => [...prev, addon]);
-    setPendingAddons((prev) => prev.filter((a) => a.id !== id));
-    setActiveAddon(null);
-    if (job.paymentIntentId) {
-      void globalThis.fetch('/api/stripe/update-authorization', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentIntentId: job.paymentIntentId, amount: addon.price * 100, addOnId: id }),
-      });
+    try {
+      await updateAddOnStatus(id, 'approved');
+      setActiveAddon(null);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Could not approve the extra.');
     }
   }
 
   async function handleDeclineAddon(id: string) {
-    await updateAddOnStatus(id, 'declined');
-    setPendingAddons((prev) => prev.filter((a) => a.id !== id));
-    setActiveAddon(null);
+    try {
+      await updateAddOnStatus(id, 'declined');
+      setActiveAddon(null);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Could not decline the extra.');
+    }
   }
 
   function handleDisputeSubmit() {
-    if (!disputeReason) return;
+    if (!disputeReason || !disputePhoto) return;
     setDisputeSubmitted(true);
     window.setTimeout(() => {
       setShowDispute(false);
       setDisputeFiled(true);
-      setCurrentStatus('disputed');
       setDisputeSubmitted(false);
     }, 1800);
   }
 
+  const currentStatus: JobStatus = disputeFiled ? 'disputed' : storedJob?.status === 'complete' ? 'completed'
+    : storedJob?.status === 'pending' ? 'scheduled' : storedJob?.status ?? 'scheduled';
   const currentStepIndex = STATUS_STEPS.findIndex((s) => s.key === currentStatus);
+  if (loading || !storedJob) {
+    return <main className="mx-auto min-h-screen max-w-5xl px-4 py-12">
+      <h1 className="text-2xl font-extrabold">Track your demo booking</h1>
+      {loading ? <p role="status">Loading booking...</p> : <p role="alert" className="mt-4 text-destructive">{error}</p>}
+      <Link to="/book" className="mt-4 inline-block font-bold text-primary">Create a demo booking</Link>
+    </main>;
+  }
+  const job = {
+    id: storedJob.code, service: storedJob.service, address: storedJob.address,
+    batchStreet: storedJob.address.replace(/^\d+\s+/, ''), batchCount,
+    referralCode: storedJob.batchCode ?? storedJob.code,
+    referralSavings: 0, neighborsSaved: Math.max(0, batchCount - 1),
+    estimatedArrival: 'ETA unavailable in demo',
+  };
 
   return (
     <>
@@ -313,8 +336,8 @@ export default function TrackPage() {
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
                     <CheckCircle size={28} className="text-primary" />
                   </div>
-                  <p className="text-base font-bold text-foreground mb-2">Dispute filed</p>
-                  <p className="text-sm text-muted-foreground">Payment capture is frozen for 48 hours while we review. You'll hear from us within 4 hours.</p>
+                  <p className="text-base font-bold text-foreground mb-2">Issue preview complete</p>
+                  <p className="text-sm text-muted-foreground">No report was sent. This local preview resets when you leave the page; no payment is affected.</p>
                 </div>
               ) : (
                 <>
@@ -361,18 +384,27 @@ export default function TrackPage() {
                     />
                   </div>
                   <div className="rounded-lg bg-muted/40 border border-border px-3 py-2 mb-4 text-xs text-muted-foreground">
-                    Filing a dispute immediately freezes the Stripe payment capture. Our team reviews within 4 hours using contractor photo proof.
+                    Demo only. A real report would be reviewed by support; this preview does not send a report or freeze a payment.
                   </div>
+                  <label className="mb-4 block text-xs font-semibold">
+                    Issue photo (required, under 1 MB)
+                    <input type="file" accept="image/jpeg,image/png,image/webp" className="mt-2 block w-full"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        setDisputePhoto(null);
+                        if (file) void readDemoPhoto(file).then(setDisputePhoto).catch((error: unknown) => setError(error instanceof Error ? error.message : 'Could not read photo.'));
+                      }} />
+                  </label>
                   <div className="grid grid-cols-2 gap-3">
                     <button onClick={() => setShowDispute(false)} className="rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors">
                       Cancel
                     </button>
                     <button
-                      disabled={!disputeReason}
+                      disabled={!disputeReason || !disputePhoto}
                       onClick={handleDisputeSubmit}
                       className="rounded-xl bg-destructive px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40 hover:bg-destructive/90 transition-colors"
                     >
-                      File dispute
+                      Preview issue report
                     </button>
                   </div>
                 </>
@@ -384,6 +416,11 @@ export default function TrackPage() {
 
       <main className="min-h-screen bg-muted/30 py-10 lg:py-16">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
+            <p>Browser-only demo. No real dispatch, payment, or notifications.</p>
+            <Link to="/field" className="mt-1 inline-block font-bold text-primary">Switch to provider view</Link>
+          </div>
+          {error && <p role="alert" className="mb-4 text-sm text-destructive">{error}</p>}
 
           {/* Page header */}
           <div className="mb-8">
@@ -395,6 +432,8 @@ export default function TrackPage() {
                   <MapPin size={13} />
                   {job.address}
                 </p>
+                <p className="mt-2 text-sm text-muted-foreground">{storedJob.serviceDate} · {storedJob.scheduledWindow}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{storedJob.acceptedAt ? `Accepted by ${storedJob.providerName}` : 'Awaiting whole-route acceptance'}</p>
               </div>
               {!disputeFiled && currentStatus === 'completed' && (
                 <button
@@ -451,7 +490,12 @@ export default function TrackPage() {
                 <div className="relative">
                   <div className="absolute left-3 top-0 bottom-0 w-px bg-border" />
                   <div className="flex flex-col gap-4">
-                    {track.MOCK_UPDATES.map((u) => (
+                    {[
+                      { id: 'booked', label: 'Demo booking saved', time: storedJob.createdAt, done: true },
+                      { id: 'accepted', label: 'Whole route accepted', time: storedJob.acceptedAt, done: Boolean(storedJob.acceptedAt) },
+                      { id: 'arrived', label: 'Provider arrived', time: storedJob.arrivedAt, done: Boolean(storedJob.arrivedAt) },
+                      { id: 'complete', label: 'Photos saved and job completed', time: storedJob.completedAt, done: Boolean(storedJob.completedAt) },
+                    ].map((u) => (
                       <div key={u.id} className="flex items-start gap-4 pl-8 relative">
                         <div className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${u.done ? 'bg-primary' : 'bg-muted border border-border'}`}>
                           {u.done
@@ -461,7 +505,7 @@ export default function TrackPage() {
                         </div>
                         <div>
                           <p className={`text-xs font-semibold ${u.done ? 'text-foreground' : 'text-muted-foreground'}`}>{u.label}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">{u.time}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">{u.time ? new Date(u.time).toLocaleString() : 'Not yet'}</p>
                         </div>
                       </div>
                     ))}
@@ -470,10 +514,18 @@ export default function TrackPage() {
               </div>
 
               {/* Approved add-ons */}
+              {(storedJob.beforePhoto || storedJob.afterPhoto) && <section className="rounded-xl border border-border bg-card p-5">
+                <h2 className="mb-3 text-sm font-bold">Service photos</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {storedJob.beforePhoto && <figure><img src={storedJob.beforePhoto} alt="Before service" className="w-full rounded-lg" /><figcaption className="mt-1 text-xs">Before</figcaption></figure>}
+                  {storedJob.afterPhoto && <figure><img src={storedJob.afterPhoto} alt="After service" className="w-full rounded-lg" /><figcaption className="mt-1 text-xs">After</figcaption></figure>}
+                </div>
+              </section>}
+
               {approvedAddons.length > 0 && (
                 <div className="bg-card rounded-xl border border-border p-5">
                   <p className="text-sm font-bold text-foreground mb-3">Approved add-ons</p>
-                  {[...MOCK_ADDONS, ...approvedRequests].filter((a) => approvedAddons.includes(a.id) || approvedRequests.some((approved) => approved.id === a.id)).map((a) => (
+                  {approvedRequests.map((a) => (
                     <div key={a.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                       <div className="flex items-center gap-2">
                         <CheckCircle size={13} className="text-primary flex-shrink-0" />
@@ -513,7 +565,7 @@ export default function TrackPage() {
                   </span>
                   <div>
                     <p className="text-xs font-semibold text-foreground">Something wrong?</p>
-                    <p className="text-xs text-muted-foreground">Flag an issue — freezes payment capture for 48 hours</p>
+                    <p className="text-xs text-muted-foreground">Preview the issue-reporting flow — no report is sent</p>
                   </div>
                 </button>
               )}
@@ -523,18 +575,18 @@ export default function TrackPage() {
             <div className="flex flex-col gap-6">
 
               {/* Share hub */}
-              <ShareHub referralCode={job.referralCode} batchStreet={job.batchStreet} savings={job.referralSavings} />
+              <ShareHub referralCode={job.referralCode} batchStreet={job.batchStreet} />
 
               {/* Neighborhood zone map — homes from virtual:content */}
               <div className="rounded-xl border border-border bg-muted/30 overflow-hidden">
                 <div className="px-4 pt-4 pb-2 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-foreground">{job.batchStreet} batch zone</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">4 homes booked · 4 spots open</p>
+                    <p className="text-sm font-semibold text-foreground">Example neighborhood layout</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Illustration only — not a map of your booking</p>
                   </div>
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
                     <Zap size={10} />
-                    Batch active
+                    Demo map
                   </span>
                 </div>
                 <div className="flex w-full flex-col items-center gap-4 px-4 pb-4" aria-label="Neighborhood zone map">
@@ -588,13 +640,13 @@ export default function TrackPage() {
                 </div>
                 <div className="rounded-xl border border-border bg-card p-3 text-center">
                   <span className="text-primary flex justify-center mb-1"><Zap size={14} /></span>
-                  <p className="text-lg font-extrabold text-foreground">${job.referralSavings}</p>
-                  <p className="text-[10px] text-muted-foreground leading-tight">Your savings</p>
+                  <p className="text-lg font-extrabold text-foreground">${storedJob.payout}</p>
+                  <p className="text-[10px] text-muted-foreground leading-tight">Demo base price</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-3 text-center">
                   <span className="text-primary flex justify-center mb-1"><MessageSquare size={14} /></span>
                   <p className="text-lg font-extrabold text-foreground">{job.neighborsSaved}</p>
-                  <p className="text-[10px] text-muted-foreground leading-tight">Neighbors saved</p>
+                  <p className="text-[10px] text-muted-foreground leading-tight">Other stops</p>
                 </div>
               </div>
 
@@ -602,15 +654,7 @@ export default function TrackPage() {
               <div className="rounded-xl border border-dashed border-border p-4">
                 <p className="text-xs font-semibold text-muted-foreground mb-2">Preview: change status</p>
                 <div className="flex flex-wrap gap-2">
-                  {STATUS_STEPS.map((s) => (
-                    <button
-                      key={s.key}
-                      onClick={() => setCurrentStatus(s.key)}
-                      className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${currentStatus === s.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
+                  <Link to="/field" className="text-sm font-semibold text-primary">Update progress in the provider demo</Link>
                 </div>
               </div>
 

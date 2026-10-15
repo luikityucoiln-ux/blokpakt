@@ -1,5 +1,117 @@
 # V8 App Template
 
+## Blokpakt prototype
+
+The marketplace is a browser-only demo with real Supabase email sign-in, not a live service or payment system. Keep the existing visual design when extending it.
+
+- Book at `/book`, follow the tracking link, and switch to `/field` to accept a whole route.
+- Arrive, save before/after photos, request an optional extra, approve it from the customer view, then complete the job.
+- Demo jobs and photos survive reloads in the same tab using `sessionStorage`. They are not shared across devices or tabs. Use sample information only; closing the tab ends the demo session.
+- The provider screen starts with a four-stop sample route. New bookings use rule-based street/service/date grouping (maximum six stops), not AI or geographic route optimization.
+- No card is authorized, no payout is sent, and no support report is submitted.
+- Secondary pages are route-split; the matched page module resolves before client hydration so server-rendered page content is preserved.
+
+See [ROADMAP.md](./ROADMAP.md) for the approved scope and limitations.
+
+### Email sign-in
+
+- The header's **Log in** button opens `/login` on desktop and mobile. Customers
+  can still explore and make demo bookings without signing in.
+- Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in local `.env` and in the
+  deployment's build environment. Use only a publishable/anon key, never a
+  service-role or secret key. Redeploy after changing these build-time settings.
+- In Supabase **Authentication → URL Configuration**, set **Site URL** to your
+  real website origin and add its exact `/auth/callback` URL under **Redirect
+  URLs**. Add a separate callback for local testing, such as
+  `http://localhost:5173/auth/callback`; use your actual port/host. Keep the
+  default magic-link email template (the `ConfirmationURL` link).
+- Email links use PKCE: open the email in the same browser that requested it.
+  A successful email request is not a completed login. Invalid/expired links
+  show an error and offer a new link; the app removes callback credentials
+  from the address bar and always returns to `/login`, not a user-supplied URL.
+- Supabase's default email sender has recipient restrictions and rate limits.
+  Configure custom SMTP for general public use. Test delivery and the callback
+  on the real hostname with an authorized email before launch.
+- The account screen shows the verified email and supports signing out of this
+  browser. Sessions persist across reloads. On a shared device, sign out after
+  use. Demo data remains tab-local and is not imported, protected by login, or
+  erased on sign-out: use sample data only.
+- Authentication alone grants no provider/admin role. No custom profile or live
+  booking is created. The SQL foundation and evidence lock remain unchanged.
+
+### Page-loading recovery
+
+Route import failures now show branded reload/home actions instead of the default
+router error page. React Router's native ESM imports are preserved in development
+SSR; the obsolete CommonJS rewrite has been removed. Secondary routes remain
+split for loading efficiency. If an actual deployed page still fails after reload,
+inspect its failed module request, response status/content type, and deployment
+asset availability. Do not reset the database to address a frontend import error.
+
+### Management and feature-demand demo
+
+- Open `/admin` and use the default **Management** tab. Its four lists reflect
+  the shared demo bookings, provider catalog/applications, derived customer
+  contacts, and service catalog. The older operations tabs remain labeled samples.
+- Search or filter records, save internal notes, and mark follow-up items.
+  Pending bookings, pending applications, and follow-up counts appear as
+  in-dashboard reminders. No emails or push notifications are sent.
+- Submit a sample application through `/join`, then mark it reviewed in
+  Management. Review does not grant provider access or add it to the catalog.
+- Create a feature-demand test with a name, explanation and button label.
+  Active tests appear under **What should Blokpakt build next?** on the homepage;
+  paused tests are hidden. Every button explains that the feature is unavailable:
+  it never books a service, takes payment, or pretends to join a waitlist.
+- Demo measurement requires a separate, explicit local opt-in. These counters
+  are not uploaded; existing site analytics consent remains separate. One view
+  is counted per button mount once at least 50% is visible. A click arriving
+  before the visibility callback also establishes that view. CTR is the share
+  of measured views with at least one click; repeat clicks only raise total
+  clicks. These are not unique visitors or site-wide production statistics.
+- State persists in this tab's `sessionStorage`. Measurement is limited to 1,000
+  views with an explicit error at the limit. Clearing demo metrics requires
+  confirmation and leaves notes, applications, bookings and feature tests intact.
+- This publicly reachable demo is **not an authenticated admin system**. Use
+  sample data only. Supabase admin authorization and real analytics aggregation
+  must be implemented before using it for real customer records.
+
+### Supabase setup: database foundation
+
+Connection settings alone do not switch the app out of demo mode. The initial
+[SQL migration](./supabase/migrations/202610150001_marketplace_foundation.sql)
+prepares a new, empty Supabase project:
+
+1. Open the intended project's **SQL Editor** and create a new query.
+2. Paste the entire migration, including `begin;` and `commit;`, then run it once.
+3. Check **Table Editor** for `services`, `customer_profiles`, `providers`,
+   `provider_services`, `route_blocks`, `bookings`, and `booking_photos`.
+4. Check **Storage** for the private `blokpakt-evidence` bucket.
+5. Leave RLS enabled. Do not add public read/write policies to make the demo work.
+
+After success, run [the read-only setup check](./supabase/verify_foundation.sql)
+in a separate SQL Editor query. Expect eight `PASS` rows. A `CHECK` row names
+the missing or mismatched setup; share that result for diagnosis instead of
+deleting tables or rerunning the creation script. This check returns metadata
+only and is specific to the initial, locked foundation, not later API migrations.
+
+The migration is transactional and does not delete existing data. If a named
+table or bucket already exists, execution fails instead of overwriting it.
+Do not rerun after success; if an error appears, keep the error text for diagnosis
+rather than deleting tables or disabling RLS.
+
+All services initially remain inactive. Browser writes, provider self-approval,
+and direct evidence access are deliberately disabled. The next implementation
+phase needs verified deployment/email configuration, validated booking/assignment operations,
+private photo access, and cross-device tests before enabling real bookings.
+Customers will not need to choose a password, but secure order access still uses
+an internal verified Auth identity. No payments are enabled by this migration.
+
+The [SQL regression checks](./supabase/tests/marketplace_foundation.sql) are for
+an isolated local Supabase/PostgreSQL test database after applying the migration,
+not the live project. They exercise RLS ownership, provider approval, address
+visibility, route constraints, and the private bucket lock using rollback-only
+fixtures.
+
 A modern, production-ready web application template built with Vite, React, and TypeScript. Designed for AI-assisted development with component introspection, layout systems, and excellent developer experience.
 
 ## 🚀 Features
