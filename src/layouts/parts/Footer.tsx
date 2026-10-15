@@ -32,7 +32,7 @@ export default function Footer() {
             <h3 className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">Company</h3>
             <ul className="space-y-2">
               {[
-                { label: 'About', href: '#' },
+                { label: 'Our Story', href: '/our-story' },
                 { label: 'How It Works', href: '#how-it-works' },
                 { label: 'Pricing', href: '#pricing' },
                 { label: 'FAQs', href: '/faq' },

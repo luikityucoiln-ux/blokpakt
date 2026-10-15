@@ -62,6 +62,10 @@ export const routes: RouteObject[] = [
     lazy: async () => ({ Component: (await import('./pages/faq')).default }),
   },
   {
+    path: '/our-story',
+    lazy: async () => ({ Component: (await import('./pages/our-story')).default }),
+  },
+  {
     path: '/completed',
     lazy: async () => ({ Component: (await import('./pages/completed')).default }),
   },
@@ -93,6 +97,7 @@ export type Path =
   | '/admin'
   | '/legal'
   | '/faq'
+  | '/our-story'
   | '/completed'
   | '/products';
 

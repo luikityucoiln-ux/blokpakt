@@ -16,6 +16,7 @@ export default function Header() {
   const navLinks = [
     { label: 'How It Works', href: '/#how-it-works' },
     { label: 'Services', href: '/book' },
+    { label: 'Our Story', href: '/our-story' },
     { label: 'FAQ', href: '/faq' },
     { label: pilot ? 'My Requests' : 'Track Job', href: pilot ? '/requests' : '/track' },
     { label: pilot ? 'Provider Demo' : 'Join as Provider', href: '/join' },
@@ -46,6 +47,7 @@ export default function Header() {
       label: '📚 Reference Pages',
       links: [
         { label: '📦 Products', href: '/products' },
+        { label: '📖 Our Story', href: '/our-story' },
         { label: '❓ FAQs', href: '/faq' },
         { label: '⚖️ Legal', href: '/legal' },
       ],
