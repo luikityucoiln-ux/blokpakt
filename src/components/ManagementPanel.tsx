@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { Bell, Search, ArrowRight } from 'lucide-react';
+import { Bell, Search, ArrowRight, CalendarDays, Users, ContactRound, Layers } from 'lucide-react';
 import { listActiveJobs, subscribeToJobs, type Job } from '../lib/jobs';
 import { useDemoManagement } from '../hooks/use-demo-management';
 import {
@@ -11,11 +11,11 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 
 const CATEGORIES = [
-  { id: 'bookings', label: 'Bookings' }, { id: 'providers', label: 'Providers & applications' },
-  { id: 'customers', label: 'Customer records' }, { id: 'services', label: 'Service listings' },
+  { id: 'bookings', label: 'Bookings', icon: CalendarDays }, { id: 'providers', label: 'Providers & applications', icon: Users },
+  { id: 'customers', label: 'Customer records', icon: ContactRound }, { id: 'services', label: 'Service listings', icon: Layers },
 ] as const;
 type Filter = 'all' | 'follow-up' | 'pending';
-const inputStyle = 'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm';
+const inputStyle = 'min-h-11 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40';
 
 function RecordEditor({ record, note, onClose, onSaved }: {
   record: ManagedRecord; note: DemoManagement['notes'][string] | undefined;
@@ -103,7 +103,7 @@ export default function ManagementPanel() {
       <div><h2 className="text-2xl font-extrabold">Management overview</h2>
         <p className="mt-1 text-sm text-muted-foreground">{records.length} managed records across 4 lists. Counts come from this tab's demo data.</p>
       </div>
-      <a href="#feature-tests" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-bold text-white">View feature demand <ArrowRight size={16} /></a>
+      <a href="#feature-tests" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-primary/20 bg-card px-4 py-3 text-sm font-bold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">View feature demand <ArrowRight size={16} aria-hidden="true" /></a>
     </header>
     <p className="text-sm text-muted-foreground">No live database access or admin login yet. Use sample information only. Notes and reviews survive reloads in this tab; they do not approve real providers or modify real services.</p>
     {(managementError || error) && <p role="alert" className="rounded-xl border border-destructive/30 p-3 text-sm text-destructive">{managementError || error}</p>}
@@ -111,9 +111,13 @@ export default function ManagementPanel() {
 
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {CATEGORIES.map((item) => <button key={item.id} type="button" aria-pressed={category === item.id} onClick={() => showCategory(item.id)}
-        className={`rounded-2xl border p-4 text-left ${category === item.id ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}>
-        <span className="block text-2xl font-extrabold">{records.filter((record) => record.kind === item.id).length}</span>
-        <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
+        className={`group rounded-2xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:p-5 ${category === item.id ? 'border-primary bg-primary text-primary-foreground shadow-sm' : 'border-border bg-card hover:border-primary/40'}`}>
+        <span className="mb-5 flex items-center justify-between gap-2">
+          <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${category === item.id ? 'bg-white/10 text-orange-200' : 'bg-primary/5 text-primary'}`}><item.icon size={20} aria-hidden="true" /></span>
+          <ArrowRight size={16} aria-hidden="true" className={category === item.id ? 'text-orange-200' : 'text-muted-foreground'} />
+        </span>
+        <span className="block text-3xl font-extrabold tabular-nums">{records.filter((record) => record.kind === item.id).length}</span>
+        <span className={`mt-2 block text-xs font-semibold ${category === item.id ? 'text-white/80' : 'text-muted-foreground'}`}>{item.label}</span>
       </button>)}
     </div>
 
@@ -131,7 +135,7 @@ export default function ManagementPanel() {
       </div>}
     </section>
 
-    <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="font-bold">{CATEGORIES.find((item) => item.id === category)?.label}</h3>
         <div className="flex w-full flex-wrap gap-2 sm:w-auto">
@@ -148,21 +152,21 @@ export default function ManagementPanel() {
       {category === 'providers' && <p className="mt-3 text-xs text-muted-foreground">Includes the three sample catalog providers and applications submitted through Join. Marking an application reviewed does not grant access or add it to the booking catalog.</p>}
       <p className="mt-3 text-xs text-muted-foreground">{filtered.length} matching records</p>
       <div className="mt-3 divide-y divide-border">
-        {filtered.slice(currentPage * 10, currentPage * 10 + 10).map((record) => <article key={record.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
+        {filtered.slice(currentPage * 10, currentPage * 10 + 10).map((record) => <article key={record.id} className="flex flex-wrap items-start justify-between gap-3 py-5">
           <div className="min-w-0 flex-1">
             <p className="break-words text-sm font-bold">{record.title}</p>
             <p className="mt-1 break-words text-xs text-muted-foreground">{record.detail}</p>
-            <span className="mt-2 inline-block rounded-full bg-muted px-2 py-1 text-xs">{record.status}</span>
+            <span className={`mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${record.status === 'pending' ? 'bg-accent/10 text-amber-900' : 'bg-primary/5 text-primary'}`}>{record.status}</span>
             {data.notes[record.id]?.followUp && <span className="ml-2 text-xs font-bold text-amber-700">Follow-up needed</span>}
             {data.notes[record.id]?.text && <p className="mt-2 whitespace-pre-wrap break-words text-xs text-muted-foreground">{data.notes[record.id].text}</p>}
           </div>
           <div className="flex flex-wrap gap-2">
-            {record.href && <Link to={record.href} className="rounded-lg border border-border px-3 py-2 text-xs font-semibold">View booking</Link>}
+            {record.href && <Link to={record.href} className="inline-flex min-h-11 items-center rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-muted">View booking</Link>}
             {record.applicationId && record.status === 'pending' && <button type="button" onClick={() => {
               const id = record.applicationId;
               if (id) run(() => reviewDemoApplication(id), 'Demo application marked reviewed. No provider access was granted.');
-            }} className="rounded-lg bg-primary/10 px-3 py-2 text-xs font-bold text-primary">Mark reviewed</button>}
-            <button type="button" onClick={() => setSelected(record)} className="rounded-lg border border-border px-3 py-2 text-xs font-semibold">Manage note</button>
+            }} className="min-h-11 rounded-xl bg-primary/10 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/15">Mark reviewed</button>}
+            <button type="button" onClick={() => setSelected(record)} className="min-h-11 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-muted">Manage note</button>
           </div>
         </article>)}
         {!filtered.length && <p className="py-8 text-center text-sm text-muted-foreground">No records match this search or filter.</p>}
@@ -174,7 +178,7 @@ export default function ManagementPanel() {
       </div>
     </section>
 
-    <section id="feature-tests" className="scroll-mt-40 rounded-2xl border border-border bg-card p-4 sm:p-5">
+    <section id="feature-tests" className="scroll-mt-32 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><h3 className="text-lg font-extrabold">Feature demand tests</h3><p className="mt-1 text-sm text-muted-foreground">Discover interest in ideas that are not implemented. Results are this tab's test interactions, not website-wide analytics.</p></div>
         <Link to="/#feature-ideas" className="rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground">Try the homepage buttons</Link>

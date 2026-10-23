@@ -14,5 +14,5 @@ function OperatorRequests() {
 }
 
 export default function OperationsPage() {
-  return <PilotShell title="Service request management"><PilotAccess><OperatorRequests /></PilotAccess></PilotShell>;
+  return <PilotShell title="Service request management" operator><PilotAccess><OperatorRequests /></PilotAccess></PilotShell>;
 }

@@ -78,7 +78,7 @@ export default function RequestList({ operator = false }: { operator?: boolean }
   };
   return <div className="space-y-5">
     {operator && !counts.error && counts.data && <section aria-label="Request counts" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {(['total', 'received', 'reviewing', 'confirmed'] as const).map((name) => <div key={name} className="rounded-xl border border-border bg-card p-4"><p className="text-xs font-bold uppercase text-muted-foreground">{name}</p><p className="mt-2 text-3xl font-extrabold">{counts.data[name]}</p></div>)}
+      {(['total', 'received', 'reviewing', 'confirmed'] as const).map((name) => <div key={name} className={`rounded-2xl border p-5 ${name === 'received' ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card'}`}><p className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${name === 'received' ? 'text-white/80' : 'text-muted-foreground'}`}><span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${name === 'received' ? 'bg-orange-300' : 'bg-primary/40'}`} />{name}</p><p className="mt-4 text-3xl font-extrabold tabular-nums">{counts.data[name]}</p></div>)}
     </section>}
     {operator && !counts.error && counts.data && counts.data.received > 0 && <p role="status" className="rounded-xl bg-accent/10 p-4 text-sm font-semibold">{counts.data.received} new request(s) need review. Dashboard reminders refresh every minute; no automatic email or push alerts are sent.</p>}
     {counts.error && operator && <p role="alert" className="text-sm text-destructive">Counts unavailable: {requestError(counts.error)}</p>}

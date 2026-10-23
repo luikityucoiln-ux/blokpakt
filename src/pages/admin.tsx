@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router';
 import { admin } from 'virtual:content';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle, XCircle, Clock, AlertTriangle, Star, ChevronDown, ChevronUp, DollarSign, Users, Shield, Camera, BarChart2, Zap, Search, RefreshCw, Eye, Flag, ThumbsUp, ThumbsDown, Package } from 'lucide-react';
+import { ArrowUpRight, LayoutDashboard, CheckCircle, XCircle, Clock, AlertTriangle, Star, ChevronDown, ChevronUp, DollarSign, Users, Shield, Camera, BarChart2, Zap, Search, RefreshCw, Eye, Flag, ThumbsUp, ThumbsDown, Package } from 'lucide-react';
 import { listBatches, type Batch } from '../lib/batches';
 import { listActiveJobs, subscribeToJobs, type Job } from '../lib/jobs';
 import ManagementPanel from '../components/ManagementPanel';
@@ -742,49 +743,57 @@ export default function AdminPage() {
         <meta name="robots" content="noindex" />
       </Helmet>
 
-      <main className="min-h-screen bg-muted/30 pb-20">
-        <h1 className="sr-only">Admin Operations Dashboard — Blokpakt</h1>
-
-        {/* Top bar */}
-        <div className="sticky top-0 z-30 bg-card border-b border-border shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground font-medium">{admin.pageSubtitle}</p>
-              <p className="text-sm font-bold text-foreground">{admin.pageTitle}</p>
+      <main className="min-h-screen bg-background pb-20">
+        <div className="relative overflow-hidden bg-primary text-primary-foreground">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-40 h-96 w-96 rounded-full border border-white/10" />
+          <div className="relative mx-auto max-w-7xl px-4 pb-10 pt-8 sm:px-6 lg:px-8">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
+                <LayoutDashboard size={16} aria-hidden="true" /> {admin.pageSubtitle} / Workspace
+              </p>
+              <Link to="/" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-semibold transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300">
+                View marketplace <ArrowUpRight size={15} aria-hidden="true" />
+              </Link>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">{activeTab === 'management' ? 'This browser tab' : admin.dateLabel}</span>
-              <span className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                Demo only
-              </span>
+            <div className="mt-8 flex flex-wrap items-end justify-between gap-6">
+              <div className="max-w-xl">
+                <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{admin.pageTitle}</h1>
+                <p className="mt-3 text-sm leading-relaxed text-white/75">A little more clarity for every block. Explore demo records, organize follow-ups, and test what comes next.</p>
+              </div>
+              <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-300/15 text-orange-300"><Shield size={18} aria-hidden="true" /></span>
+                <div><p className="text-sm font-bold text-orange-200">Demo workspace</p><p className="mt-1 text-xs text-white/70">{activeTab === 'management' ? 'This browser tab only' : `Sample date: ${admin.dateLabel}`}</p></div>
+              </div>
             </div>
           </div>
+        </div>
 
-          {/* Tabs */}
-          <div className="max-w-7xl mx-auto px-4 pb-3 flex flex-wrap gap-2">
-            <button type="button" onClick={() => setActiveTab('management')} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'management' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>Management</button>
+        <div className="border-b border-border bg-card">
+          <nav aria-label="Dashboard sections" className="mx-auto flex max-w-7xl flex-wrap gap-2 px-4 py-4 sm:px-6 lg:px-8">
+            <button type="button" aria-pressed={activeTab === 'management'} onClick={() => setActiveTab('management')} className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-3 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${activeTab === 'management' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted'}`}><LayoutDashboard size={15} aria-hidden="true" />Management</button>
             {admin.tabs.map((tab) => (
               <button
                 key={tab.id}
+                type="button"
+                aria-pressed={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id as 'timeline' | 'payouts' | 'ratings' | 'batches')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`min-h-11 rounded-xl px-4 py-3 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                   activeTab === tab.id
                     ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    : 'text-muted-foreground hover:bg-muted'
                 }`}
               >
                 {tab.label} (sample)
               </button>
             ))}
-          </div>
+          </nav>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 pt-5 space-y-5">
+        <div className="mx-auto max-w-7xl space-y-7 px-4 pt-6 sm:px-6 lg:px-8">
           {/* Demo banner */}
-          <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 px-4 py-2.5 text-sm text-accent font-medium">
-            <span className="w-2 h-2 rounded-full bg-accent animate-pulse flex-shrink-0" />
-            {admin.demoBanner}
+          <div className="flex items-start gap-3 rounded-2xl border border-accent/25 bg-accent/5 px-5 py-4 text-sm leading-relaxed text-foreground">
+            <AlertTriangle size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-accent" />
+            <p>{admin.demoBanner}</p>
           </div>
 
           {/* KPI strip — always visible */}

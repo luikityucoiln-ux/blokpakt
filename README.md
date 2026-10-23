@@ -101,6 +101,13 @@ asset availability. Do not reset the database to address a frontend import error
 
 ### Management and feature-demand demo
 
+- `/our-story` uses the green/orange neighborhood illustration, story cards,
+  and expandable Q&A. Illustrations describe the concept, not actual routes;
+  pilot limitations remain visible alongside the product direction.
+- The demo dashboard has a green workspace header, wrapping section navigation,
+  and category cards. The live `/ops` workspace (also served at `/admin` when
+  live requests are enabled) uses matching styling, with its existing verified
+  sign-in and administrator checks unchanged.
 - Open `/admin` and use the default **Management** tab. Its four lists reflect
   the shared demo bookings, provider catalog/applications, derived customer
   contacts, and service catalog. The older operations tabs remain labeled samples.

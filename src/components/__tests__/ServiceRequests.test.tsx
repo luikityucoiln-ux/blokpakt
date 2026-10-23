@@ -106,6 +106,17 @@ it('denies non-admin accounts without fetching all-customer data or counts', asy
   expect(api.loadRequestCounts).not.toHaveBeenCalled();
 });
 
+it('keeps operator sign-in ahead of private records in the styled workspace', () => {
+  auth.signedIn = false;
+  show(<OperationsPage />);
+  expect(screen.getByRole('heading', { level: 1, name: 'Service request management' })).toBeVisible();
+  expect(screen.getByText('Operator workspace')).toBeVisible();
+  expect(screen.getByRole('link', { name: 'Log in with email' })).toHaveAttribute('href', '/login');
+  expect(api.isPilotAdmin).not.toHaveBeenCalled();
+  expect(api.listRequests).not.toHaveBeenCalled();
+  expect(api.loadRequestCounts).not.toHaveBeenCalled();
+});
+
 it('filters customer requests by signed-in identity and confirms before cancellation', async () => {
   show(<RequestsPage />);
   const button = await screen.findByRole('button', { name: 'Cancel request' });
