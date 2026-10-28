@@ -41,6 +41,74 @@ Gemini CLI can import it through [GEMINI.md](./GEMINI.md); use `/memory show` to
 check loaded context. Other Gemini interfaces may need the story supplied
 manually. Instructions reduce drift; tests and human review still matter.
 
+## Product basis and offline notebooks
+
+Read [PRODUCT_BRIEF.md](./PRODUCT_BRIEF.md) for the owner-approved product
+identity, the role of the free home planner, proposed growth gates, and a
+checklist for future AI collaborators. It separates facts, hypotheses, examples,
+and drafts rather than inventing a business model.
+
+### Free Home & Time Planner
+
+- Open `/home-planner.html` from the homepage's **Open the free home planner**
+  card or **Free Home Planner** footer link. **Download for offline use** saves
+  a single HTML file; double-click it in a modern browser. No install, backend,
+  CDN, online chart library, or sign-in is required.
+- The source is [public/home-planner.html](./public/home-planner.html). Vite
+  copies it unchanged to the public build; it is not a React route or a live
+  service-request screen.
+- Includes effective hourly pay with expanded formulas, a quick ledger, four
+  latest entries across months, monthly summaries, a safety buffer and free-fund
+  goal, an SVG projection, and non-saving commute/overtime/pay scenarios.
+- Salary is annualized across 12 months. Work costs are subtracted once; do not
+  also log them as expenses. Fixed entries apply only to their dated month.
+  Goal timing includes any safety-buffer shortfall before the free-fund target.
+  Settings apply to every planning month, not historical payroll periods.
+- **Backup & data** offers **Download backup**, **Restore backup**, and confirmed
+  example-only cleanup. The interface explains saving/restoring a file without
+  requiring users to know JSON or edit the file. Restoring replaces current data,
+  rather than merging it; download a backup first to keep the current copy.
+  Initial examples use the current local date and are clearly marked. Cleanup
+  keeps personal entries and explicitly saved custom pay/goal settings. Downloads
+  contain the fresh tool with examples, not personal figures; download a separate
+  backup too. The underlying JSON format and existing backups remain compatible.
+- No automatic requests, analytics, account integration, or planner-data uploads.
+  The optional **Meet Blokpakt** link goes online only when clicked and carries no
+  planner values. This is a planning aid, not financial advice, a quote, or a
+  savings guarantee. No advertising campaign or tracking has been launched.
+- Local storage and JSON are not encrypted. Online and downloaded copies do not
+  sync. Export before moving the file or clearing storage. Some browsers limit
+  local-file storage: keep a backup and resolve any visible save warning.
+- Existing same-origin data keeps the legacy `little-mint.workspace.v1` key and
+  version-1 backup format. The original
+  [offline-workspace.html](./offline-workspace.html) location is now a read-only
+  recovery/export page, so a browser's old file-local storage can be backed up
+  before switching paths.
+
+### Local owner notebook
+
+Double-click [owner-workspace.html](./owner-workspace.html). It is intentionally
+outside `public/`, absent from site navigation, and excluded from the production
+website build. This is a local planning tool, **not an authenticated admin page**.
+Do not publish it as one or store customer records, credentials, or secrets.
+
+- The vertical growth path starts with 0, then draft household thresholds
+  10, 50, 100, and 500, with the feature/focus below each number. Edit the cards
+  locally; thresholds must stay increasing and the first remains zero.
+- The real household count starts **Not recorded**. An optional local aggregate
+  needs an observation date and non-sensitive source. Nothing queries Supabase
+  or treats reaching a threshold as a feature launch.
+- Add, edit, complete, filter, and delete next steps, attach them to a milestone,
+  and choose due dates. The overview shows overdue items and the next seven days.
+  These reminders work only while open or upon reopening: no email or push.
+- Starter tasks are suggestions without imposed deadlines. Saving edits or
+  checking them off adopts them; **Remove untouched starters** preserves adopted
+  and user-created tasks. Save your edits before cleanup.
+- **Backups** offers **Download backup** and **Restore backup**, with confirmation before
+  replacement or erasure, and never clears the financial planner or other keys.
+  Corrupt data and other-tab changes pause writes rather than silently overwrite.
+  Owner backups and home-planner backups have separate schemas and storage keys.
+
 ## Real service-request pilot
 
 The pilot implementation is separate from the demo. See

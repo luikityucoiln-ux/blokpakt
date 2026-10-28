@@ -8,8 +8,8 @@ investment product, cryptocurrency exchange, or financial marketplace.
 "Block" means nearby households and grouped service work. "Provider" means an
 independent home-service professional, not a broker or investment provider.
 
-Before changing product behavior, read the [English story](README.md#our-story)
-and [product rules](ROADMAP.md). If a proposed change contradicts them, stop,
+Before changing product behavior, read the [English story](README.md#our-story),
+[product basis](PRODUCT_BRIEF.md), and [product rules](ROADMAP.md). If a proposed change contradicts them, stop,
 identify the mismatch, and correct the proposal rather than changing the product
 to fit an AI assumption. Ask the owner about genuine changes in business scope.
 
@@ -23,6 +23,11 @@ to fit an AI assumption. Ask the owner about genuine changes in business scope.
 - Demo bookings, providers, prices, photos, and metrics are not real records.
   Do not copy them into production, treat a request as a confirmed booking, or
   fall back to demo data when a live API fails.
+- The public Home & Time Planner is a free, local-only educational helper, not a
+  financial business. The separate offline owner notebook is not a protected
+  admin page or a public growth claim. Its 0/10/50/100/500 household gates are
+  editable drafts, never automatic feature unlocks; no real user count is known
+  merely because a notebook starts at zero.
 - Browser UI is not authorization. Preserve server-side ownership checks,
   administrator allowlists, RLS, and the existing evidence-storage lock.
   Never accept a client-selected role or put secrets in `VITE_` variables.

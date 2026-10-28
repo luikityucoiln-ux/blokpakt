@@ -36,9 +36,10 @@ export default function Footer() {
                 { label: 'How It Works', href: '#how-it-works' },
                 { label: 'Pricing', href: '#pricing' },
                 { label: 'FAQs', href: '/faq' },
+                { label: 'Free Home Planner', href: '/home-planner.html' },
               ].map((l) => (
                 <li key={l.label}>
-                  <a href={l.href} className="text-sm text-white/70 hover:text-white transition-colors">{l.label}</a>
+                  <a href={l.href} className="inline-flex min-h-11 items-center text-sm text-white/70 hover:text-white transition-colors">{l.label}</a>
                 </li>
               ))}
             </ul>

@@ -4,6 +4,9 @@
 
 This file is the source of truth for product rules that must survive UI iteration and guide future backend work. Read this file before changing booking, routing, contractor selection, reviews, payments, or database design.
 
+The [product basis](PRODUCT_BRIEF.md) records the owner-approved identity and
+the boundaries for the public offline helper and local owner notebook.
+
 ## Current Phase: Demo Marketplace + Guarded Service-Request Pilot
 
 - Marketplace workflows use local mock data and browser-only interactions. Email
@@ -34,6 +37,67 @@ This file is the source of truth for product rules that must survive UI iteratio
 - `VITE_ENABLE_LIVE_REQUESTS=true` switches `/book`, `/track`, and `/admin` to the
   pilot after deployment checks. Default false preserves the existing demo.
   Marketing prices/providers and other demo screens are not automatically made live.
+
+### Commercial Validation Decision
+
+- Start with manually coordinated batches in one operator-confirmed service area
+  and one service category. Select these only after verifying demand and provider
+  availability; neither is established by this decision.
+- Prioritize sustainable economics per completed job before subscriptions. Keep
+  homeowner, HOA, and contractor subscriptions deferred. Existing Premium screens
+  remain demonstrations, not paid entitlements or a subscription launch.
+- Use a 10% household batch discount and a 5% provider commission only as initial
+  modeling hypotheses, not published rates, automatic deductions, or guarantees.
+  Two or more homes on the same street requesting the same service are candidates
+  for coordination, not sufficient evidence of savings. Confirm compatible timing,
+  scope, and provider-approved pricing manually before customer agreement.
+- Do not add a customer surcharge to this initial model. Any later fee structure
+  requires explicit approval and transparent total prices before agreement.
+- Model provider proceeds after commission and job costs, and divide by all
+  associated work, setup, and travel hours. Track total proceeds as well as hourly
+  earnings; less travel does not imply less on-site labor or replacement work.
+- Model platform contribution as fee revenue minus payment/payout fees, direct
+  coordination and support labor, and expected refund/dispute costs. Include
+  acquisition and fixed overhead when assessing business profitability. Do not
+  label the amount remaining after card processing as net profit.
+- Record quoted versus actual scope, price, batch size, work/travel time, costs,
+  cancellations, and repeat demand for completed pilot work in approved private
+  operational records, never public demo stores. Separate estimates from actuals.
+- Expand only after repeated completed batches show customer savings, provider
+  willingness and viable earnings, and positive platform contribution including
+  coordination labor. Reprice or pause if these conditions are not met; do not
+  subsidize guaranteed discounts to make the model appear successful.
+- This decision enables no collection of fees, online payments, automatic
+  dispatch, AI features, discount guarantees, or guaranteed arrival windows.
+  Payment operations remain a separately approved implementation after stable
+  booking and routing. No website behavior changes are authorized by this section.
+
+### Free Home Planner and Local Owner Planning
+
+- `/home-planner.html` is an optional, free Home & Time Planner linked from the
+  homepage and footer. It helps with manual everyday spending/time estimates,
+  not investments, banking, financial services, or actual service quotes.
+- Keep its HTML, CSS, JavaScript, icons, and SVG illustration self-contained.
+  It must work when downloaded and opened directly, without analytics, CDNs,
+  chart services, backend calls, or an account. An explicit website link may
+  leave the tool but must not carry financial inputs.
+- Examples are labeled and relative to the local date. Browser-local data and
+  confirmed JSON backups stay separate from live requests and demo records.
+  Currency changes relabel, not convert; projections are not guarantees.
+- The separate root `owner-workspace.html` is offline-only planning, not a
+  protected admin system. Do not include it in the public build or navigation.
+  Do not store real customer records, credentials, or secrets in local notebooks.
+- The owner approved an editable **draft** sequence of 0, 10, 50, 100, and 500
+  verified pilot households, with each proposed feature/focus below its number.
+  Zero is the planning origin, not a claim of zero real users. The observed count
+  remains unknown until the owner supplies a dated, sourced aggregate locally.
+- Milestones do not launch functionality or override the commercial-validation
+  gates above. Repeated completed work, provider economics, support capacity,
+  permissions, and explicit approval matter more than raw audience size.
+- Owner tasks and due-date reminders remain local. No email, push, automatic
+  feature delivery, advertising spend, campaign tracking, or new business model
+  is enabled by these tools. See the [product basis](PRODUCT_BRIEF.md#5-growth-from-zero-a-draft-not-automatic-unlocks)
+  for the proposed focus at each threshold.
 
 ### Email Sign-In
 

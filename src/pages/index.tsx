@@ -1,10 +1,12 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion } from 'motion/react';
 import { Link, useNavigate } from 'react-router';
-import { Shield, Camera, Clock, ChevronRight, ArrowRight, LocateFixed } from 'lucide-react';
+import { Shield, Camera, Clock, ChevronRight, ArrowRight, Users, ClipboardCheck, Wrench, House, Leaf, Droplets, Snowflake, PiggyBank, Download } from 'lucide-react';
 import { home } from 'virtual:content';
 import FeatureInterestPanel from '../components/FeatureInterestPanel';
+import { SERVICES } from '../lib/marketplace-catalog';
+import { liveRequestsEnabled } from '../lib/service-requests';
 
 
 const fadeUp = {
@@ -25,21 +27,23 @@ const trustIcons: Record<string, ReactNode> = {
 
 const VALUE_PROPS = [
   {
-    icon: '🚚',
-    title: 'Shared Travel Savings',
-    description: 'Vendors serve the same street in a single stop. Saved travel time and setup fees pass directly back to you as your 10% discount.',
+    icon: Users,
+    title: 'Neighbors, Together',
+    description: 'Nearby households can request similar work together. Group pricing depends on the service, timing, and provider agreement.',
   },
   {
-    icon: '🤝',
-    title: 'Zero Hassle',
-    description: 'Just share your route link with neighbors. Blokpakt automatically manages individual payments and unlocks group rates.',
+    icon: ClipboardCheck,
+    title: 'Clear Before You Commit',
+    description: 'Service area, availability, scope, price, and timing are reviewed manually. A request is not a confirmed booking.',
   },
   {
-    icon: '🛡️',
-    title: 'Vetted & Guaranteed',
-    description: '100% money-back guarantee if your contractor no-shows. Every contractor is fully vetted and posts a security deposit before taking local routes.',
+    icon: Wrench,
+    title: 'Independent Local Providers',
+    description: 'Blokpakt is building a marketplace for independent home-service professionals. No online payments or automatic dispatch are enabled.',
   },
 ];
+
+const serviceIcons = { lawn: Leaf, gutter: House, pressure: Droplets, snow: Snowflake };
 
 const PROVIDER_INVITE_CODES: Record<string, string> = {
   'MARCUS-T': 'marcus-t',
@@ -50,16 +54,14 @@ const PROVIDER_INVITE_CODES: Record<string, string> = {
 export default function HomePage() {
   const [streetAddress, setStreetAddress] = useState('');
   const [inviteCode, setInviteCode] = useState('');
-  const [locationMessage, setLocationMessage] = useState('');
-  const addressInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   const site = 'https://blokpakt.com';
   const logoUrl = `${site}/assets/blokpakt-bp-mark.svg`;
   const socialImageUrl = `${site}/assets/og-image.png`;
-  const title = 'Blokpakt | Neighbors save when they book together';
+  const title = 'Blokpakt | Neighborhood home services';
   const description =
-    'Book home services with nearby neighbors to create more efficient routes and better local pricing.';
+    'Explore neighborhood home services with Blokpakt. Our US pilot uses manually reviewed requests, quotes, and scheduling. No online payments.';
 
   function handleStreetCheck() {
     const address = streetAddress.trim();
@@ -77,35 +79,6 @@ export default function HomePage() {
     navigate(`/batch/${encodeURIComponent(code.toUpperCase())}`);
   }
 
-  function handleLocateMe() {
-    if (!navigator.geolocation) {
-      setLocationMessage('Location is not available in this browser.');
-      return;
-    }
-
-    setLocationMessage('Finding your street...');
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords }) => {
-        try {
-          const response = await window.fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.latitude}&lon=${coords.longitude}`,
-          );
-          if (!response.ok) throw new Error('Reverse geocoding failed');
-          const data = await response.json() as { address?: { house_number?: string; road?: string } };
-          const address = data.address;
-          const street = [address?.house_number, address?.road].filter(Boolean).join(' ');
-          if (!street) throw new Error('No street found');
-          setStreetAddress(street);
-          setLocationMessage('Location found. Please confirm the address before continuing.');
-        } catch {
-          setLocationMessage('We could not find your street. Please enter it manually.');
-        }
-      },
-      () => setLocationMessage('We could not access your location. Please enter it manually.'),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
-    );
-  }
-
   return (
     <>
       <Helmet>
@@ -117,7 +90,7 @@ export default function HomePage() {
         <meta property="og:type" content="website" />
         <meta property="og:url" content={site} />
         <meta property="og:image" content={socialImageUrl} />
-        <meta property="og:image:alt" content="Blokpakt saves neighbors money on home services" />
+        <meta property="og:image:alt" content="Blokpakt neighborhood home-services concept" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content={socialImageUrl} />
         <script type="application/ld+json">{JSON.stringify({
@@ -125,7 +98,7 @@ export default function HomePage() {
           '@graph': [
             { '@type': 'WebSite', '@id': `${site}/#website`, name: 'Blokpakt', url: `${site}/` },
             {
-              '@type': 'LocalBusiness',
+              '@type': 'Organization',
               '@id': `${site}/#organization`,
               name: 'Blokpakt',
               url: `${site}/`,
@@ -139,8 +112,6 @@ export default function HomePage() {
               url: `${site}/`,
               isPartOf: { '@id': `${site}/#website` },
               about: { '@id': `${site}/#organization` },
-              datePublished: '2026-09-01',
-              dateModified: '2026-09-01',
             },
           ],
         })}</script>
@@ -178,13 +149,13 @@ export default function HomePage() {
                 <motion.div variants={fadeUp}>
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary mb-6">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
-                    Hyper-local home services
+                    US pilot in development
                   </span>
                 </motion.div>
 
                 <motion.h1
                   variants={fadeUp}
-                  className="text-4xl sm:text-5xl lg:text-[3.25rem] font-extrabold leading-[1.1] tracking-tight text-foreground mb-5"
+                  className="text-4xl sm:text-5xl lg:text-[3.25rem] font-extrabold leading-[1.1] text-foreground mb-5"
                 >
                   {home.hero.headline}
                 </motion.h1>
@@ -198,54 +169,51 @@ export default function HomePage() {
 
                 {/* Search bar */}
                 <motion.div variants={fadeUp} id="check-street">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="relative flex-1">
-                      <input
-                        ref={addressInputRef}
-                        type="text"
-                        value={streetAddress}
-                        onChange={(event) => setStreetAddress(event.target.value)}
-                        placeholder="Enter your street address..."
-                        className="w-full rounded-xl border border-border bg-card px-4 py-3.5 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 shadow-sm"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleLocateMe}
-                        aria-label="Use current location"
-                        title="Use current location"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      >
-                        <LocateFixed size={18} />
-                      </button>
-                    </div>
-                    <button
-                      onClick={handleStreetCheck}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3.5 text-sm font-bold text-white shadow-md hover:bg-accent/90 transition-colors whitespace-nowrap"
-                    >
-                      {home.hero.searchCta}
-                      <ArrowRight size={16} />
-                    </button>
-                  </div>
-                  <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                    <input
-                      type="text"
-                      value={inviteCode}
-                      onChange={(event) => setInviteCode(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') handleInviteCode();
-                      }}
-                      placeholder="Neighbor's invite code (e.g. OAK-2024)"
-                      className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleInviteCode}
-                      className="rounded-lg px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    >
-                      Apply Code
-                    </button>
-                  </div>
-                  {locationMessage && <p className="mt-2 text-xs text-muted-foreground" role="status">{locationMessage}</p>}
+                  {liveRequestsEnabled ? (
+                    <Link to="/request-service" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-bold text-white hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                      Request a service <ArrowRight size={16} aria-hidden="true" />
+                    </Link>
+                  ) : (
+                    <>
+                      <form onSubmit={(event) => { event.preventDefault(); handleStreetCheck(); }} aria-label="Explore a sample street">
+                        <label htmlFor="sample-street" className="mb-2 block text-sm font-semibold text-foreground">Example street</label>
+                        <div className="flex flex-col gap-3 sm:flex-row">
+                          <input
+                            id="sample-street"
+                            type="text"
+                            autoComplete="off"
+                            maxLength={150}
+                            value={streetAddress}
+                            onChange={(event) => setStreetAddress(event.target.value)}
+                            placeholder={home.hero.searchPlaceholder}
+                            aria-describedby="homepage-status"
+                            className="min-w-0 flex-1 rounded-lg border border-border bg-card px-4 py-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          />
+                          <button type="submit" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-bold text-white hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                            {home.hero.searchCta} <ArrowRight size={16} aria-hidden="true" />
+                          </button>
+                        </div>
+                      </form>
+                      <details className="mt-4">
+                        <summary className="cursor-pointer text-sm font-semibold text-primary">Have a demo invite code?</summary>
+                        <form onSubmit={(event) => { event.preventDefault(); handleInviteCode(); }} className="mt-3 flex flex-col gap-2 sm:flex-row" aria-label="Open a demo invitation">
+                          <label htmlFor="demo-invite" className="sr-only">Demo invite code</label>
+                          <input id="demo-invite" type="text" autoComplete="off" required maxLength={80} value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} placeholder="e.g. OAK-2024" className="min-w-0 flex-1 rounded-lg border border-border bg-card px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                          <button type="submit" disabled={!inviteCode.trim()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-primary/20 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30">
+                            Open demo invite <ArrowRight size={16} aria-hidden="true" />
+                          </button>
+                        </form>
+                      </details>
+                    </>
+                  )}
+                  <p id="homepage-status" className="mt-4 text-xs leading-relaxed text-muted-foreground">
+                    {liveRequestsEnabled
+                      ? 'Requests are reviewed manually. Coverage, provider availability, price, and timing must be agreed before confirmation.'
+                      : 'Demo only. Use sample information. No booking, availability check, or payment is made.'}
+                  </p>
+                  <Link to="/our-story" className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary hover:underline underline-offset-4">
+                    Our story <ArrowRight size={16} aria-hidden="true" />
+                  </Link>
                 </motion.div>
               </motion.div>
 
@@ -256,7 +224,7 @@ export default function HomePage() {
                 transition={{ duration: 0.6, ease: 'easeOut' as const, delay: 0.2 }}
                 className="flex justify-center lg:justify-end"
               >
-                <div className="relative w-full max-w-md mx-auto">
+                <div className="relative w-full min-w-0 max-w-md mx-auto">
                   <div className="rounded-2xl bg-card border border-border shadow-2xl p-6 relative overflow-hidden">
                     <svg className="absolute inset-0 w-full h-full opacity-[0.03] pointer-events-none" aria-hidden="true">
                       <defs>
@@ -268,14 +236,14 @@ export default function HomePage() {
                     </svg>
                     <div className="flex items-center justify-between mb-5">
                       <div>
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Active Route</p>
+                        <p className="text-xs font-medium text-muted-foreground">Neighborhood example</p>
                         <h3 className="text-lg font-bold text-foreground mt-0.5">{home.hero.mockup.streetName}</h3>
                       </div>
                       <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-3 py-1 text-sm font-bold text-accent">
-                        {home.hero.mockup.discount} off
+                        Sample route
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex flex-wrap items-center gap-2 mb-3" aria-hidden="true">
                       {Array.from({ length: home.hero.mockup.goal + 1 }).map((_, i) => (
                         <div
                           key={i}
@@ -287,7 +255,7 @@ export default function HomePage() {
                               : 'bg-muted border-border text-muted-foreground'
                           }`}
                         >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                          <House size={16} />
                         </div>
                       ))}
                     </div>
@@ -300,33 +268,59 @@ export default function HomePage() {
                       />
                     </div>
                     <p className="text-sm text-foreground/70">
-                      <span className="font-semibold text-foreground">Booked: {home.hero.mockup.booked} home</span>
+                      <span className="font-semibold text-foreground">{home.hero.mockup.booked} interested household</span>
                       {' '}|{' '}
-                      <span className="text-accent font-medium">Goal: {home.hero.mockup.goal}+ homes to {home.hero.mockup.label}</span>
+                      <span className="text-accent font-medium">{home.hero.mockup.goal}+ homes to explore grouping</span>
                     </p>
                     <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-                        <span className="text-xs text-muted-foreground">Waiting for neighbors</span>
+                        <span className="text-xs text-muted-foreground">Illustrative, not a live request</span>
                       </div>
-                      <button
-                        onClick={() => navigate('/book')}
-                        className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-                      >
-                        Share street link →
-                      </button>
+                      <Link to="/our-story" className="inline-flex min-h-11 items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80">
+                        The idea <ArrowRight size={14} aria-hidden="true" />
+                      </Link>
                     </div>
+                    <p className="mt-3 text-xs leading-relaxed text-muted-foreground">Group pricing is subject to provider agreement. No fixed savings are guaranteed.</p>
                   </div>
                   <motion.div
-                    className="absolute -top-3 -right-3 bg-accent text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg"
+                    className="absolute -top-3 right-3 bg-accent text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg"
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 1.4, type: 'spring', stiffness: 300 }}
                   >
-                    Unlock group rate
+                    Closer together
                   </motion.div>
                 </div>
               </motion.div>
+            </div>
+          </div>
+        </section>
+
+        <section id="services" aria-labelledby="services-heading" className="scroll-mt-24 border-y border-border bg-card py-12 lg:py-16">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-accent">Around the house</p>
+                <h2 id="services-heading" className="mt-2 text-2xl font-extrabold text-foreground sm:text-3xl">What does your home need?</h2>
+              </div>
+              <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{liveRequestsEnabled ? 'Available services and coverage are reviewed during your request.' : 'Explore sample services. Prices and providers in the demo are illustrative.'}</p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {SERVICES.map((service) => {
+                const Icon = serviceIcons[service.id as keyof typeof serviceIcons];
+                return (
+                  <Link key={service.id} to={liveRequestsEnabled ? '/request-service' : `/book?service=${service.id}`} className="group flex min-w-0 flex-col rounded-lg border border-border bg-background p-5 transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+                    <div className="mb-5 flex items-center justify-between gap-3">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary"><Icon size={23} aria-hidden="true" /></span>
+                      <ArrowRight size={18} className="text-muted-foreground transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                    </div>
+                    <h3 className="text-base font-bold text-foreground">{service.label}</h3>
+                    <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{service.description}</p>
+                    <span className="mt-5 text-xs font-semibold text-primary">{liveRequestsEnabled ? 'Request service' : 'Explore demo'}</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -337,7 +331,7 @@ export default function HomePage() {
             <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
               {VALUE_PROPS.map((valueProp) => (
                 <article key={valueProp.title} className="rounded-2xl border border-border bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-                  <div className="text-4xl" aria-hidden="true">{valueProp.icon}</div>
+                  <valueProp.icon size={28} className="text-primary" aria-hidden="true" />
                   <h2 className="mt-5 text-lg font-bold text-foreground">{valueProp.title}</h2>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{valueProp.description}</p>
                 </article>
@@ -379,7 +373,7 @@ export default function HomePage() {
                 How it works
               </motion.p>
               <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-foreground max-w-lg">
-                Three steps. One street. Everyone saves.
+                A little planning. A closer neighborhood.
               </motion.h2>
             </motion.div>
 
@@ -455,101 +449,49 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── SOCIAL PROOF / STATS ─────────────────────────────── */}
-        <section id="pricing" className="py-20 lg:py-28 bg-background">
+        <section id="pricing" aria-labelledby="pilot-heading" className="border-t border-border bg-background py-14 lg:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <motion.div
-              variants={stagger}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              className="mb-12"
-            >
-              <motion.p variants={fadeUp} className="text-sm font-semibold text-accent uppercase tracking-wide mb-2">
-                By the numbers
-              </motion.p>
-              <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-foreground">
-                Built for both sides of the street.
-              </motion.h2>
-            </motion.div>
+            <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-16">
+              <figure className="min-w-0">
+                <img src="/assets/og-image.png" alt="Illustrated Blokpakt neighborhood concept" width={1200} height={630} loading="lazy" className="aspect-[1200/630] w-full rounded-lg border border-border object-contain" />
+                <figcaption className="mt-2 text-xs text-muted-foreground">Concept illustration, not a live route or service area.</figcaption>
+              </figure>
+              <div>
+                <p className="text-sm font-semibold text-accent">For both sides of the street</p>
+                <h2 id="pilot-heading" className="mt-2 text-2xl font-extrabold text-foreground sm:text-3xl">Local work. Thoughtfully coordinated.</h2>
+                <p className="mt-4 text-sm leading-relaxed text-muted-foreground">We are preparing a manually operated US pilot. Coverage and providers are not yet established. Every service needs an agreed scope, quote, and date before it is confirmed.</p>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">No subscriptions, online payments, automatic dispatch, or guaranteed discounts.</p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link to={liveRequestsEnabled ? '/request-service' : '/book'} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                    {liveRequestsEnabled ? 'Request a service' : 'Explore the service demo'} <ArrowRight size={16} aria-hidden="true" />
+                  </Link>
+                  <Link to="/join" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border px-5 py-3 text-sm font-semibold text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+                    Explore the provider demo <ArrowRight size={16} aria-hidden="true" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-            {/* Bento grid */}
-            <motion.div
-              variants={stagger}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-5"
-            >
-              {/* Large card — contractor earnings */}
-              <motion.div
-                variants={fadeUp}
-                className="md:col-span-2 rounded-2xl border border-border bg-primary text-primary-foreground p-8 relative overflow-hidden"
-              >
-                <svg className="absolute inset-0 w-full h-full opacity-[0.06] pointer-events-none" aria-hidden="true">
-                  <defs>
-                    <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse">
-                      <circle cx="2" cy="2" r="1.5" fill="currentColor" />
-                    </pattern>
-                  </defs>
-                  <rect width="100%" height="100%" fill="url(#dots)" />
-                </svg>
-                <div className="relative">
-                  <p className="text-sm font-semibold text-primary-foreground/60 uppercase tracking-wide mb-3">
-                    Contractor earnings
-                  </p>
-                  <p className="text-5xl font-extrabold mb-2">{home.stats[0].value}</p>
-                  <p className="text-base text-primary-foreground/80 mb-6">{home.stats[0].label}</p>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { label: '4 homes', value: '$180 gross' },
-                      { label: '5% fee', value: '−$9' },
-                      { label: 'Net payout', value: '$171' },
-                    ].map((item) => (
-                      <div key={item.label} className="rounded-lg bg-white/10 px-3 py-2.5">
-                        <p className="text-xs text-primary-foreground/60 mb-0.5">{item.label}</p>
-                        <p className="text-sm font-bold">{item.value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Rating card */}
-              <motion.div
-                variants={fadeUp}
-                className="rounded-2xl border border-border bg-card p-8 flex flex-col justify-between"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-                    Quality rating
-                  </p>
-                  <p className="text-5xl font-extrabold text-foreground mb-2">{home.stats[1].value}</p>
-                  <p className="text-sm text-muted-foreground">{home.stats[1].label}</p>
-                </div>
-                <p className="text-xs text-muted-foreground mt-4 pt-4 border-t border-border leading-relaxed">
-                  {home.stats[1].detail}
-                </p>
-              </motion.div>
-
-              {/* Dispute card */}
-              <motion.div
-                variants={fadeUp}
-                className="md:col-span-3 rounded-2xl border-2 border-accent/20 bg-accent/5 p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-accent uppercase tracking-wide mb-2">
-                    Dispute protection
-                  </p>
-                  <p className="text-4xl font-extrabold text-foreground mb-1">{home.stats[2].value}</p>
-                  <p className="text-sm text-muted-foreground">{home.stats[2].label}</p>
-                </div>
-                <div className="flex items-start gap-3 max-w-sm">
-                  <Shield size={20} className="text-accent flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-muted-foreground leading-relaxed">{home.stats[2].detail}</p>
-                </div>
-              </motion.div>
-            </motion.div>
+        <section aria-labelledby="home-planner-heading" className="border-t border-border bg-[#eaf2e8] py-14 lg:py-20">
+          <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_auto] lg:px-8">
+            <div className="max-w-2xl">
+              <span className="mb-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-background px-4 py-2 text-xs font-bold text-primary">
+                <PiggyBank size={20} className="text-accent" aria-hidden="true" /> A free little tool for home life
+              </span>
+              <h2 id="home-planner-heading" className="text-3xl font-extrabold text-primary sm:text-4xl">Small spends. A bigger picture.</h2>
+              <p className="mt-4 text-base leading-relaxed text-primary/80">See the working time behind everyday expenses. Keep a quick ledger, plan a safety cushion, and make a little more room for home.</p>
+              <p className="mt-3 text-sm leading-relaxed text-primary/75">No sign-up or bank connection. Your figures stay in your browser. Download a single HTML file to use offline; examples are clearly marked. Planning estimates, not service quotes or guaranteed savings.</p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <a href="/home-planner.html" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                Open the free home planner <ArrowRight size={18} aria-hidden="true" />
+              </a>
+              <a href="/home-planner.html" download="blokpakt-home-planner.html" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-primary/20 bg-background px-6 py-3 text-sm font-bold text-primary hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <Download size={18} aria-hidden="true" /> Download for offline use
+              </a>
+            </div>
           </div>
         </section>
 

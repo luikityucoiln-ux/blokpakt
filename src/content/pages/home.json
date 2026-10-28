@@ -1,9 +1,9 @@
 {
   "hero": {
-    "headline": "Your whole block saves. Your contractor earns more.",
-    "subheadline": "Blokpakt batches home services by street — so neighbors share the route, split the travel cost, and everyone wins.",
-    "searchPlaceholder": "Enter your address or ZIP code",
-    "searchCta": "Check Your Street",
+    "headline": "Blokpakt",
+    "subheadline": "Home services, closer together. Bring nearby maintenance needs together, with less scattered work and more neighborhood connection.",
+    "searchPlaceholder": "e.g. 247 Oak Street",
+    "searchCta": "Explore demo",
     "mockup": {
       "streetName": "Oak Street",
       "booked": 1,
@@ -13,34 +13,34 @@
     }
   },
   "bookingFaq": {
-    "eyebrow": "Before you book",
+    "eyebrow": "Before you begin",
     "headline": "The practical answers, before you commit.",
     "items": [
-      { "id": "batch", "question": "How does a street batch form?", "answer": "Enter your address to see whether your street is active. When 2 or more homes on the same street request the same service window, the group rate unlocks automatically. You can invite a neighbor from your booking link." },
-      { "id": "charge", "question": "When am I charged?", "answer": "Bookings are available Monday through Saturday, 8:00 AM–6:00 PM local time. Your payment method is authorized when you book and charged after the service is completed and the required before-and-after photos are uploaded. Any approved add-on must be recorded and confirmed through Blokpakt before it is charged." },
-      { "id": "reschedule", "question": "How do I reschedule or cancel?", "answer": "You can reschedule or cancel for free until 24 hours before the scheduled service window. Open your booking or contact support as soon as possible; shorter-notice changes may be subject to the terms shown before confirmation." },
+      { "id": "batch", "question": "How does a street batch form?", "answer": "The demo groups sample bookings by street, service, and date. In the intended pilot, an operator reviews nearby requests and confirms provider availability, scope, pricing, and timing manually. A second household does not guarantee a discount." },
+      { "id": "charge", "question": "When am I charged?", "answer": "Blokpakt does not currently authorize cards, collect payments, or send payouts. Demo prices are illustrative. Any future service price and payment arrangement must be agreed before confirmation." },
+      { "id": "reschedule", "question": "Is my request a confirmed booking?", "answer": "No. A request requires manual review of the service area, contractor availability, price, and date. In the request pilot, customers can cancel unconfirmed requests; confirmed work and changes are handled by the operator." },
       { "id": "prepare", "question": "What should I do before the provider arrives?", "answer": "Clear personal items from the work area, secure pets, identify gates and water or power access, and tell us about hazards or restricted areas. Providers can only service areas they can safely access." },
-      { "id": "limits", "question": "What are common service limitations?", "answer": "Weather, unsafe access, blocked areas, hazardous materials, unusually large quantities, and work outside the selected service scope may require a new quote or an approved add-on. Any overloaded or unusual property condition requires provider photos and the homeowner's online approval before an added charge." }
+      { "id": "limits", "question": "What are common service limitations?", "answer": "Weather, unsafe access, hazardous materials, property size, and work outside the agreed scope can affect availability and pricing. Scope and changes require manual agreement. Online add-on approval and photo uploads are demo features, not live pilot operations." }
     ]
   },
   "trustSignals": [
     {
       "id": "ts1",
       "icon": "shield",
-      "label": "Stripe-secured payments",
-      "detail": "Card held on auth — never charged until job is done"
+      "label": "No online payments",
+      "detail": "No card authorizations, charges, or payouts"
     },
     {
       "id": "ts2",
       "icon": "camera",
-      "label": "Photo-verified completion",
-      "detail": "Before & after photos required to release payment"
+      "label": "Sample photo workflow",
+      "detail": "Before-and-after photos are part of the demo only"
     },
     {
       "id": "ts3",
       "icon": "clock",
-      "label": "48-hour dispute window",
-      "detail": "Flag any issue within 48 hrs to freeze payment capture"
+      "label": "Manually agreed timing",
+      "detail": "No automatic dispatch or guaranteed arrival windows"
     }
   ],
   "services": {
@@ -195,29 +195,29 @@
     ]
   },
   "trustAndSafety": {
-    "eyebrow": "Built for accountable service",
-    "headline": "Every job has a clear record.",
-    "intro": "Booking details, photo evidence, and approved changes stay attached to the job from start to finish.",
+    "eyebrow": "Clarity comes first",
+    "headline": "Know what happens next.",
+    "intro": "The intended pilot starts with a request, followed by manual review. Service coverage and contractor availability must be confirmed before any work is agreed.",
     "items": [
       {
         "id": "verified",
-        "title": "Verified completion",
-        "description": "Providers submit before-and-after evidence for the completed scope."
+        "title": "A request, not a booking",
+        "description": "Sending a request does not reserve a provider or confirm a service date."
       },
       {
         "id": "approval",
-        "title": "Clear add-on approval",
-        "description": "No added service is charged until the homeowner approves it."
+        "title": "An agreed scope and quote",
+        "description": "Property details, included work, pricing, and timing require manual agreement."
       },
       {
         "id": "support",
-        "title": "Issue reporting",
-        "description": "Homeowners can flag a concern while the job record is still available."
+        "title": "Demo and pilot stay separate",
+        "description": "Sample providers, prices, photos, and bookings are not real service records."
       }
     ],
     "reporting": {
-      "title": "Need to report an issue?",
-      "description": "Open your booking record to share photos and details with support."
+      "title": "What about photos and service changes?",
+      "description": "Photo evidence and add-on approval can be explored in the demo. They are not live pilot operations, and no demo action sends a support report or takes payment."
     }
   },
   "howItWorks": {
@@ -225,20 +225,20 @@
       {
         "id": "s1",
         "number": "01",
-        "title": "Enter your address",
-        "description": "We check if your street is in an active batch zone or add you to the waitlist for your neighborhood."
+        "title": "Choose the work",
+        "description": "Explore lawn care, gutter cleaning, pressure washing, and snow removal. Local service coverage still needs confirmation."
       },
       {
         "id": "s2",
         "number": "02",
-        "title": "Invite one neighbor",
-        "description": "Share your street link via WhatsApp or Nextdoor. One neighbor booking unlocks the group rate for everyone."
+        "title": "Bring nearby needs together",
+        "description": "Neighbors needing similar work may be served together. Whether grouping is practical depends on scope, timing, and provider agreement."
       },
       {
         "id": "s3",
         "number": "03",
-        "title": "Sit back — we handle the rest",
-        "description": "Your contractor arrives, completes the job with photo proof, and your card is only charged after you're satisfied."
+        "title": "Agree before confirming",
+        "description": "In the intended pilot, an operator reviews availability and coordinates the quote and date. No automatic dispatch or online payment is enabled."
       }
     ]
   },

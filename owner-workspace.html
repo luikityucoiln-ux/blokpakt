@@ -1,0 +1,1935 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#eaf2e8" />
+    <meta name="color-scheme" content="light" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src data:; font-src 'none'; form-action 'none'; base-uri 'none'"
+    />
+    <title>Blokpakt | Owner notebook</title>
+    <style>
+      :root {
+        --paper: #fcfaf4;
+        --mint: #eaf2e8;
+        --green: #163e2c;
+        --ink: #293e35;
+        --muted: #5f7064;
+        --line: #d5dfd0;
+        --orange: #a85200;
+        --peach: #fff0dc;
+        --white: #fffef9;
+        --danger: #a2352c;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font:
+          15px/1.6 "Trebuchet MS",
+          Verdana,
+          sans-serif;
+      }
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+      h1,
+      h2 {
+        font-family: Georgia, "Times New Roman", serif;
+        font-weight: 400;
+        line-height: 1.15;
+      }
+      h1 {
+        font-size: clamp(32px, 4vw, 48px);
+      }
+      h2 {
+        font-size: 28px;
+      }
+      h3 {
+        font-size: 19px;
+        line-height: 1.35;
+      }
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+        color: inherit;
+        min-height: 44px;
+      }
+      button,
+      input,
+      select,
+      textarea,
+      a {
+        touch-action: manipulation;
+      }
+      button {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        cursor: pointer;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--white);
+        font-size: 13px;
+        font-weight: bold;
+      }
+      button:hover {
+        background: var(--mint);
+      }
+      button.primary {
+        color: white;
+        background: var(--green);
+        border-color: var(--green);
+      }
+      button.primary:hover {
+        background: #24543c;
+      }
+      button.danger {
+        color: var(--danger);
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      :focus-visible {
+        outline: 3px solid var(--orange);
+        outline-offset: 3px;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        min-width: 0;
+        padding: 10px 12px;
+        border: 1px solid #bfcfba;
+        border-radius: 8px;
+        background: var(--white);
+      }
+      textarea {
+        resize: vertical;
+      }
+      label {
+        display: grid;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: bold;
+      }
+      label small {
+        font-weight: normal;
+        color: var(--muted);
+      }
+      [hidden] {
+        display: none !important;
+      }
+      .defs {
+        position: absolute;
+        width: 0;
+        height: 0;
+        overflow: hidden;
+      }
+      .icon {
+        width: 20px;
+        height: 20px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        flex-shrink: 0;
+      }
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 238px;
+        background: var(--mint);
+        border-right: 1px solid var(--line);
+        padding: 34px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--green);
+        font-weight: 800;
+        font-size: 27px;
+        letter-spacing: -1px;
+      }
+      .brand .icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        background: #fce5c8;
+        color: var(--orange);
+        padding: 5px;
+      }
+      .eyebrow {
+        font-size: 10px;
+        text-transform: uppercase;
+        font-weight: bold;
+        letter-spacing: 1.7px;
+        color: var(--orange);
+      }
+      .sidebar .eyebrow {
+        margin: 6px 0 0 42px;
+        color: var(--muted);
+        letter-spacing: 1px;
+      }
+      .nav {
+        display: grid;
+        gap: 8px;
+      }
+      .nav button {
+        justify-content: flex-start;
+        border-color: transparent;
+        background: transparent;
+        color: var(--muted);
+      }
+      .nav button[aria-current="page"] {
+        background: var(--white);
+        color: var(--green);
+        border-color: var(--line);
+      }
+      .sidebar-note {
+        margin-top: auto;
+        border-top: 1px solid #cad8c4;
+        padding-top: 20px;
+      }
+      .sidebar-note h2 {
+        font-size: 22px;
+        margin-bottom: 12px;
+      }
+      .small {
+        font-size: 12px;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      main {
+        margin-left: 238px;
+        max-width: 1500px;
+        padding: 28px 48px 48px;
+      }
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 22px;
+        margin-bottom: 30px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 6px;
+        padding: 5px 9px;
+        font-size: 11px;
+        font-weight: bold;
+        background: var(--mint);
+        color: var(--green);
+      }
+      .tag.draft {
+        background: var(--peach);
+        color: var(--orange);
+      }
+      .hero {
+        display: grid;
+        grid-template-columns: 1fr 190px;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+      .hero .eyebrow {
+        margin-bottom: 12px;
+      }
+      .hero p {
+        margin-top: 15px;
+        max-width: 600px;
+        color: var(--muted);
+      }
+      .neighborhood {
+        width: 100%;
+        height: auto;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+      .card {
+        padding: 23px;
+        background: var(--white);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        min-width: 0;
+      }
+      .stat-number {
+        display: block;
+        margin: 8px 0;
+        color: var(--green);
+        font-family: Georgia, serif;
+        font-size: 32px;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+      }
+      .columns {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr);
+        gap: 28px;
+        align-items: start;
+      }
+      .section-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .section-heading + p {
+        margin-bottom: 20px;
+      }
+      .ladder {
+        list-style: none;
+        margin: 0;
+        padding: 0 0 0 24px;
+        position: relative;
+      }
+      .ladder::before {
+        content: "";
+        position: absolute;
+        left: 4px;
+        top: 34px;
+        bottom: 70px;
+        width: 2px;
+        background: #bdcfb6;
+      }
+      .milestone {
+        position: relative;
+        padding: 24px;
+        margin-bottom: 20px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--white);
+      }
+      .milestone::before {
+        content: "";
+        position: absolute;
+        top: 35px;
+        left: -27px;
+        width: 12px;
+        height: 12px;
+        border: 3px solid var(--green);
+        border-radius: 50%;
+        background: var(--paper);
+      }
+      .milestone.origin {
+        background: var(--mint);
+      }
+      .milestone .threshold {
+        display: block;
+        font-family: Georgia, serif;
+        font-size: 48px;
+        line-height: 1.1;
+        color: var(--green);
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: anywhere;
+      }
+      .milestone .count-label {
+        display: block;
+        margin: 5px 0 18px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .milestone p {
+        margin: 12px 0;
+        font-size: 13px;
+        overflow-wrap: anywhere;
+      }
+      .milestone .gate {
+        border-left: 3px solid #d99950;
+        background: var(--peach);
+        padding: 12px;
+        border-radius: 0 8px 8px 0;
+      }
+      .milestone-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .side-stack {
+        display: grid;
+        gap: 20px;
+      }
+      .side-stack h2 {
+        font-size: 24px;
+      }
+      .side-stack p {
+        margin: 10px 0 18px;
+      }
+      .form-grid {
+        display: grid;
+        gap: 16px;
+      }
+      .form-pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-top: 18px;
+      }
+      .reminder-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .reminder-list li {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line);
+        overflow-wrap: anywhere;
+      }
+      .reminder-list button {
+        margin-top: 8px;
+      }
+      .due {
+        color: var(--orange);
+        font-weight: bold;
+      }
+      .overdue {
+        color: var(--danger);
+        font-weight: bold;
+      }
+      .notice {
+        padding: 16px 20px;
+        border: 1px solid #d5a272;
+        border-radius: 10px;
+        background: var(--peach);
+        margin-bottom: 22px;
+        font-size: 13px;
+      }
+      #feedback {
+        position: sticky;
+        top: 12px;
+        z-index: 4;
+        box-shadow: 0 4px 20px #1b382818;
+      }
+      #feedback[data-error="true"] {
+        border-color: var(--danger);
+      }
+      .empty {
+        padding: 24px 12px;
+        border: 1px dashed var(--line);
+        border-radius: 10px;
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+      }
+      .tasks {
+        list-style: none;
+        margin: 18px 0 0;
+        padding: 0;
+        display: grid;
+        gap: 12px;
+      }
+      .task {
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--white);
+      }
+      .task-title {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        overflow-wrap: anywhere;
+      }
+      .task-title input {
+        width: 24px;
+        height: 44px;
+        margin: 0;
+        flex: 0 0 24px;
+        accent-color: var(--green);
+      }
+      .task-title span {
+        padding-top: 9px;
+        min-width: 0;
+      }
+      .task.done .task-title span {
+        text-decoration: line-through;
+        color: var(--muted);
+      }
+      .task p {
+        margin: 10px 0 0 36px;
+        font-size: 12px;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+      .task-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin: 12px 0 0 36px;
+      }
+      .task .actions {
+        margin-left: 36px;
+      }
+      .filter {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+      .filter label {
+        min-width: 160px;
+      }
+      details {
+        margin-top: 20px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px 20px;
+        background: var(--mint);
+      }
+      summary {
+        cursor: pointer;
+        min-height: 44px;
+        padding-block: 10px;
+        font-weight: bold;
+        font-size: 13px;
+      }
+      details ul {
+        padding-left: 20px;
+        font-size: 13px;
+      }
+      details li {
+        margin: 10px 0;
+      }
+      dialog {
+        width: min(620px, calc(100% - 28px));
+        max-height: calc(100dvh - 32px);
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--paper);
+        color: var(--ink);
+        padding: 28px;
+      }
+      dialog::backdrop {
+        background: #163e2c66;
+      }
+      dialog h2 {
+        font-size: 28px;
+      }
+      dialog p {
+        margin: 12px 0 20px;
+      }
+      .archive-actions {
+        display: grid;
+        gap: 12px;
+      }
+      .archive-actions button {
+        justify-content: flex-start;
+      }
+      .dialog-footer {
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+      }
+      footer {
+        border-top: 1px solid var(--line);
+        margin-top: 32px;
+        padding-top: 20px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .mobile-nav,
+      .mobile-brand {
+        display: none;
+      }
+      @media (max-width: 1100px) {
+        main {
+          padding-inline: 26px;
+        }
+        .columns {
+          grid-template-columns: 1fr;
+        }
+        .side-stack {
+          grid-template-columns: 1fr 1fr;
+        }
+        .side-stack .identity {
+          grid-column: 1 / -1;
+        }
+      }
+      @media (max-width: 700px) {
+        .sidebar {
+          display: none;
+        }
+        main {
+          margin: 0;
+          padding: 20px 18px 110px;
+        }
+        .mobile-brand {
+          display: flex;
+          margin-bottom: 20px;
+        }
+        .hero {
+          grid-template-columns: 1fr;
+        }
+        .neighborhood {
+          display: none;
+        }
+        .stats {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+        .stats .card {
+          padding: 16px 20px;
+        }
+        .stat-number {
+          font-size: 28px;
+        }
+        .side-stack,
+        .form-pair {
+          grid-template-columns: 1fr;
+        }
+        .mobile-nav {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          position: fixed;
+          inset: auto 0 0;
+          z-index: 5;
+          border-top: 1px solid var(--line);
+          background: var(--white);
+          padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+          gap: 4px;
+        }
+        .mobile-nav button {
+          min-height: 58px;
+          flex-direction: column;
+          gap: 3px;
+          border-color: transparent;
+          background: transparent;
+          font-size: 10px;
+        }
+        .mobile-nav button[aria-current="page"] {
+          color: var(--green);
+          background: var(--mint);
+        }
+        .milestone {
+          padding: 20px;
+        }
+        .card {
+          padding: 20px;
+        }
+        dialog {
+          padding: 20px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg class="defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <symbol id="i-home" viewBox="0 0 24 24">
+          <path d="m3 10 9-7 9 7v10H3ZM9 20v-7h6v7" />
+        </symbol>
+        <symbol id="i-path" viewBox="0 0 24 24">
+          <circle cx="6" cy="5" r="2" />
+          <circle cx="18" cy="19" r="2" />
+          <path d="M8 5h7a4 4 0 0 1 0 8H9a3 3 0 0 0 0 6h7" />
+        </symbol>
+        <symbol id="i-check" viewBox="0 0 24 24">
+          <rect x="4" y="3" width="16" height="18" rx="2" />
+          <path d="m8 12 3 3 5-6" />
+        </symbol>
+        <symbol id="i-data" viewBox="0 0 24 24">
+          <ellipse cx="12" cy="5" rx="8" ry="3" />
+          <path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0" />
+        </symbol>
+        <symbol id="i-download" viewBox="0 0 24 24">
+          <path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" />
+        </symbol>
+        <symbol id="i-upload" viewBox="0 0 24 24">
+          <path d="M12 16V4m-5 5 5-5 5 5M4 16v5h16v-5" />
+        </symbol>
+        <symbol id="i-close" viewBox="0 0 24 24">
+          <path d="m6 6 12 12M18 6 6 18" />
+        </symbol>
+        <symbol id="i-edit" viewBox="0 0 24 24">
+          <path d="m4 15 12-12 5 5L9 20H4ZM13 6l5 5" />
+        </symbol>
+        <symbol id="i-leaf" viewBox="0 0 24 24">
+          <path d="M20 4C11 2 3 7 5 14s12 7 15-10ZM4 21l11-11" />
+        </symbol>
+      </defs>
+    </svg>
+    <aside class="sidebar">
+      <div>
+        <div class="brand">
+          <svg class="icon" aria-hidden="true"><use href="#i-home" /></svg
+          >blokpakt
+        </div>
+        <p class="eyebrow">Owner notebook</p>
+      </div>
+      <nav class="nav" aria-label="Notebook navigation">
+        <button type="button" data-view="path" aria-current="page">
+          <svg class="icon" aria-hidden="true"><use href="#i-path" /></svg
+          >Growth path
+        </button>
+        <button type="button" data-view="tasks">
+          <svg class="icon" aria-hidden="true"><use href="#i-check" /></svg>My
+          next steps
+        </button>
+        <button type="button" data-action="archive">
+          <svg class="icon" aria-hidden="true"><use href="#i-data" /></svg
+          >Backups
+        </button>
+      </nav>
+      <div class="sidebar-note">
+        <h2>Build a little.<br />Learn a lot.</h2>
+        <p class="small muted">
+          A planning notebook, not a live dashboard or protected admin system.
+          No customer records, credentials, or secrets here.
+        </p>
+      </div>
+    </aside>
+    <main>
+      <div class="brand mobile-brand">
+        <svg class="icon" aria-hidden="true"><use href="#i-home" /></svg
+        >blokpakt
+      </div>
+      <header class="topbar">
+        <span id="today"></span
+        ><span class="tag draft">Owner planning &middot; local only</span>
+      </header>
+      <div id="storage-warning" class="notice" role="alert" hidden></div>
+      <div
+        id="feedback"
+        class="notice"
+        role="status"
+        aria-live="polite"
+        hidden
+      ></div>
+      <noscript
+        ><p class="notice">
+          Enable JavaScript to use your notebook. No internet connection is
+          required.
+        </p></noscript
+      >
+      <section id="path-view">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">From zero, thoughtfully</p>
+            <h1 tabindex="-1">One neighborhood.<br />One next step.</h1>
+            <p>
+              A place to remember what matters, what to test, and what to do
+              next. Start at zero. Grow only when the evidence supports it.
+            </p>
+          </div>
+          <svg
+            class="neighborhood"
+            viewBox="0 0 200 170"
+            role="img"
+            aria-label="Three little homes connected by a garden path"
+          >
+            <ellipse cx="102" cy="150" rx="94" ry="12" fill="#dbe7d3" />
+            <path
+              d="M29 136c10-28 61 23 71-4s62-9 76 7"
+              fill="none"
+              stroke="#c9934e"
+              stroke-width="4"
+              stroke-dasharray="6 7"
+            />
+            <g
+              fill="#fff8e9"
+              stroke="#497858"
+              stroke-width="2.5"
+              stroke-linejoin="round"
+            >
+              <path d="M18 116V76l29-22 30 22v40Z" />
+              <path d="M76 101V42l35-25 35 25v59Z" />
+              <path d="M137 120V87l24-19 25 19v33Z" />
+              <path d="M101 101V73h20v28M39 116V94h16v22M155 120v-18h14v18" />
+            </g>
+            <g fill="#e6a053">
+              <rect x="91" y="48" width="12" height="14" rx="2" />
+              <rect x="119" y="48" width="12" height="14" rx="2" />
+              <circle cx="171" cy="31" r="12" />
+            </g>
+            <path
+              d="M15 146c-4-13 1-22 12-22 2 12-3 19-12 22Z"
+              fill="#73977a"
+            />
+          </svg>
+        </div>
+        <div class="stats" aria-label="Local planning summary">
+          <div class="card">
+            <span class="small muted">Reported pilot households</span
+            ><strong id="household-count" class="stat-number"
+              >Not recorded</strong
+            ><span id="household-caption" class="small muted"
+              >No live user count is connected.</span
+            >
+          </div>
+          <div class="card">
+            <span class="small muted">Open next steps</span
+            ><strong id="open-count" class="stat-number">0</strong
+            ><span class="small muted"
+              >Suggested tasks are not completed work.</span
+            >
+          </div>
+          <div class="card">
+            <span class="small muted">Due today or overdue</span
+            ><strong id="due-count" class="stat-number">0</strong
+            ><span class="small muted"
+              >Reminders appear here, not by email or push.</span
+            >
+          </div>
+        </div>
+        <div class="columns">
+          <section aria-labelledby="growth-title">
+            <div class="section-heading">
+              <h2 id="growth-title">The growth path</h2>
+              <span class="tag draft">Editable draft</span>
+            </div>
+            <p class="small muted">
+              Numbers mean proposed verified households in one pilot area, not
+              visitors, tool downloads, or confirmed bookings. Zero is the
+              planning origin, not a claim about today's users. Reaching a
+              number never launches a feature.
+            </p>
+            <ol id="milestones" class="ladder"></ol>
+          </section>
+          <div class="side-stack">
+            <section class="card" aria-labelledby="observation-title">
+              <h2 id="observation-title">A small reality check</h2>
+              <p class="small muted">
+                Optional, owner-entered aggregate. This notebook does not verify
+                it or contact Supabase. Record a count, date, and non-sensitive
+                source together; leave all three blank to clear it.
+              </p>
+              <form id="observation-form" class="form-grid">
+                <label
+                  >Reported households<input
+                    name="households"
+                    type="number"
+                    min="0"
+                    max="1000000"
+                    step="1"
+                    inputmode="numeric"
+                    placeholder="Not recorded"
+                /></label>
+                <label
+                  >Observation date<input
+                    name="asOf"
+                    type="date"
+                    min="1900-01-01"
+                /></label>
+                <label
+                  >Evidence source<input
+                    name="source"
+                    maxlength="160"
+                    placeholder="e.g. anonymized pilot count"
+                  /><small>No names, emails, or addresses.</small></label
+                >
+                <button type="submit" class="primary">
+                  Save local observation
+                </button>
+              </form>
+            </section>
+            <section class="card" aria-labelledby="reminders-title">
+              <div class="section-heading">
+                <h2 id="reminders-title">On your little list</h2>
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-check" />
+                </svg>
+              </div>
+              <p class="small muted">
+                Overdue first, then the next seven days. Undated tasks remain in
+                My next steps.
+              </p>
+              <ul id="reminders" class="reminder-list"></ul>
+              <div class="actions">
+                <button type="button" data-view="tasks">
+                  See all next steps
+                </button>
+              </div>
+            </section>
+            <details class="identity" open>
+              <summary>Keep Blokpakt, Blokpakt.</summary>
+              <ul>
+                <li>
+                  An asset-light home-services marketplace connecting households
+                  with independent providers. Never a trading, investment, or
+                  cryptocurrency platform.
+                </li>
+                <li>
+                  Start with a manually operated US pilot. Coverage, providers,
+                  scope, price, and timing need confirmation. A request is not a
+                  booking.
+                </li>
+                <li>
+                  No online payments, automatic dispatch, subscriptions, AI
+                  claims, nationwide coverage, or guaranteed savings.
+                </li>
+                <li>
+                  The free home planner is an optional educational entry point,
+                  not a new financial business. Demand and acquisition benefits
+                  are hypotheses.
+                </li>
+                <li>
+                  Before changing scope, read the repository's AGENTS.md,
+                  PRODUCT_BRIEF.md, README story, and ROADMAP.md. These draft
+                  cards do not override them.
+                </li>
+              </ul>
+            </details>
+          </div>
+        </div>
+      </section>
+      <section id="tasks-view" hidden>
+        <div class="hero">
+          <div>
+            <p class="eyebrow">Less in your head, more on paper</p>
+            <h1 tabindex="-1">My next small steps.</h1>
+            <p>
+              Add a task, connect it to a milestone, and choose a date if
+              useful. Check it off when you have actually done it.
+            </p>
+          </div>
+        </div>
+        <div class="columns">
+          <section aria-labelledby="task-list-title">
+            <div class="section-heading">
+              <h2 id="task-list-title">Your checklist</h2>
+              <span id="task-count" class="tag"></span>
+            </div>
+            <div class="filter">
+              <label
+                >Show tasks<select id="task-filter">
+                  <option value="open">Open tasks</option>
+                  <option value="due">Due within 7 days</option>
+                  <option value="done">Completed tasks</option>
+                  <option value="all">All tasks</option>
+                </select></label
+              ><button type="button" data-action="cleanup">
+                Remove untouched starters
+              </button>
+            </div>
+            <ul id="tasks" class="tasks"></ul>
+          </section>
+          <section class="card" aria-labelledby="task-form-title">
+            <h2 id="task-form-title">A new next step</h2>
+            <p class="small muted">
+              This stays in your browser only. No sensitive business or customer
+              data.
+            </p>
+            <form id="task-form" class="form-grid">
+              <label
+                >Task<input
+                  name="title"
+                  maxlength="160"
+                  required
+                  placeholder="What is one useful next action?"
+              /></label>
+              <label
+                >Note<textarea
+                  name="note"
+                  maxlength="500"
+                  rows="3"
+                  placeholder="A short, non-sensitive reminder"
+                ></textarea>
+              </label>
+              <label
+                >Growth milestone<select name="milestoneId" required></select
+              ></label>
+              <label
+                >Due date (optional)<input
+                  name="due"
+                  type="date"
+                  min="1900-01-01"
+                  max="9999-12-31"
+              /></label>
+              <div class="actions">
+                <button id="task-submit" type="submit" class="primary">
+                  Save next step</button
+                ><button
+                  id="cancel-task"
+                  type="button"
+                  data-action="cancel-task"
+                  hidden
+                >
+                  Cancel edit
+                </button>
+              </div>
+            </form>
+            <p class="small muted">
+              Starter suggestions become yours when edited or checked off.
+              Cleanup preserves those adopted tasks and everything you add.
+            </p>
+          </section>
+        </div>
+      </section>
+      <footer>
+        <span id="save-status">Local browser storage only</span> &middot; Keep a
+        backup file. No cloud sync, sign-in, or background notifications. This
+        file is not part of the public website build.
+      </footer>
+    </main>
+    <nav class="mobile-nav" aria-label="Mobile notebook navigation">
+      <button type="button" data-view="path" aria-current="page">
+        <svg class="icon" aria-hidden="true"><use href="#i-path" /></svg>Growth
+        path
+      </button>
+      <button type="button" data-view="tasks">
+        <svg class="icon" aria-hidden="true"><use href="#i-check" /></svg>Next
+        steps
+      </button>
+      <button type="button" data-action="archive">
+        <svg class="icon" aria-hidden="true"><use href="#i-data" /></svg>Backups
+      </button>
+    </nav>
+    <dialog id="milestone-dialog" aria-labelledby="milestone-title">
+      <div class="section-heading">
+        <h2 id="milestone-title">Edit a draft milestone</h2>
+        <button
+          type="button"
+          data-close="milestone-dialog"
+          aria-label="Close milestone editor"
+        >
+          <svg class="icon" aria-hidden="true"><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <p class="small muted">
+        Keep thresholds increasing from zero. Editing a card is local planning,
+        not a product launch or approval to change the business model.
+      </p>
+      <form id="milestone-form" class="form-grid">
+        <label
+          >Proposed household threshold<input
+            name="threshold"
+            type="number"
+            min="0"
+            max="1000000"
+            step="1"
+            inputmode="numeric"
+            required
+        /></label>
+        <label
+          >Feature or focus<input name="title" maxlength="100" required
+        /></label>
+        <label
+          >What we would explore<textarea
+            name="description"
+            maxlength="500"
+            rows="3"
+            required
+          ></textarea>
+        </label>
+        <label
+          >Evidence needed before proceeding<textarea
+            name="gate"
+            maxlength="500"
+            rows="3"
+            required
+          ></textarea>
+        </label>
+        <p id="milestone-error" class="notice" role="alert" hidden></p>
+        <button type="submit" class="primary">Save draft milestone</button>
+      </form>
+    </dialog>
+    <dialog id="archive-dialog" aria-labelledby="archive-title">
+      <div class="section-heading">
+        <h2 id="archive-title">Back up your notebook</h2>
+        <button
+          type="button"
+          data-close="archive-dialog"
+          aria-label="Close backup settings"
+        >
+          <svg class="icon" aria-hidden="true"><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <p class="small muted">
+        Download a copy of your milestones, household observation, and tasks to
+        keep for later or move to another device. To bring them back, choose
+        Restore backup and select the file you saved. You do not need to open or
+        edit the file.
+      </p>
+      <p class="small muted">
+        Restoring replaces your current notebook; it does not combine copies.
+        Download a backup first if you want to keep your current data. Backups
+        are not encrypted, so store them privately. Owner backups work only in
+        this notebook, not in the home planner.
+      </p>
+      <div class="archive-actions">
+        <button type="button" data-action="export">
+          <svg class="icon" aria-hidden="true"><use href="#i-download" /></svg
+          >Download backup
+        </button>
+        <button type="button" data-action="import">
+          <svg class="icon" aria-hidden="true"><use href="#i-upload" /></svg
+          >Restore backup
+        </button>
+        <input
+          id="import-file"
+          type="file"
+          accept="application/json,.json"
+          hidden
+        />
+        <button type="button" data-action="cleanup">
+          <svg class="icon" aria-hidden="true"><use href="#i-leaf" /></svg
+          >Remove untouched starter tasks
+        </button>
+        <button type="button" data-action="reload">Reload notebook</button>
+      </div>
+      <p id="archive-status" class="small" role="status" hidden></p>
+      <div class="dialog-footer">
+        <button type="button" class="danger" data-action="reset">
+          Erase owner notebook data
+        </button>
+        <p class="small muted">
+          Only this notebook is erased. Your home planner, website login, and
+          other browser data are left alone. Moving this file, changing
+          browsers, or clearing browser data can disconnect saved data. Download
+          a backup first. This notebook is not a password-protected admin page;
+          do not publish it as one.
+        </p>
+      </div>
+    </dialog>
+    <script>
+      "use strict";
+      const KEY = "blokpakt.owner-workspace.v1";
+      const MAX_TASKS = 2000;
+      const MILESTONE_IDS = ["start", "learn", "coordinate", "repeat", "scale"];
+      const localDate = (date) =>
+        `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      const escapeHTML = (value) =>
+        String(value).replace(
+          /[&<>"']/g,
+          (character) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[character],
+        );
+      const icon = (name) =>
+        `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+      const integer = (value, min, max) =>
+        Number.isInteger(value) && value >= min && value <= max;
+      const text = (value, max, required = false) =>
+        typeof value === "string" &&
+        value.length <= max &&
+        (!required || value.trim().length > 0);
+      function validDate(value) {
+        if (
+          typeof value !== "string" ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(value) ||
+          value < "1900-01-01"
+        )
+          return false;
+        const date = new Date(value + "T12:00:00");
+        return Number.isFinite(date.getTime()) && localDate(date) === value;
+      }
+      function draftMilestones() {
+        return [
+          {
+            id: "start",
+            threshold: 0,
+            title: "Start with one neighborhood",
+            description:
+              "Choose one pilot area and one home-service category. Check the request flow before inviting anyone.",
+            gate: "Owner-confirmed coverage and provider availability, working email verification, and tested request permissions.",
+          },
+          {
+            id: "learn",
+            threshold: 10,
+            title: "Learn through manual requests",
+            description:
+              "Review each household's needs. Agree scope, a quote, and a date one request at a time. This is a focus, not a new feature unlock.",
+            gate: "Provider and customer agreement before confirmation. Learn from completed work, cancellations, and support needs.",
+          },
+          {
+            id: "coordinate",
+            threshold: 50,
+            title: "Test nearby service batches",
+            description:
+              "Manually coordinate compatible same-street requests and compare quoted and actual results.",
+            gate: "Repeated completed batches must support customer savings, viable provider earnings, and positive platform contribution including coordination labor. No automatic discount.",
+          },
+          {
+            id: "repeat",
+            threshold: 100,
+            title: "Make repeat home care easier",
+            description:
+              "Consider clearer request updates and repeat-request tools after observing actual repeat demand.",
+            gate: "Reliable fulfillment, repeat demand, support capacity, server-side permissions, and owner approval before implementing new features.",
+          },
+          {
+            id: "scale",
+            threshold: 500,
+            title: "Consider careful expansion",
+            description:
+              "Evaluate another service area and targeted coordination tools only where evidence supports them.",
+            gate: "Sustainable completed batches, provider capacity, support readiness, and a separately approved expansion plan. No automatic payments, AI, or dispatch.",
+          },
+        ];
+      }
+      function emptyState() {
+        return {
+          app: "blokpakt-owner",
+          version: 1,
+          observation: { households: null, asOf: "", source: "" },
+          milestones: draftMilestones(),
+          tasks: [],
+        };
+      }
+      function initialState() {
+        const suggestions = [
+          ["Choose one pilot area and service", "start"],
+          ["Confirm independent provider availability", "start"],
+          ["Check real email sign-in and request privacy", "start"],
+          ["Agree scope, price, and date before confirming work", "learn"],
+          [
+            "Record actual work, travel time, and costs after completed batches",
+            "coordinate",
+          ],
+          [
+            "Review customer savings, provider earnings, and platform contribution",
+            "coordinate",
+          ],
+          ["Back up the local notebooks", "start"],
+        ];
+        return {
+          ...emptyState(),
+          tasks: suggestions.map(([title, milestoneId], index) => ({
+            id: `starter-${index}`,
+            title,
+            milestoneId,
+            note: "",
+            due: "",
+            done: false,
+            example: true,
+            createdAt: new Date().toISOString(),
+          })),
+        };
+      }
+      function validateData(data) {
+        if (
+          !data ||
+          data.app !== "blokpakt-owner" ||
+          data.version !== 1 ||
+          !Array.isArray(data.milestones) ||
+          data.milestones.length !== MILESTONE_IDS.length ||
+          !Array.isArray(data.tasks) ||
+          data.tasks.length > MAX_TASKS
+        )
+          throw new Error(
+            "Use a version 1 Blokpakt owner backup with at most 2,000 tasks.",
+          );
+        const observation = data.observation;
+        if (
+          !observation ||
+          !text(observation.source, 160) ||
+          typeof observation.asOf !== "string"
+        )
+          throw new Error("Invalid observation.");
+        if (observation.households === null) {
+          if (observation.asOf !== "" || observation.source !== "")
+            throw new Error(
+              "An empty observation must have no date or source.",
+            );
+        } else if (
+          !integer(observation.households, 0, 1000000) ||
+          !validDate(observation.asOf) ||
+          observation.asOf > localDate(new Date()) ||
+          !observation.source.trim()
+        ) {
+          throw new Error(
+            "Record a whole household count, a date no later than today, and a non-sensitive evidence source.",
+          );
+        }
+        let previous = -1;
+        const milestones = data.milestones.map((item, index) => {
+          if (
+            !item ||
+            item.id !== MILESTONE_IDS[index] ||
+            !integer(item.threshold, 0, 1000000) ||
+            item.threshold <= previous ||
+            (index === 0 && item.threshold !== 0) ||
+            !text(item.title, 100, true) ||
+            !text(item.description, 500, true) ||
+            !text(item.gate, 500, true)
+          )
+            throw new Error(
+              "Milestones must start at zero, increase in order, and include a title, description, and evidence gate.",
+            );
+          previous = item.threshold;
+          return {
+            id: item.id,
+            threshold: item.threshold,
+            title: item.title.trim(),
+            description: item.description.trim(),
+            gate: item.gate.trim(),
+          };
+        });
+        const ids = new Set();
+        const tasks = data.tasks.map((task) => {
+          if (
+            !task ||
+            !text(task.id, 100, true) ||
+            ids.has(task.id) ||
+            !text(task.title, 160, true) ||
+            !text(task.note, 500) ||
+            !MILESTONE_IDS.includes(task.milestoneId) ||
+            (task.due !== "" && !validDate(task.due)) ||
+            typeof task.done !== "boolean" ||
+            typeof task.example !== "boolean" ||
+            typeof task.createdAt !== "string" ||
+            !Number.isFinite(Date.parse(task.createdAt))
+          )
+            throw new Error(
+              "A task has invalid fields, an unknown milestone, or a duplicate ID.",
+            );
+          ids.add(task.id);
+          return {
+            id: task.id,
+            title: task.title.trim(),
+            note: task.note.trim(),
+            milestoneId: task.milestoneId,
+            due: task.due,
+            done: task.done,
+            example: task.example,
+            createdAt: task.createdAt,
+          };
+        });
+        return {
+          app: "blokpakt-owner",
+          version: 1,
+          observation: {
+            households: observation.households,
+            asOf: observation.asOf,
+            source: observation.source.trim(),
+          },
+          milestones,
+          tasks,
+        };
+      }
+      function taskTiming(task, now = new Date()) {
+        if (task.done)
+          return {
+            label: "Completed",
+            className: "muted",
+            upcoming: false,
+            due: false,
+          };
+        if (!task.due)
+          return {
+            label: "No date chosen",
+            className: "muted",
+            upcoming: false,
+            due: false,
+          };
+        const today = localDate(now),
+          end = new Date(now);
+        end.setDate(end.getDate() + 7);
+        return {
+          label:
+            task.due < today
+              ? `Overdue · ${task.due}`
+              : task.due === today
+                ? "Due today"
+                : `Due ${task.due}`,
+          className:
+            task.due < today ? "overdue" : task.due === today ? "due" : "muted",
+          upcoming: task.due <= localDate(end),
+          due: task.due <= today,
+        };
+      }
+      function sortedTasks(tasks) {
+        return [...tasks].sort(
+          (a, b) =>
+            Number(a.done) - Number(b.done) ||
+            (a.due || "9999-99-99").localeCompare(b.due || "9999-99-99") ||
+            b.createdAt.localeCompare(a.createdAt),
+        );
+      }
+      let state,
+        storedRaw = null,
+        recoveryRaw = null,
+        storageBlocked = false,
+        conflict = false,
+        editingTask = null,
+        editingMilestone = null;
+      const byId = (id) => document.getElementById(id);
+      function notify(message, error = false) {
+        const feedback = byId("feedback");
+        feedback.textContent = message;
+        feedback.hidden = false;
+        feedback.dataset.error = String(error);
+        feedback.setAttribute("role", error ? "alert" : "status");
+        const archive = byId("archive-status");
+        archive.textContent = message;
+        archive.hidden = false;
+      }
+      function warn(message) {
+        byId("storage-warning").textContent = message;
+        byId("storage-warning").hidden = false;
+        byId("save-status").textContent = "Saving needs attention";
+      }
+      try {
+        storedRaw = localStorage.getItem(KEY);
+        state =
+          storedRaw === null
+            ? initialState()
+            : validateData(JSON.parse(storedRaw));
+      } catch (error) {
+        recoveryRaw = storedRaw;
+        storageBlocked = true;
+        state = emptyState();
+        warn(
+          "Saved owner data could not be read. Nothing has been replaced and no starter data was loaded. Open Backups to download a recovery copy, or explicitly erase this notebook before restoring a valid backup. " +
+            (error instanceof SyntaxError
+              ? "The saved copy is damaged."
+              : error.message),
+        );
+      }
+      function persist(next) {
+        if (storageBlocked || conflict) {
+          notify("Saving is paused. Resolve the storage warning first.", true);
+          return false;
+        }
+        let validated;
+        try {
+          validated = validateData(next);
+        } catch (error) {
+          notify("Not saved: " + error.message, true);
+          return false;
+        }
+        try {
+          if (localStorage.getItem(KEY) !== storedRaw) {
+            conflict = true;
+            warn(
+              "This owner notebook changed in another tab. Saving is paused. Download a backup of this copy if needed, then reload for the latest saved data.",
+            );
+            notify("Not saved: another tab changed this notebook.", true);
+            return false;
+          }
+          const serialized = JSON.stringify(validated);
+          localStorage.setItem(KEY, serialized);
+          storedRaw = serialized;
+          state = validated;
+          byId("save-status").textContent = "Saved on this device just now";
+          byId("storage-warning").hidden = true;
+          return true;
+        } catch (error) {
+          warn(
+            "Browser storage is unavailable or full. Your change was not saved. Keep the page open and download a backup of previously saved data. " +
+              error.message,
+          );
+          notify("Not saved: browser storage is unavailable.", true);
+          return false;
+        }
+      }
+      function milestoneOptions() {
+        return state.milestones
+          .map(
+            (item) =>
+              `<option value="${item.id}">${item.threshold} · ${escapeHTML(item.title)}</option>`,
+          )
+          .join("");
+      }
+      function syncForms() {
+        const form = byId("observation-form");
+        form.elements.households.value = state.observation.households ?? "";
+        form.elements.asOf.value = state.observation.asOf;
+        form.elements.asOf.max = localDate(new Date());
+        form.elements.source.value = state.observation.source;
+        const select = byId("task-form").elements.milestoneId,
+          current = select.value;
+        select.innerHTML = milestoneOptions();
+        select.value = MILESTONE_IDS.includes(current)
+          ? current
+          : MILESTONE_IDS[0];
+      }
+      function renderMilestones() {
+        byId("milestones").innerHTML = state.milestones
+          .map(
+            (
+              item,
+              index,
+            ) => `<li class="milestone ${index === 0 ? "origin" : ""}" data-milestone="${item.id}">
+          <span class="threshold">${item.threshold.toLocaleString("en-US")}</span>
+          <span class="count-label">${index === 0 ? "Planning origin · not a measured user count" : "Proposed verified pilot households"}</span>
+          <h3>${escapeHTML(item.title)}</h3><p>${escapeHTML(item.description)}</p>
+          <p class="gate"><strong>Evidence before proceeding</strong><br/>${escapeHTML(item.gate)}</p>
+          <div class="milestone-footer"><span class="tag draft">${state.observation.households !== null && state.observation.households >= item.threshold ? "Count reached · evidence still needed" : "Draft focus · not a launch promise"}</span><button type="button" data-edit-milestone="${item.id}" aria-label="Edit milestone ${item.threshold}">${icon("edit")}Edit draft</button></div>
+        </li>`,
+          )
+          .join("");
+      }
+      function renderTasks() {
+        const filter = byId("task-filter").value;
+        const tasks = sortedTasks(state.tasks).filter(
+          (task) =>
+            filter === "all" ||
+            (filter === "open" && !task.done) ||
+            (filter === "done" && task.done) ||
+            (filter === "due" && taskTiming(task).upcoming),
+        );
+        byId("task-count").textContent =
+          `${tasks.length} shown / ${state.tasks.length} total`;
+        byId("tasks").innerHTML = tasks.length
+          ? tasks
+              .map((task) => {
+                const timing = taskTiming(task),
+                  milestone = state.milestones.find(
+                    (item) => item.id === task.milestoneId,
+                  );
+                return `<li class="task ${task.done ? "done" : ""}"><label class="task-title"><input type="checkbox" data-toggle-task="${escapeHTML(task.id)}" ${task.done ? "checked" : ""}/><span>${escapeHTML(task.title)}</span></label>
+            ${task.note ? `<p>${escapeHTML(task.note)}</p>` : ""}
+            <div class="task-meta"><span class="small ${timing.className}">${timing.label}</span><span class="tag">${milestone.threshold} · ${escapeHTML(milestone.title)}</span>${task.example ? '<span class="tag draft">Starter suggestion</span>' : ""}</div>
+            <div class="actions"><button type="button" data-edit-task="${escapeHTML(task.id)}" aria-label="Edit ${escapeHTML(task.title)}">Edit task</button><button type="button" class="danger" data-delete-task="${escapeHTML(task.id)}" aria-label="Delete ${escapeHTML(task.title)}">Delete</button></div></li>`;
+              })
+              .join("")
+          : '<li class="empty">No tasks in this view. A little breathing room.</li>';
+      }
+      function renderSummary() {
+        const observation = state.observation;
+        byId("household-count").textContent =
+          observation.households === null
+            ? "Not recorded"
+            : observation.households.toLocaleString("en-US");
+        byId("household-caption").textContent =
+          observation.households === null
+            ? "No live user count is connected."
+            : `Owner-entered, not verified by this app · ${observation.asOf} · ${observation.source}`;
+        byId("open-count").textContent = state.tasks.filter(
+          (task) => !task.done,
+        ).length;
+        byId("due-count").textContent = state.tasks.filter(
+          (task) => taskTiming(task).due,
+        ).length;
+        const upcoming = sortedTasks(
+          state.tasks.filter((task) => taskTiming(task).upcoming),
+        );
+        byId("reminders").innerHTML = upcoming.length
+          ? upcoming
+              .slice(0, 4)
+              .map(
+                (task) =>
+                  `<li><strong class="small">${escapeHTML(task.title)}</strong><br/><span class="small ${taskTiming(task).className}">${taskTiming(task).label}</span><br/><button type="button" data-edit-task="${escapeHTML(task.id)}">Open task</button></li>`,
+              )
+              .join("")
+          : '<li class="small muted">Nothing dated for the next seven days. Add a due date to a next step when you are ready.</li>';
+        byId("today").textContent = new Date().toLocaleDateString("en-US", {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        });
+      }
+      function render() {
+        renderMilestones();
+        renderTasks();
+        renderSummary();
+      }
+      function showView(view) {
+        byId("path-view").hidden = view !== "path";
+        byId("tasks-view").hidden = view !== "tasks";
+        document.querySelectorAll("[data-view]").forEach((button) => {
+          if (button.dataset.view === view)
+            button.setAttribute("aria-current", "page");
+          else button.removeAttribute("aria-current");
+        });
+        byId(view + "-view")
+          .querySelector("h1")
+          .focus();
+        window.scrollTo({ top: 0, behavior: "instant" });
+      }
+      function resetTaskForm() {
+        editingTask = null;
+        byId("task-form").reset();
+        byId("task-form-title").textContent = "A new next step";
+        byId("task-submit").textContent = "Save next step";
+        byId("cancel-task").hidden = true;
+      }
+      byId("observation-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        if (!form.reportValidity()) return;
+        const fields = Object.fromEntries(new FormData(form));
+        const observation = {
+          households:
+            fields.households === "" ? null : Number(fields.households),
+          asOf: fields.asOf,
+          source: fields.source.trim(),
+        };
+        if (persist({ ...state, observation })) {
+          render();
+          notify(
+            "Local observation saved. No feature was launched or marked ready.",
+          );
+        }
+      });
+      byId("task-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        if (!form.reportValidity()) return;
+        if (!editingTask && state.tasks.length >= MAX_TASKS) {
+          notify(
+            "The 2,000 task limit is reached. Download a backup before making space.",
+            true,
+          );
+          return;
+        }
+        const fields = Object.fromEntries(new FormData(form)),
+          previous = state.tasks.find((task) => task.id === editingTask);
+        const task = {
+          id: previous
+            ? previous.id
+            : typeof crypto.randomUUID === "function"
+              ? crypto.randomUUID()
+              : `task-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          title: fields.title.trim(),
+          note: fields.note.trim(),
+          due: fields.due,
+          milestoneId: fields.milestoneId,
+          done: previous ? previous.done : false,
+          example: false,
+          createdAt: previous ? previous.createdAt : new Date().toISOString(),
+        };
+        const tasks = previous
+          ? state.tasks.map((item) => (item.id === previous.id ? task : item))
+          : [task, ...state.tasks];
+        if (persist({ ...state, tasks })) {
+          resetTaskForm();
+          render();
+          notify(
+            "Next step saved on this device. Reminders appear in this notebook only.",
+          );
+        }
+      });
+      byId("milestone-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        if (!form.reportValidity()) return;
+        const fields = Object.fromEntries(new FormData(form));
+        const milestones = state.milestones.map((item) =>
+          item.id === editingMilestone
+            ? {
+                ...item,
+                threshold: Number(fields.threshold),
+                title: fields.title.trim(),
+                description: fields.description.trim(),
+                gate: fields.gate.trim(),
+              }
+            : item,
+        );
+        try {
+          validateData({ ...state, milestones });
+        } catch (error) {
+          byId("milestone-error").textContent = error.message;
+          byId("milestone-error").hidden = false;
+          return;
+        }
+        if (persist({ ...state, milestones })) {
+          byId("milestone-dialog").close();
+          syncForms();
+          render();
+          notify(
+            "Draft milestone saved locally. Product approval and evidence are still required.",
+          );
+        } else {
+          byId("milestone-error").textContent = byId("feedback").textContent;
+          byId("milestone-error").hidden = false;
+        }
+      });
+      byId("task-filter").addEventListener("change", renderTasks);
+      document.addEventListener("change", (event) => {
+        const input = event.target.closest("[data-toggle-task]");
+        if (!input) return;
+        const tasks = state.tasks.map((task) =>
+          task.id === input.dataset.toggleTask
+            ? { ...task, done: input.checked, example: false }
+            : task,
+        );
+        if (persist({ ...state, tasks })) {
+          render();
+          notify(
+            "Task updated. Adopted starter tasks are kept during cleanup.",
+          );
+        } else input.checked = !input.checked;
+      });
+      function downloadBackup() {
+        try {
+          const content =
+            recoveryRaw !== null ? recoveryRaw : JSON.stringify(state, null, 2);
+          const url = URL.createObjectURL(
+            new Blob([content], { type: "application/json" }),
+          );
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `blokpakt-owner-${recoveryRaw !== null ? "recovery-" : ""}${localDate(new Date())}.json`;
+          document.body.append(link);
+          link.click();
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          notify(
+            "Owner backup download requested. Check your downloads and store it privately.",
+          );
+        } catch (error) {
+          notify("Backup could not be downloaded: " + error.message, true);
+        }
+      }
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest("button");
+        if (!button) return;
+        if (button.dataset.view) {
+          showView(button.dataset.view);
+          return;
+        }
+        if (button.dataset.close) {
+          byId(button.dataset.close).close();
+          return;
+        }
+        if (button.dataset.editMilestone) {
+          const item = state.milestones.find(
+              (milestone) => milestone.id === button.dataset.editMilestone,
+            ),
+            form = byId("milestone-form");
+          editingMilestone = item.id;
+          for (const name of ["threshold", "title", "description", "gate"])
+            form.elements[name].value = item[name];
+          form.elements.threshold.readOnly = item.id === "start";
+          byId("milestone-error").hidden = true;
+          byId("milestone-dialog").showModal();
+          return;
+        }
+        if (button.dataset.editTask) {
+          const task = state.tasks.find(
+              (item) => item.id === button.dataset.editTask,
+            ),
+            form = byId("task-form");
+          editingTask = task.id;
+          for (const name of ["title", "note", "milestoneId", "due"])
+            form.elements[name].value = task[name];
+          byId("task-form-title").textContent = "Edit your next step";
+          byId("task-submit").textContent = "Save task changes";
+          byId("cancel-task").hidden = false;
+          showView("tasks");
+          form.elements.title.focus();
+          form.scrollIntoView({ block: "center" });
+          return;
+        }
+        if (button.dataset.deleteTask) {
+          if (
+            !confirm(
+              "Delete this task permanently? Download a backup first if you need to keep it.",
+            )
+          )
+            return;
+          if (
+            persist({
+              ...state,
+              tasks: state.tasks.filter(
+                (task) => task.id !== button.dataset.deleteTask,
+              ),
+            })
+          ) {
+            if (editingTask === button.dataset.deleteTask) resetTaskForm();
+            render();
+            notify("Task removed.");
+          }
+          return;
+        }
+        const action = button.dataset.action;
+        if (action === "archive") byId("archive-dialog").showModal();
+        if (action === "cancel-task") resetTaskForm();
+        if (action === "export") downloadBackup();
+        if (action === "reload") {
+          if (
+            confirm(
+              "Reload the notebook? Unsaved form changes will be lost. Download a backup first if needed.",
+            )
+          )
+            location.reload();
+        }
+        if (action === "import") {
+          if (storageBlocked || conflict) {
+            notify(
+              "Resolve the storage warning before restoring a backup.",
+              true,
+            );
+            return;
+          }
+          byId("import-file").click();
+        }
+        if (action === "cleanup") {
+          const count = state.tasks.filter((task) => task.example).length;
+          if (!count) {
+            notify("No untouched starter tasks remain.");
+            return;
+          }
+          if (
+            !confirm(
+              `Remove ${count} untouched starter tasks? Added, edited, and checked-off tasks are kept. Milestones and your observation stay unchanged.`,
+            )
+          )
+            return;
+          if (
+            persist({
+              ...state,
+              tasks: state.tasks.filter((task) => !task.example),
+            })
+          ) {
+            if (
+              editingTask &&
+              !state.tasks.some((task) => task.id === editingTask)
+            )
+              resetTaskForm();
+            render();
+            notify(
+              "Untouched starters removed. Your own and adopted tasks remain.",
+            );
+          }
+        }
+        if (action === "reset") {
+          if (conflict) {
+            notify(
+              "Reload the latest owner notebook before erasing data changed in another tab.",
+              true,
+            );
+            return;
+          }
+          if (
+            !confirm(
+              "Erase ALL owner tasks and observations, and reset milestones to their draft defaults? Download a backup first. The home planner and website data are NOT erased.",
+            )
+          )
+            return;
+          try {
+            const next = emptyState(),
+              raw = JSON.stringify(next);
+            localStorage.setItem(KEY, raw);
+            storedRaw = raw;
+            state = next;
+            recoveryRaw = null;
+            storageBlocked = false;
+            byId("storage-warning").hidden = true;
+            byId("save-status").textContent = "Empty owner notebook saved";
+            resetTaskForm();
+            syncForms();
+            render();
+            notify(
+              "Owner notebook erased. Starter tasks will not return on reload.",
+            );
+          } catch (error) {
+            notify("Could not erase owner data: " + error.message, true);
+          }
+        }
+      });
+      byId("import-file").addEventListener("change", async (event) => {
+        const file = event.target.files[0];
+        event.target.value = "";
+        if (!file) return;
+        try {
+          if (file.size > 4 * 1024 * 1024)
+            throw new Error("Backup exceeds the 4 MB limit.");
+          const imported = validateData(JSON.parse(await file.text()));
+          if (
+            !confirm(
+              `Restore ${imported.tasks.length} tasks, milestones, and observation from this backup? This replaces your entire owner notebook instead of combining copies. Download a backup first to keep your current data. Unsaved edits will be discarded.`,
+            )
+          )
+            return;
+          if (persist(imported)) {
+            resetTaskForm();
+            syncForms();
+            render();
+            notify(
+              "Your notebook has been restored and saved on this device. Home planner data was not changed.",
+            );
+          }
+        } catch (error) {
+          notify(
+            "Restore stopped: " +
+              (error instanceof SyntaxError
+                ? "This file could not be read. Choose an unedited backup downloaded from this notebook."
+                : error.message),
+            true,
+          );
+        }
+      });
+      window.addEventListener("storage", (event) => {
+        if (event.key !== KEY && event.key !== null) return;
+        conflict = true;
+        warn(
+          "This owner notebook changed in another tab. Saving is paused to avoid overwriting it. Download a backup of this copy if needed, then reload.",
+        );
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) {
+          renderSummary();
+          renderTasks();
+        }
+      });
+      window.addEventListener("focus", () => {
+        renderSummary();
+        renderTasks();
+      });
+      let lastDay = localDate(new Date());
+      setInterval(() => {
+        const today = localDate(new Date());
+        if (today !== lastDay) {
+          lastDay = today;
+          renderSummary();
+          renderTasks();
+          byId("observation-form").elements.asOf.max = today;
+        }
+      }, 60000);
+      syncForms();
+      render();
+      if (!storageBlocked && storedRaw === null) persist(state);
+    </script>
+  </body>
+</html>
